@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharks Fantasy</title>
+    <link rel="shortcut icon" href="./logo.ico" type="image/x-icon">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Teko:wght@600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --dark: #0f2027;
+            --dark-2: #203a43;
+            --accent: #ffd700;
+            --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark), var(--dark-2), #2c5364);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- UTILS --- */
+        .hidden {
+            display: none !important;
+        }
+
+        .btn {
+            background: var(--primary);
+            border: none;
+            padding: 12px 24px;
+            color: var(--dark);
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: #fff;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            padding: 10px 20px;
+        }
+
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        /* --- AUTH SCREEN --- */
+        #auth-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .auth-container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            font-family: 'Teko', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: -webkit-linear-gradient(var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .auth-toggle {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #aaa;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* --- DASHBOARD --- */
+        #dashboard-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo-mini {
+            font-family: 'Teko';
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        /* POOL VIEW */
+        #view-pool {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pool-container {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 2/3;
+            background: rgba(0, 168, 255, 0.1);
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5) inset;
+
+            /* GRID LAYOUT 1-2-3-1 */
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr 1fr;
+            padding: 20px;
+            gap: 10px;
+        }
+
+        /* Pool Markings */
+        .pool-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-50%);
+        }
+
+        /* Goal Silhouette */
+        .pool-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        .pool-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .player-node {
+            width: 70px;
+            height: 70px;
+            background: var(--dark-2);
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-node img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+
+        .player-node:hover {
+            transform: scale(1.1);
+            border-color: var(--accent);
+            z-index: 10;
+        }
+
+        .player-node.goalie {
+            border-color: #ff4757;
+        }
+
+        .node-label {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 2px 0;
+        }
+
+        .total-points-display {
+            text-align: center;
+            padding: 10px;
+            font-family: 'Teko';
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        /* RANKING VIEW */
+        #view-ranking {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .rank-table th,
+        .rank-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .rank-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--primary);
+        }
+
+        .rank-pos {
+            font-weight: bold;
+            color: var(--accent);
+            font-family: 'Teko';
+            font-size: 1.2rem;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #1e2a3a, #111);
+            width: 90%;
+            max-width: 350px;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 210, 255, 0.2);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .card-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid var(--accent);
+            margin: 0 auto 20px;
+            overflow: hidden;
+        }
+
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-name {
+            font-family: 'Teko';
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .card-pos {
+            color: var(--primary);
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .card-phrase {
+            font-style: italic;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-item span {
+            display: block;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .stat-item strong {
+            display: block;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .card-total {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen">
+        <div class="auth-container">
+            <img src="./logo.png" alt="Logo" style="width:150px; margin-bottom: 10px;">
+            <h1>SHARKS FANTASY</h1>
+            <p style="margin-bottom: 20px; color: #ccc;">Waterpolo Manager</p>
+
+            <form id="auth-form">
+                <h2 id="auth-mode-title" style="margin-bottom:15px; font-family:'Teko'; color:#fff; font-size: 1.5rem;">
+                    Inicia Sesión</h2>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <div id="auth-error" style="color: #ff4757; font-size: 0.8rem; margin-bottom: 10px;"></div>
+                <button type="submit" class="btn" id="auth-btn">Entrar</button>
+            </form>
+
+            <div class="auth-toggle" id="toggle-auth">¿No tienes cuenta? Regístrate</div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboard-screen" class="hidden">
+        <header>
+            <div class="logo-mini">
+                <img src="./logo.png" alt="Sharks Logo" style="height: 35px; width: auto;">
+                SHARKS FANTASY
+            </div>
+            <button class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;" id="logout-btn">Salir</button>
+        </header>
+
+        <div class="total-points-display">
+            PUNTOS TOTALES: <span id="user-total-points">0</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="view-pool">Mi Equipo</button>
+            <button class="tab-btn" data-tab="view-ranking">Ranking</button>
+            <button class="tab-btn" data-tab="view-profile">Mi Perfil</button>
+        </div>
+
+        <!-- VIEW: POOL -->
+        <div id="view-pool">
+            <div class="pool-container" id="pool-grid">
+                <!-- 
+                   Row 1: 1 Player (Boya)
+                   Row 2: 2 Players (Extremos)
+                   Row 3: 3 Players (Defensa)
+                   Row 4: 1 Player (Portero)
+                -->
+                <div class="pool-row" id="row-1"></div>
+                <div class="pool-row" id="row-2"></div>
+                <div class="pool-row" id="row-3"></div>
+                <div class="pool-row" id="row-4"></div>
+            </div>
+
+        </div>
+
+        <!-- VIEW: RANKING -->
+        <div id="view-ranking" class="hidden">
+            <table class="rank-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Equipo</th>
+                        <th>Puntos</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body">
+                    <!-- Loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <style>
+            #ranking-body tr {
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+            #ranking-body tr:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+        </style>
+
+        <!-- VIEW: PROFILE -->
+        <div id="view-profile" class="hidden" style="padding: 20px; display: flex; justify-content: center;">
+            <div class="auth-container">
+                <h2 style="font-family: 'Teko'; margin-bottom: 20px;">MI PERFIL</h2>
+                <form id="profile-form">
+                    <label
+                        style="display:block; text-align:left; color:#aaa; font-size:0.8rem; margin-bottom:5px;">Nombre
+                        Entrenador</label>
+                    <input type="text" id="p-name" placeholder="Nombre de tu equipo/entrenador" required>
+
+                    <label
+                        style="display:block; text-align:left; color:#aaa; font-size:0.8rem; margin-bottom:5px; margin-top:15px;">Email</label>
+                    <input type="email" id="p-email" disabled style="opacity: 0.5; cursor: not-allowed;">
+
+                    <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">Guardar
+                        Cambios</button>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+                    <button type="button" id="btn-delete-account" class="btn btn-danger" style="width: 100%;">Eliminar
+                        Cuenta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYER MODAL -->
+    <div class="modal" id="modal-player">
+        <div class="card">
+            <span class="close-modal">&times;</span>
+            <div class="card-img"><img id="m-photo" src="" alt=""></div>
+            <h2 class="card-name" id="m-name">Nombre</h2>
+            <div class="card-pos" id="m-pos">POSICIÓN</div>
+            <p class="card-phrase" id="m-phrase">"Frase"</p>
+            <div class="card-stats">
+                <!-- Dynamic Stats injected via JS -->
+            </div>
+            <div class="card-total">
+                <span style="font-size: 0.8rem; color:#aaa; display:block;">Puntos Fantasy</span>
+                <span id="m-points">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div class="modal" id="modal-delete-confirm">
+        <div class="card" style="border-color: #e74c3c; box-shadow: 0 0 50px rgba(231, 76, 60, 0.2);">
+            <h2 style="color: #e74c3c; font-family: 'Teko'; margin-bottom: 10px;">¿ESTÁS SEGURO?</h2>
+            <p style="margin-bottom: 20px; color: #ccc; font-size: 0.9rem;">
+                Si eliminas tu cuenta, perderás <strong>todo tu equipo y tus puntos</strong> para siempre. <br><br>
+                Esta acción no se puede deshacer.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn" id="btn-cancel-delete" style="background: #555; color: white;">No, cancelar</button>
+                <button class="btn" id="btn-confirm-delete" style="background: #e74c3c; color: white;">Sí,
+                    eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPPONENT TEAM MODAL -->
+    <div class="modal" id="modal-opponent-team" style="z-index: 900;">
+        <div class="card"
+            style="width: 95%; max-width: 500px; padding: 15px; background: rgba(0, 20, 40, 0.98); border: 1px solid var(--primary);">
+            <span class="close-modal" id="close-opponent-modal">&times;</span>
+            <h2 class="card-name" id="opp-team-name" style="margin-bottom:15px; color: var(--primary);">Equipo Rival
+            </h2>
+
+            <div class="pool-container" style="height: 400px; margin-bottom: 0;">
+                <div class="pool-row" id="opp-row-1"></div>
+                <div class="pool-row" id="opp-row-2"></div>
+                <div class="pool-row" id="opp-row-3"></div>
+                <div class="pool-row" id="opp-row-4"></div>
+            </div>
+            <div class="card-total" style="margin-top:15px;">
+                <span style="font-size: 0.8rem; color:#aaa; display:block;">Puntos Totales do Rival</span>
+                <span id="opp-team-points" style="color: var(--secondary);">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="view-admin" class="hidden"
+        style="padding: 20px; background: rgba(0,0,0,0.95); position: fixed; top:0; left:0; width:100%; height:100%; z-index: 2000; overflow-y: auto;">
+        <h2 style="font-family: 'Teko'; color: #e74c3c;">PANEL DE ADMINISTRACIÓN</h2>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button class="btn-outline"
+                onclick="document.getElementById('view-admin').classList.add('hidden')">Cerrar</button>
+            <button class="btn" onclick="recalculateGlobalRanking()" style="background:var(--secondary); color:#000;">🧮
+                Actualizar Ranking Global</button>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="admin-search" placeholder="Buscar jugador..."
+                style="padding: 10px; width: 100%; max-width: 300px;">
+        </div>
+
+        <div id="admin-players-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+            <!-- Admin items injected here -->
+        </div>
+    </div>
+
+    <!-- ADMIN TOGGLE (Hidden in footer or somewhere discreet) -->
+    <div style="position: fixed; bottom: 10px; right: 10px; opacity: 0.3; cursor: pointer; font-size: 0.7rem;"
+        id="admin-trigger">Dev Admin</div>
+
+    <!-- FIREBASE & APP LOGIC -->
+    <script type="module">
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtKaONmU_RiTjjVvpN4XyJZAUY-ZgafIM",
+            authDomain: "sharks-fantasy.firebaseapp.com",
+            projectId: "sharks-fantasy",
+            storageBucket: "sharks-fantasy.firebasestorage.app",
+            messagingSenderId: "38574787028",
+            appId: "1:38574787028:web:3bfe1adc814f31261f2e41",
+            measurementId: "G-N8Q6MQ4TBC"
+        };
+
+        if (typeof firebaseConfig === 'undefined') {
+            alert("¡ERROR CRÍTICO! \nFalta la variable firebaseConfig en el código.\nPor favor, abre el archivo index.html y pega tu configuración de Firebase en la línea 240 aprox.");
+            throw new Error("firebaseConfig no definida");
+        }
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        // INIT FIREBASE
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // -----------------------------------------------------------
+        // DATOS DE JUGADORES (SEED DATA - Solo para inicializar DB)
+        // -----------------------------------------------------------
+        const positions = { GK: "Portero", BO: "Boya", EX: "Extremo", LA: "Lateral", CB: "Contraboya" };
+
+        // ESTA VARIABLE AHORA SOLO SE USA SI LA BASE DE DATOS ESTÁ VACÍA
+        const seedPlayersData = [
+            // PORTEROS (ids 1-2)
+            { id: 1, name: "Andoni Irastorza", nick: "Andoni", pos: "Portero", phrase: "No pasa nada por aquí.", photo: "./jugadores/AndoniIrastorza.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 2, name: "Pablo Camara", nick: "Pablo", pos: "Portero", phrase: "Ocho brazos tengo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+
+            // JUGADORES DE CAMPO (ids 3-18)
+            { id: 3, name: "Alvaro Mayordomo", nick: "Alvaro", pos: "Extremo", phrase: "Velocidad pura.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 4, name: "Andreu Valero", nick: "Andreu", pos: "Extremo", phrase: "Desde mi casa las meto.", photo: "./jugadores/AndreuValero.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 5, name: "Bruno Pomara", nick: "Bruno", pos: "Lateral", phrase: "Aquí mando yo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 6, name: "Carlos Ferrer", nick: "Carlos", pos: "Lateral", phrase: "Donde pone el ojo...", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 7, name: "Cesar Paredes", nick: "Cesar", pos: "Contraboya", phrase: "La izquierda de oro.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 8, name: "Guillermo Izquierdo", nick: "Guillermo", pos: "Lateral", phrase: "Organización ante todo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 9, name: "Hernan Frances", nick: "Hernan", pos: "Boya", phrase: "Imparable en 2 metros.", photo: "./jugadores/HernanFrances.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 10, name: "Jorge Ortiz", nick: "Jorge", pos: "Extremo", phrase: "Tú no pasas.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 11, name: "Jose Rodas", nick: "Jose", pos: "Extremo", phrase: "El futuro es hoy.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 12, name: "Josep Baeza", nick: "Josep", pos: "Boya", phrase: "No me ves venir.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 13, name: "Pablo Ferrer", nick: "Pablo", pos: "Lateral", phrase: "Redes seguras.", photo: "./jugadores/PabloFerrer.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 14, name: "Raul Benitez", nick: "Raul", pos: "Extremo", phrase: "Lucha hasta el final.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 15, name: "Teo Vicente", nick: "Teo", pos: "Boya", phrase: "Fuerza bruta.", photo: "./jugadores/predeterminado.png", stats: { goles: 2, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 16, name: "Victor Medina", nick: "Victor", pos: "Contraboya", phrase: "Trucos bajo el agua.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 17, name: "Vivien Chavanelle", nick: "Vivien", pos: "Contraboya", phrase: "Talento mediterráneo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } }
+        ];
+
+        // GLOBAL LIVE DATA
+        let playersData = [];
+
+        // LOGIC: Calculate Points
+        // LOGIC: Calculate Points
+        const calcPoints = (p) => {
+            const s = p.stats;
+            if (!s) return 0;
+
+            let pts = 0;
+
+            // COMMON
+            pts += (s.partidos || 0) * 1;
+            pts += (s.tarjetas || 0) * -5;
+            pts += (s.expulsiones || 0) * -1;
+
+            if (p.pos === 'Portero') {
+                // GOALIE SPECIFIC
+                pts += (s.paradas || 0) * 2;
+                pts += (s.goles_contra || 0) * -1;
+                pts += (s.penaltis_parados || 0) * 3;
+            } else {
+                // FIELD PLAYER SPECIFIC
+                pts += (s.goles || 0) * 6;
+                pts += (s.penaltis || 0) * 4;
+                pts += (s.tiros || 0) * 2;
+                pts += (s.penaltis_fallados || 0) * -3;
+            }
+            return pts;
+        };
+
+        // -----------------------------------------------------------
+        // APP STATE & DOM UI
+        // -----------------------------------------------------------
+        let currentUser = null;
+        let isLoginMode = true;
+
+        const authScreen = document.getElementById('auth-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const authForm = document.getElementById('auth-form');
+        const authBtn = document.getElementById('auth-btn');
+        const toggleAuth = document.getElementById('toggle-auth');
+        const authError = document.getElementById('auth-error');
+        const authModeTitle = document.getElementById('auth-mode-title');
+
+        // Toggle Login / Signup
+        toggleAuth.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authBtn.textContent = isLoginMode ? "Entrar" : "Crear Equipo";
+            toggleAuth.textContent = isLoginMode ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Entra";
+            authModeTitle.textContent = isLoginMode ? "Inicia Sesión" : "Regístrate";
+            authError.textContent = "";
+        });
+
+        // HANDLE AUTH
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            authError.textContent = "Procesando...";
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    await handleNewUserDraft(userCred.user);
+                }
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/invalid-login-credentials' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    authError.textContent = "Error: Credenciales inválidas. ¿Tienes cuenta? Si no, pulsa 'Regístrate' abajo.";
+                } else if (error.code === 'auth/email-already-in-use') {
+                    authError.textContent = "Error: Ese email ya está en uso.";
+                } else if (error.code === 'auth/weak-password') {
+                    authError.textContent = "Error: La contraseña es muy débil (mín. 6 caracteres).";
+                } else {
+                    authError.textContent = "Error: " + error.message;
+                }
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+        // AUTH LISTENER & INIT FLOW
+        onAuthStateChanged(auth, async (user) => {
+            // 1. Fetch Players Data First (Critical)
+            await initPlayersData();
+
+            if (user) {
+                currentUser = user;
+                authScreen.classList.add('hidden');
+                dashboardScreen.classList.remove('hidden');
+                loadDashboard();
+            } else {
+                currentUser = null;
+                authScreen.classList.remove('hidden');
+                dashboardScreen.classList.add('hidden');
+            }
+        });
+
+        // -----------------------------------------------------------
+        // DATA SYNC LOGIC
+        // -----------------------------------------------------------
+        async function initPlayersData() {
+            try {
+                // Check if collection has docs
+                const q = query(collection(db, "jugadores"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    console.log("DB vacía. Subiendo datos semilla...");
+                    // Upload Seed Data
+                    const batchCalls = seedPlayersData.map(p => {
+                        // Use ID as doc ID for easy access
+                        return setDoc(doc(db, "jugadores", p.id.toString()), p);
+                    });
+                    await Promise.all(batchCalls);
+                    playersData = [...seedPlayersData]; // Load local
+                    alert("Base de datos inicializada correctamente.");
+                } else {
+                    console.log("Cargando datos de Firestore...");
+                    playersData = [];
+                    querySnapshot.forEach((doc) => {
+                        playersData.push(doc.data());
+                    });
+                    // Sort by ID to ensure order doesn't jump
+                    playersData.sort((a, b) => a.id - b.id);
+                }
+            } catch (e) {
+                console.error("Error cargando jugadores:", e);
+                alert("Error crítico cargando datos. Revisa consola.");
+            }
+        }
+
+        // -----------------------------------------------------------
+        // GAME LOGIC
+        // -----------------------------------------------------------
+
+        // DRAFT: 1 Goalie + 6 Field Players
+        async function handleNewUserDraft(user) {
+            const goalies = playersData.filter(p => p.pos === 'Portero');
+            const field = playersData.filter(p => p.pos !== 'Portero');
+
+            // Pick 1 Goalie
+            const myGoalie = goalies[Math.floor(Math.random() * goalies.length)];
+
+            // Pick 6 Field
+            let shuffledField = field.sort(() => 0.5 - Math.random());
+            const myField = shuffledField.slice(0, 6);
+
+            const teamIds = [myGoalie.id, ...myField.map(p => p.id)];
+
+            // Calculate Initial Total Points
+            let totalPts = 0;
+            teamIds.forEach(id => {
+                const p = playersData.find(x => x.id === id);
+                totalPts += calcPoints(p);
+            });
+
+            // Save to Firestore
+            await setDoc(doc(db, "usuarios", user.uid), {
+                email: user.email,
+                equipo: teamIds,
+                puntos: totalPts,
+                createdAt: new Date()
+            });
+        }
+
+        async function loadDashboard() {
+            // Get user data
+            const docRef = doc(db, "usuarios", currentUser.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                // RECALCULATE POINTS (Source of truth is playersData)
+                let currentTotalPoints = 0;
+                if (data.equipo && Array.isArray(data.equipo)) {
+                    data.equipo.forEach(id => {
+                        const p = playersData.find(x => x.id === id);
+                        if (p) currentTotalPoints += calcPoints(p);
+                    });
+                }
+
+                // Update UI
+                document.getElementById('user-total-points').textContent = currentTotalPoints;
+                renderPool(data.equipo);
+
+                // Sync with Firestore if different (e.g. stats changed or first load after reset)
+                if (data.puntos !== currentTotalPoints) {
+                    // Update quietly in background
+                    updateDoc(docRef, { puntos: currentTotalPoints }).catch(console.error);
+                }
+
+            } else {
+                // Fail-safe if data missing but user exists (shouldn't happen with correct flow)
+                console.warn("No data for user, drafting now...");
+                await handleNewUserDraft(currentUser);
+                loadDashboard();
+            }
+
+            loadRanking(); // Fetch ranking in background
+        }
+
+        function renderPool(teamIds) {
+            // Clear Rows
+            ['row-1', 'row-2', 'row-3', 'row-4'].forEach(id => document.getElementById(id).innerHTML = '');
+
+            const teamPlayers = teamIds.map(id => playersData.find(p => p.id === id));
+
+            // LOGIC TO PLACE PLAYERS IN 1-2-3-1
+            // Row 4 (Bottom): Portero
+            const goalie = teamPlayers.find(p => p.pos === 'Portero') || teamPlayers[0];
+            const others = teamPlayers.filter(p => p.id !== goalie.id);
+
+            // Row 1 (Top): Boya (Best Boya or random if none)
+            const boyaIndex = others.findIndex(p => p.pos === 'Boya');
+            const boya = boyaIndex !== -1 ? others[boyaIndex] : others[0];
+            const others2 = others.filter(p => p.id !== boya.id);
+
+            // Row 2 (wings/mid): Next 2 players
+            const midPlayers = others2.slice(0, 2);
+
+            // Row 3 (Def/Rest): Remaining 3 players
+            const defPlayers = others2.slice(2, 5);
+
+            // Helper to create HTML Node
+            const createNode = (p) => {
+                const div = document.createElement('div');
+                div.className = `player-node ${p.pos === 'Portero' ? 'goalie' : ''}`;
+                div.innerHTML = `
+                    <img src="${p.photo}" alt="${p.nick}">
+                    <div class="node-label">${p.nick}</div>
+                `;
+                div.onclick = () => openModal(p);
+                return div;
+            };
+
+            // Append to DOM
+            document.getElementById('row-4').appendChild(createNode(goalie)); // GK
+            document.getElementById('row-1').appendChild(createNode(boya));   // Boya
+            midPlayers.forEach(p => document.getElementById('row-2').appendChild(createNode(p)));
+            defPlayers.forEach(p => document.getElementById('row-3').appendChild(createNode(p)));
+        }
+
+        async function loadRanking() {
+            const q = query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            const tbody = document.getElementById('ranking-body');
+            tbody.innerHTML = "";
+
+            let pos = 1;
+            querySnapshot.forEach((doc) => {
+                const d = doc.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="rank-pos">${pos++}</td>
+                    <td>${d.nombre || d.email.split('@')[0] + ' FC'}</td>
+                    <td style="font-weight:bold; color:var(--accent);">${d.puntos}</td>
+                `;
+                // Add click event to view team
+                tr.onclick = () => openOpponentModal(d);
+                tbody.appendChild(tr);
+            });
+        }
+
+        // TAB SWITCHING
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.getElementById('view-pool').classList.add('hidden');
+                document.getElementById('view-ranking').classList.add('hidden');
+                document.getElementById('view-profile').classList.add('hidden');
+
+                document.getElementById(btn.dataset.tab).classList.remove('hidden');
+
+                if (btn.dataset.tab === 'view-ranking') loadRanking();
+                if (btn.dataset.tab === 'view-profile') loadProfile();
+            });
+        });
+
+        // PROFILE LOGIC
+        function loadProfile() {
+            if (!currentUser) return;
+            document.getElementById('p-email').value = currentUser.email;
+            document.getElementById('p-name').value = currentUser.displayName || "";
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('p-name').value;
+            const btn = e.target.querySelector('button');
+            const originalText = btn.textContent;
+
+            btn.textContent = "Guardando...";
+            btn.disabled = true;
+
+            try {
+                // 1. Update Auth
+                await updateProfile(currentUser, { displayName: newName });
+
+                // 2. Update Firestore
+                await updateDoc(doc(db, "usuarios", currentUser.uid), {
+                    nombre: newName
+                });
+
+                alert("¡Perfil actualizado correctamente!");
+            } catch (error) {
+                console.error(error);
+                alert("Error al actualizar: " + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // DELETE ACCOUNT LOGIC
+        const modalDelete = document.getElementById('modal-delete-confirm');
+        const btnDeleteInit = document.getElementById('btn-delete-account');
+        const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+        const btnCancelDelete = document.getElementById('btn-cancel-delete');
+
+        btnDeleteInit.addEventListener('click', () => modalDelete.classList.add('active'));
+        btnCancelDelete.addEventListener('click', () => modalDelete.classList.remove('active'));
+
+        btnConfirmDelete.addEventListener('click', async () => {
+            if (!currentUser) return;
+            const originalText = btnConfirmDelete.textContent;
+            btnConfirmDelete.textContent = "Borrando...";
+            btnConfirmDelete.disabled = true;
+
+            try {
+                const uid = currentUser.uid;
+
+                // 1. Delete Firestore Data
+                await deleteDoc(doc(db, "usuarios", uid));
+
+                // 2. Delete Auth User
+                await deleteUser(currentUser);
+
+                // Success handled by onAuthStateChanged (user becomes null)
+                modalDelete.classList.remove('active');
+                alert("Cuenta eliminada correctamente.");
+
+            } catch (error) {
+                console.error(error);
+                let msg = "Error al eliminar cuenta: " + error.message;
+                if (error.code === 'auth/requires-recent-login') {
+                    msg = "Por seguridad, necesitas haber iniciado sesión recientemente. Por favor, sal y vuelve a entrar para eliminar tu cuenta.";
+                }
+                alert(msg);
+                modalDelete.classList.remove('active');
+            } finally {
+                btnConfirmDelete.textContent = originalText;
+                btnConfirmDelete.disabled = false;
+            }
+        });
+
+        // MODAL LOGIC (PLAYER)
+        const modal = document.getElementById('modal-player');
+        function openModal(p) {
+            document.getElementById('m-photo').src = p.photo;
+            document.getElementById('m-name').textContent = p.name;
+            document.getElementById('m-pos').textContent = p.pos.toUpperCase();
+            document.getElementById('m-phrase').textContent = `"${p.phrase}"`;
+
+            // DYNAMIC STATS DISPLAY
+            const statsContainer = document.querySelector('.card-stats');
+            let statsHTML = '';
+
+            // Common Stats
+            statsHTML += `<div class="stat-item"><span>Partidos</span><strong>${p.stats.partidos || 0}</strong></div>`;
+            statsHTML += `<div class="stat-item"><span>Tarjetas</span><strong>${p.stats.tarjetas || 0}</strong></div>`;
+            statsHTML += `<div class="stat-item"><span>Expulsiones</span><strong>${p.stats.expulsiones || 0}</strong></div>`;
+
+            if (p.pos === 'Portero') {
+                statsHTML += `<div class="stat-item"><span>Paradas</span><strong>${p.stats.paradas || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Goles Contra</span><strong>${p.stats.goles_contra || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Pen. Parados</span><strong>${p.stats.penaltis_parados || 0}</strong></div>`;
+            } else {
+                statsHTML += `<div class="stat-item"><span>Goles</span><strong>${p.stats.goles || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Tiros</span><strong>${p.stats.tiros || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Pen. Marcados</span><strong>${p.stats.penaltis || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Pen. Fallados</span><strong>${p.stats.penaltis_fallados || 0}</strong></div>`;
+            }
+
+            statsContainer.innerHTML = statsHTML;
+            document.getElementById('m-points').textContent = calcPoints(p);
+
+            modal.classList.add('active');
+        }
+        document.querySelector('.close-modal').addEventListener('click', () => modal.classList.remove('active'));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+
+        // OPPONENT MODAL LOGIC
+        const modalOpponent = document.getElementById('modal-opponent-team');
+        document.getElementById('close-opponent-modal').onclick = () => modalOpponent.classList.remove('active');
+        modalOpponent.onclick = (e) => {
+            if (e.target === modalOpponent) modalOpponent.classList.remove('active');
+        };
+
+        function openOpponentModal(userData) {
+            document.getElementById('opp-team-name').textContent = userData.nombre || "Equipo Rival";
+            document.getElementById('opp-team-points').textContent = userData.puntos;
+            renderOpponentPool(userData.equipo);
+            modalOpponent.classList.add('active');
+        }
+
+        function renderOpponentPool(teamIds) {
+            // Clear Rows
+            ['opp-row-1', 'opp-row-2', 'opp-row-3', 'opp-row-4'].forEach(id => document.getElementById(id).innerHTML = '');
+
+            if (!teamIds || !Array.isArray(teamIds)) return;
+
+            const teamPlayers = teamIds.map(id => playersData.find(p => p.id === id)).filter(p => p); // filter undefined
+
+            // LOGIC TO PLACE PLAYERS IN 1-2-3-1 (Reused logic)
+            const goalie = teamPlayers.find(p => p.pos === 'Portero') || teamPlayers[0];
+            const others = teamPlayers.filter(p => p.id !== goalie.id);
+            const boyaIndex = others.findIndex(p => p.pos === 'Boya');
+            const boya = boyaIndex !== -1 ? others[boyaIndex] : others[0];
+            const others2 = others.filter(p => p.id !== boya.id);
+            const midPlayers = others2.slice(0, 2);
+            const defPlayers = others2.slice(2, 5);
+
+            const createNode = (p) => {
+                const div = document.createElement('div');
+                div.className = `player-node ${p.pos === 'Portero' ? 'goalie' : ''}`;
+                div.innerHTML = `
+                    <img src="${p.photo}" alt="${p.nick}">
+                    <div class="node-label">${p.nick}</div>
+                `;
+                // Allow opening details for opponent players too
+                div.onclick = (e) => {
+                    e.stopPropagation(); // Prevent bubbling to modal background
+                    openModal(p);
+                };
+                return div;
+            };
+
+            if (goalie) document.getElementById('opp-row-4').appendChild(createNode(goalie));
+            if (boya) document.getElementById('opp-row-1').appendChild(createNode(boya));
+            midPlayers.forEach(p => document.getElementById('opp-row-2').appendChild(createNode(p)));
+            defPlayers.forEach(p => document.getElementById('opp-row-3').appendChild(createNode(p)));
+        }
+
+
+
+        // -----------------------------------------------------------
+        // ADMIN PANEL LOGIC
+        // -----------------------------------------------------------
+        const adminTrigger = document.getElementById('admin-trigger');
+        const adminView = document.getElementById('view-admin');
+        const adminGrid = document.getElementById('admin-players-grid');
+        const adminSearch = document.getElementById('admin-search');
+
+        adminTrigger.addEventListener('dblclick', () => {
+            const pass = prompt("Contraseña de Administrador:");
+            if (pass === "admin123") { // Simple protection
+                renderAdminPanel();
+                adminView.classList.remove('hidden');
+            } else {
+                alert("Acceso denegado.");
+            }
+        });
+
+        adminSearch.addEventListener('input', (e) => {
+            renderAdminPanel(e.target.value);
+        });
+
+        function renderAdminPanel(filter = "") {
+            adminGrid.innerHTML = "";
+            const term = filter.toLowerCase();
+
+            playersData.forEach(p => {
+                if (filter && !p.name.toLowerCase().includes(term) && !p.nick.toLowerCase().includes(term)) return;
+
+                const card = document.createElement('div');
+                card.className = "auth-container"; // Reuse style
+                card.style.padding = "15px";
+                card.style.textAlign = "left";
+
+                // Helper for stat control
+                const createControl = (label, key, step = 1) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:0.9rem;">
+                        <span style="color:#aaa;">${label}:</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button onclick="updatePlayerStat(${p.id}, '${key}', -${step})" style="padding:2px 8px; background:#444; color:white; border:none; border-radius:4px;">-</button>
+                            <span style="font-weight:bold; width:20px; text-align:center;">${p.stats[key] || 0}</span>
+                            <button onclick="updatePlayerStat(${p.id}, '${key}', ${step})" style="padding:2px 8px; background:var(--primary); color:var(--dark); border:none; border-radius:4px;">+</button>
+                        </div>
+                    </div>
+                `;
+
+                let statsControls = "";
+                // Common
+                statsControls += createControl("Partidos", "partidos");
+                statsControls += createControl("Tarjetas", "tarjetas");
+                statsControls += createControl("Expulsiones", "expulsiones");
+
+                if (p.pos === 'Portero') {
+                    statsControls += createControl("Paradas", "paradas");
+                    statsControls += createControl("Goles Contra", "goles_contra");
+                    statsControls += createControl("Pen. Parados", "penaltis_parados");
+                } else {
+                    statsControls += createControl("Goles", "goles");
+                    statsControls += createControl("Tiros", "tiros");
+                    statsControls += createControl("Penaltis (Gol)", "penaltis");
+                    statsControls += createControl("Pen. Fallados", "penaltis_fallados");
+                }
+
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:10px;">
+                        <img src="${p.photo}" style="width:40px; height:40px; border-radius:50%;">
+                        <div>
+                            <div style="font-weight:bold; color:var(--primary);">${p.nick}</div>
+                            <div style="font-size:0.8rem; color:#888;">${p.pos}</div>
+                        </div>
+                    </div>
+                    <div>${statsControls}</div>
+                `;
+                adminGrid.appendChild(card);
+            });
+        }
+
+        // Global function for onclick access
+        window.updatePlayerStat = async (id, key, delta) => {
+            const p = playersData.find(x => x.id === id);
+            if (!p) return;
+
+            // Update Local
+            p.stats[key] = (p.stats[key] || 0) + delta;
+            if (p.stats[key] < 0) p.stats[key] = 0; // Prevent negatives
+
+            // Update UI immediately (Optimistic)
+            renderAdminPanel(document.getElementById('admin-search').value);
+
+            // Update DB
+            try {
+                const playerRef = doc(db, "jugadores", id.toString());
+                await updateDoc(playerRef, {
+                    [`stats.${key}`]: p.stats[key]
+                });
+                console.log(`Stat ${key} updated for ${p.nick}`);
+
+                // 1. Immediate Local Refresh for Admin
+                recalcMyPoints();
+
+            } catch (e) {
+                console.error("Error actualizando DB:", e);
+                alert("Error al guardar cambio en DB");
+            }
+        };
+
+        // RECALCULATE MY POINTS (Optimistic UI)
+        function recalcMyPoints() {
+            if (!currentUser) return;
+            // Re-run the dashboard logic which calculates points from playersData
+            loadDashboard();
+        }
+
+        // GLOBAL RANKING RECALCULATION (Batch Operation)
+        window.recalculateGlobalRanking = async () => {
+            const confirmed = confirm("¿Seguro que quieres recalcular los puntos de TODOS los usuarios? Esto puede tardar unos segundos.");
+            if (!confirmed) return;
+
+            const btn = document.querySelector('#view-admin button[onclick="recalculateGlobalRanking()"]');
+            const originalText = btn.textContent;
+            btn.textContent = "Calculando...";
+            btn.disabled = true;
+
+            try {
+                const usersSnap = await getDocs(collection(db, "usuarios"));
+                let updatedCount = 0;
+
+                const updates = [];
+                usersSnap.forEach(userDoc => {
+                    const userData = userDoc.data();
+                    if (userData.equipo && Array.isArray(userData.equipo)) {
+                        let newPoints = 0;
+                        userData.equipo.forEach(pId => {
+                            const p = playersData.find(x => x.id === pId);
+                            if (p) newPoints += calcPoints(p);
+                        });
+
+                        // Only update if changed
+                        if (newPoints !== userData.puntos) {
+                            updates.push(updateDoc(userDoc.ref, { puntos: newPoints }));
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                await Promise.all(updates);
+                alert(`¡Ranking actualizado! Se han corregido los puntos de ${updatedCount} usuarios.`);
+
+            } catch (e) {
+                console.error("Error recalculando ranking:", e);
+                alert("Error durante el recalculo masivo: " + e.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        };
+
+
+    </script>
+</body>
+
+</html>

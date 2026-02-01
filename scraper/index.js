@@ -1,4 +1,4 @@
-
+import 'dotenv/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { initializeApp } from 'firebase/app';
@@ -19,8 +19,8 @@ const firebaseConfig = {
 // TEAM STATS URL (Source of Truth)
 const TARGET_URL = 'https://clupik.pro/es/team/15688441';
 
-const ADMIN_EMAIL = "pablofebaix@gmail.com";
-const ADMIN_PASSWORD = "pablito06";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 // --- POINT CALCULATION ---
 const calcMatchPoints = (pos, s) => {

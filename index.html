@@ -553,6 +553,10 @@
         </div>
 
         <!-- VIEW: RANKING -->
+        <p style="text-align:center; color:#ff4757; font-size: 0.8rem; margin-bottom: 10px;">⚠️ESTADISTICAS MAL
+            CALCULADAS⚠️</p>
+        <p style="text-align:center; color:#ff4757; font-size: 0.8rem; margin-bottom: 10px;">ESTAMOS TRABAJANDO EN ELLO
+        </p>
         <div id="view-ranking" class="hidden">
             <table class="rank-table">
                 <thead>
@@ -1939,9 +1943,22 @@
             }
         }
 
-        adminTrigger.addEventListener('dblclick', () => {
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        adminTrigger.addEventListener('dblclick', async () => {
             const pass = prompt("Contraseña de Administrador:");
-            if (pass === "admin123") { // Simple protection
+            if (!pass) return;
+
+            const hash = await sha256(pass);
+            const correctHash = "9eee6f1de156e0732ebbf80436ab6c7297a3536ed0c6e6e82792a95f0ea1ac81"; // admin_sharks201
+
+            if (hash === correctHash) {
                 renderAdminPanel();
                 adminView.classList.remove('hidden');
             } else {

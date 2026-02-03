@@ -166,7 +166,7 @@ async function syncTeamStats() {
 
             const webP = webPlayers.find(wp => {
                 const wpName = normalize(wp.name);
-                return wpName === pName || (pNick && wpName === pNick);
+                return wpName === pName || (pNick && wpName === pNick) || wpName.includes(pName);
             });
 
             if (webP) {
@@ -213,14 +213,21 @@ async function syncTeamStats() {
                     let newHistorial = [...(p.historial || []), newEntry];
 
                     // Update DB with NEW TOTALS (Source of Truth) to avoid drift
-                    // We set root stats to webP.stats directly.
-                    // But we push the delta to history.
-
                     await updateDoc(doc(db, "jugadores", docSnap.id), {
                         historial: newHistorial,
                         stats: webP.stats
                     });
                     updatesCount++;
+                } else {
+                    // EDGE CASE: If History is correct (sums to Web) but Root Stats is wrong/desynced
+                    // We should update Root Stats to match Web to ensure consistency
+                    const isRootSynced = JSON.stringify(p.stats) === JSON.stringify(webP.stats);
+                    if (!isRootSynced) {
+                        console.log(`\n⚠️ Repairing Root Stats for ${p.name} (History was OK, but Root mismatched)`);
+                        await updateDoc(doc(db, "jugadores", docSnap.id), {
+                            stats: webP.stats
+                        });
+                    }
                 }
             }
         }

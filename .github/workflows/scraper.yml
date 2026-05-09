@@ -1,0 +1,10 @@
+name: Weekly Stats Sync
+# Implemented in Plan 3 - scraper automation
+on:
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Scraper automation coming in Plan 3"

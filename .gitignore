@@ -22,3 +22,6 @@ yarn-error.log*
 # Local Scraper logs
 scraper/*.txt
 scraper/debug_*.js
+
+# Git worktrees
+.worktrees/

@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharks Fantasy</title>
+    <link rel="shortcut icon" href="./logo.ico" type="image/x-icon">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Teko:wght@600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --dark: #0f2027;
+            --dark-2: #203a43;
+            --accent: #ffd700;
+            --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark), var(--dark-2), #2c5364);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- UTILS --- */
+        .hidden {
+            display: none !important;
+        }
+
+        .btn {
+            background: var(--primary);
+            border: none;
+            padding: 12px 24px;
+            color: var(--dark);
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: #fff;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            padding: 10px 20px;
+        }
+
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding-inline: 10px;
+        }
+
+        /* --- AUTH SCREEN --- */
+        #auth-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .auth-container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            font-family: 'Teko', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: -webkit-linear-gradient(var(--primary), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .auth-toggle {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #aaa;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* --- DASHBOARD --- */
+        #dashboard-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo-mini {
+            font-family: 'Teko';
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        /* POOL VIEW */
+        #view-pool {
+            flex: 1;
+            padding: 20px;
+            /* Flex properties moved to inline style or classes to allow internal layout */
+        }
+
+        .pool-container {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 2/3;
+            background: rgba(0, 168, 255, 0.1);
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5) inset;
+
+            /* GRID LAYOUT 1-2-3-1 */
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr 1fr;
+            padding: 20px;
+            gap: 10px;
+        }
+
+        /* Pool Markings */
+        .pool-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-50%);
+        }
+
+        /* Goal Silhouette */
+        .pool-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        .pool-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .player-node {
+            width: 70px;
+            height: 70px;
+            background: var(--dark-2);
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-node img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+
+        .player-node:hover {
+            transform: scale(1.1);
+            border-color: var(--accent);
+            z-index: 10;
+        }
+
+        .player-node.goalie {
+            border-color: #ff4757;
+        }
+
+        .node-label {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 2px 0;
+        }
+
+        .total-points-display {
+            text-align: center;
+            padding: 10px;
+            font-family: 'Teko';
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        /* RANKING VIEW */
+        #view-ranking {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .rank-table th,
+        .rank-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .rank-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--primary);
+        }
+
+        .rank-pos {
+            font-weight: bold;
+            color: var(--accent);
+            font-family: 'Teko';
+            font-size: 1.2rem;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #1e2a3a, #111);
+            width: 90%;
+            max-width: 350px;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 210, 255, 0.2);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .card-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid var(--accent);
+            margin: 0 auto 20px;
+            overflow: hidden;
+        }
+
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-name {
+            font-family: 'Teko';
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .card-pos {
+            color: var(--primary);
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .card-phrase {
+            font-style: italic;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-item span {
+            display: block;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .stat-item strong {
+            display: block;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .card-total {
+            margin-block: 20px;
+            font-size: 1.5rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen">
+        <div class="auth-container">
+            <img src="./logo.png" alt="Logo" style="width:150px; margin-bottom: 10px;">
+            <h1>SHARKS FANTASY</h1>
+            <p style="margin-bottom: 20px; color: #ccc;">Waterpolo Manager</p>
+
+            <form id="auth-form">
+                <h2 id="auth-mode-title" style="margin-bottom:15px; font-family:'Teko'; color:#fff; font-size: 1.5rem;">
+                    Inicia Sesión</h2>
+                <input type="text" id="auth-name" placeholder="Tu Nombre (Entrenador)" class="hidden" required disabled>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <div id="auth-error" style="color: #ff4757; font-size: 0.8rem; margin-bottom: 10px;"></div>
+                <button type="submit" class="btn" id="auth-btn">Entrar</button>
+            </form>
+
+            <div class="auth-toggle" id="toggle-auth">¿No tienes cuenta? Regístrate</div>
+        </div>
+    </div>
+
+    <style>
+        /* DASHBOARD LAYOUT */
+        .dashboard-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .jornada-sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            flex-shrink: 0;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .jornada-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .jornada-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Responsive Dashboard */
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .jornada-sidebar {
+                width: 100%;
+                max-width: 500px;
+                margin-top: 20px;
+            }
+        }
+    </style>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboard-screen" class="hidden">
+        <header>
+            <div class="logo-mini">
+                <img src="./logo.png" alt="Sharks Logo" style="height: 35px; width: auto;">
+                SHARKS FANTASY
+            </div>
+            <button class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;" id="logout-btn">Salir</button>
+        </header>
+
+        <div class="total-points-display">
+            PUNTOS TOTALES: <span id="user-total-points">0</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="view-pool">Mi Equipo</button>
+            <button class="tab-btn" data-tab="view-ranking">Ranking</button>
+            <button class="tab-btn" data-tab="view-players">Jugadores</button>
+            <button class="tab-btn" data-tab="view-profile">Mi Perfil</button>
+        </div>
+
+        <!-- VIEW: POOL -->
+        <div id="view-pool" style="display: flex; justify-content: center; width: 100%;">
+
+            <div class="dashboard-layout">
+                <!-- MAIN: POOL -->
+                <div class="pool-container" id="pool-grid">
+                    <!-- 
+                       Row 1: 1 Player (Boya)
+                       Row 2: 2 Players (Extremos)
+                       Row 3: 3 Players (Defensa)
+                       Row 4: 1 Player (Portero)
+                    -->
+                    <div class="pool-row" id="row-1"></div>
+                    <div class="pool-row" id="row-2"></div>
+                    <div class="pool-row" id="row-3"></div>
+                    <div class="pool-row" id="row-4"></div>
+                </div>
+
+                <!-- SIDEBAR: JORNADAS POINTS -->
+                <div class="jornada-sidebar">
+                    <h3
+                        style="font-family:'Teko'; color:#fff; font-size:1.5rem; margin-bottom:15px; text-align:center;">
+                        PUNTOS POR JORNADA</h3>
+                    <div id="user-jornadas-list">
+                        <div style="text-align:center; color:#666;">Sin datos aún</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW: RANKING -->
+        <p style="text-align:center; color:#ff4757; font-size: 0.8rem; margin-bottom: 10px;">⚠️ESTADISTICAS MAL
+            CALCULADAS⚠️</p>
+        <p style="text-align:center; color:#ff4757; font-size: 0.8rem; margin-bottom: 10px;">ESTAMOS TRABAJANDO EN ELLO
+        </p>
+        <div id="view-ranking" class="hidden">
+            <table class="rank-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Equipo</th>
+                        <th>Puntos</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body">
+                    <!-- Loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <style>
+            #ranking-body tr {
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+            #ranking-body tr:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            /* PLAYERS LIST VIEW */
+            #all-players-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 20px;
+                width: 100%;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .player-list-item {
+                display: flex;
+                align-items: center;
+                background: rgba(255, 255, 255, 0.05);
+                padding: 10px 15px;
+                border-radius: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .player-list-item:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: translateX(5px);
+                border-color: var(--primary);
+            }
+
+            .player-list-img {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #555;
+                margin-right: 15px;
+            }
+        </style>
+
+        <!-- VIEW: ALL PLAYERS -->
+        <div id="view-players" class="hidden">
+            <div style="margin-bottom: 20px; display:flex; justify-content:center;">
+                <input type="text" id="players-view-search" placeholder="🔍 Buscar jugador..."
+                    style="padding: 12px; width: 100%; max-width:300px; text-align:center; border-radius: 20px; border: 1px solid #555; background: rgba(0,0,0,0.5); color: white;">
+            </div>
+            <div id="all-players-grid"></div>
+        </div>
+
+        <!-- VIEW: PROFILE -->
+        <div id="view-profile" class="hidden" style="padding: 20px; display: flex; justify-content: center;">
+            <div class="auth-container">
+                <h2 style="font-family: 'Teko'; margin-bottom: 20px;">MI PERFIL</h2>
+                <form id="profile-form">
+                    <label
+                        style="display:block; text-align:left; color:#aaa; font-size:0.8rem; margin-bottom:5px;">Nombre
+                        Entrenador</label>
+                    <input type="text" id="p-name" placeholder="Nombre de tu equipo/entrenador" required>
+
+                    <label
+                        style="display:block; text-align:left; color:#aaa; font-size:0.8rem; margin-bottom:5px; margin-top:15px;">Email</label>
+                    <input type="email" id="p-email" disabled style="opacity: 0.5; cursor: not-allowed;">
+
+                    <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">Guardar
+                        Cambios</button>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+                    <button type="button" id="btn-delete-account" class="btn btn-danger" style="width: 100%;">Eliminar
+                        Cuenta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYER MODAL -->
+    <div class="modal" id="modal-player">
+        <div class="card">
+            <span class="close-modal">&times;</span>
+            <div class="card-img"><img id="m-photo" src="" alt=""></div>
+            <h2 class="card-name" id="m-name">Nombre</h2>
+            <div class="card-pos" id="m-pos">POSICIÓN</div>
+            <p class="card-phrase" id="m-phrase">"Frase"</p>
+            <div class="card-total">
+                <span style="font-size: 0.8rem; color:#aaa; display:block;">Puntos Fantasy</span>
+                <span id="m-points">0</span>
+            </div>
+            <div class="card-stats">
+                <!-- Stats injected via JS -->
+            </div>
+
+            <div id="m-history-container" style="margin-top: 20px; width: 100%;">
+                <!-- History injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div class="modal" id="modal-delete-confirm">
+        <div class="card" style="border-color: #e74c3c; box-shadow: 0 0 50px rgba(231, 76, 60, 0.2);">
+            <h2 style="color: #e74c3c; font-family: 'Teko'; margin-bottom: 10px;">¿ESTÁS SEGURO?</h2>
+            <p style="margin-bottom: 20px; color: #ccc; font-size: 0.9rem;">
+                Si eliminas tu cuenta, perderás <strong>todo tu equipo y tus puntos</strong> para siempre. <br><br>
+                Esta acción no se puede deshacer.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn" id="btn-cancel-delete" style="background: #555; color: white;">No, cancelar</button>
+                <button class="btn" id="btn-confirm-delete" style="background: #e74c3c; color: white;">Sí,
+                    eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPPONENT TEAM MODAL -->
+    <div class="modal" id="modal-opponent-team" style="z-index: 900;">
+        <div class="card"
+            style="width: 95%; max-width: 500px; padding: 15px; background: rgba(0, 20, 40, 0.98); border: 1px solid var(--primary);">
+            <span class="close-modal" id="close-opponent-modal">&times;</span>
+            <h2 class="card-name" id="opp-team-name" style="margin-bottom:15px; color: var(--primary);">Equipo Rival
+            </h2>
+
+            <div class="pool-container" style="height: 400px; margin-bottom: 0;">
+                <div class="pool-row" id="opp-row-1"></div>
+                <div class="pool-row" id="opp-row-2"></div>
+                <div class="pool-row" id="opp-row-3"></div>
+                <div class="pool-row" id="opp-row-4"></div>
+            </div>
+            <div class="card-total" style="margin-top:15px;">
+                <span style="font-size: 0.8rem; color:#aaa; display:block;">Puntos Totales</span>
+                <span id="opp-team-points" style="color: var(--secondary);">0</span>
+            </div>
+
+            <div id="opp-jornadas-list"
+                style="margin-top:20px; border-top:1px solid #333; padding-top:10px; text-align:left; max-height:150px; overflow-y:auto;">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="view-admin" class="hidden"
+        style="padding: 20px; background: rgba(0,0,0,0.95); position: fixed; top:0; left:0; width:100%; height:100%; z-index: 2000; overflow-y: auto;">
+        <h2 style="font-family: 'Teko'; color: #e74c3c;">PANEL DE ADMINISTRACIÓN</h2>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button class="btn" onclick="document.getElementById('view-admin').classList.add('hidden')"
+                style="padding-inline: 10px; background: #333; color: white;">Cerrar</button>
+            <button class="btn" onclick="recalculateGlobalRanking()" style="background:var(--secondary); color:#000;">🧮
+                Actualizar Ranking</button>
+            <button class="btn" id="btn-auto-sync" onclick="triggerAutoSync()"
+                style="background:#8e44ad; color:#fff; margin-left:10px;">
+                🔄 Auto-Sync (Web)
+            </button>
+        </div>
+
+        <!-- JORNADA SELECTOR -->
+        <div
+            style="background:#222; padding:10px; border-radius:8px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+            <label style="color:#aaa;">EDICIÓN DE JORNADA:</label>
+            <input type="number" id="admin-jornada" value="1" min="1" max="30"
+                style="width:60px; padding:5px; text-align:center; font-weight:bold; font-size:1.1rem;">
+            <button class="btn" onclick="deleteJornadaData()"
+                style="padding: 5px 15px; background: #e74c3c; color: white; margin-left: auto;">🗑️ Borrar
+                Datos</button>
+        </div>
+
+        <!-- ADMIN TABS -->
+        <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #444; padding-bottom:10px;">
+            <button class="btn" id="tab-admin-players" style="background:#555; color: white;">Jugadores</button>
+            <button class="btn" id="tab-admin-users"
+                style="background:transparent; border: 1px solid #555; color: #888;">Usuarios</button>
+        </div>
+
+        <!-- SECTION: PLAYERS -->
+        <div id="admin-section-players">
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="admin-search" placeholder="Buscar jugador..."
+                    style="padding: 10px; width: 100%; max-width: 300px;">
+            </div>
+            <div id="admin-players-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                <!-- Admin items injected here -->
+            </div>
+        </div>
+
+        <!-- SECTION: USERS -->
+        <div id="admin-section-users" class="hidden">
+            <div id="admin-users-list" style="display:flex; flex-direction:column; gap:10px;">
+                <!-- User items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN USER TEAM MODAL -->
+    <div class="modal" id="modal-admin-user-team" style="z-index: 2200;">
+        <div class="card"
+            style="width: 95%; max-width: 500px; padding: 15px; background: rgba(10, 10, 10, 0.98); border: 1px solid var(--accent);">
+            <span class="close-modal" id="close-admin-user-team">&times;</span>
+            <h2 id="adm-user-team-name" style="margin-bottom:15px; color:var(--accent);">Equipo de Usuario</h2>
+            <div id="adm-user-team-grid" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+    </div>
+
+    <!-- PLAYER SELECTOR MODAL -->
+    <div class="modal" id="modal-player-selector" style="z-index: 2300;">
+        <div class="card" style="width: 95%; max-width: 500px; max-height:80vh; overflow-y:auto;">
+            <span class="close-modal" id="close-player-selector">&times;</span>
+            <h3>Selecciona Jugador</h3>
+            <input type="text" id="selector-search" placeholder="Buscar..."
+                style="width:100%; padding:8px; margin-bottom:10px;">
+            <div id="selector-list" style="display:grid; gap:5px;"></div>
+        </div>
+    </div>
+
+    <!-- ADMIN EDIT MODAL -->
+    <div class="modal" id="modal-admin-edit" style="z-index: 2100;">
+        <div class="card">
+            <span class="close-modal" id="close-admin-edit">&times;</span>
+            <h2 style="font-family:'Teko'; color:var(--primary); margin-bottom:15px;">EDITAR JUGADOR</h2>
+            <form id="form-admin-edit" style="display:flex; flex-direction:column; gap:10px;">
+                <input type="hidden" id="edit-id">
+                <input type="text" id="edit-name" placeholder="Nombre Completo">
+                <input type="text" id="edit-nick" placeholder="Apodo (Corto)">
+                <input type="text" id="edit-phrase" placeholder="Frase">
+                <input type="text" id="edit-photo" placeholder="URL Foto">
+
+                <label style="color:#aaa; font-size:0.8rem;">Posición:</label>
+                <select id="edit-pos" style="background:#222; color:white; border:1px solid #444; padding:5px;">
+                    <option value="Portero">Portero</option>
+                    <option value="Boya">Boya</option>
+                    <option value="Contraboya">Contraboya</option>
+                    <option value="Extremo">Extremo</option>
+                    <option value="Lateral">Lateral</option>
+                </select>
+
+                <button type="submit" class="btn" style="margin-top:10px;">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN TOGGLE (Hidden in footer or somewhere discreet) -->
+    <div style="position: fixed; bottom: 10px; right: 10px; opacity: 0.3; cursor: pointer; font-size: 0.7rem;"
+        id="admin-trigger">Dev Admin</div>
+
+    <!-- FIREBASE & APP LOGIC -->
+    <script type="module">
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtKaONmU_RiTjjVvpN4XyJZAUY-ZgafIM",
+            authDomain: "sharks-fantasy.firebaseapp.com",
+            projectId: "sharks-fantasy",
+            storageBucket: "sharks-fantasy.firebasestorage.app",
+            messagingSenderId: "38574787028",
+            appId: "1:38574787028:web:3bfe1adc814f31261f2e41",
+            measurementId: "G-N8Q6MQ4TBC"
+        };
+
+        if (typeof firebaseConfig === 'undefined') {
+            alert("¡ERROR CRÍTICO! \nFalta la variable firebaseConfig en el código.\nPor favor, abre el archivo index.html y pega tu configuración de Firebase en la línea 240 aprox.");
+            throw new Error("firebaseConfig no definida");
+        }
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        // INIT FIREBASE
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // -----------------------------------------------------------
+        // DATOS DE JUGADORES (SEED DATA - Solo para inicializar DB)
+        // -----------------------------------------------------------
+        const positions = { GK: "Portero", BO: "Boya", EX: "Extremo", LA: "Lateral", CB: "Contraboya" };
+
+        // ESTA VARIABLE AHORA SOLO SE USA SI LA BASE DE DATOS ESTÁ VACÍA
+        const seedPlayersData = [
+            // PORTEROS (ids 1-2)
+            { id: 1, name: "Andoni Irastorza", nick: "Andoni", pos: "Portero", phrase: "No pasa nada por aquí.", photo: "./jugadores/AndoniIrastorza.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 2, name: "Pablo Camara", nick: "Pablo", pos: "Portero", phrase: "Ocho brazos tengo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+
+            // JUGADORES DE CAMPO (ids 3-18)
+            { id: 3, name: "Alvaro Mayordomo", nick: "Alvaro", pos: "Extremo", phrase: "Velocidad pura.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 4, name: "Andreu Valero", nick: "Andreu", pos: "Extremo", phrase: "Desde mi casa las meto.", photo: "./jugadores/AndreuValero.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 5, name: "Bruno Pomara", nick: "Bruno", pos: "Lateral", phrase: "Aquí mando yo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 6, name: "Carlos Ferrer", nick: "Carlos", pos: "Lateral", phrase: "Donde pone el ojo...", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 7, name: "Cesar Paredes", nick: "Cesar", pos: "Contraboya", phrase: "La izquierda de oro.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 8, name: "Guillermo Izquierdo", nick: "Guillermo", pos: "Lateral", phrase: "Organización ante todo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 9, name: "Hernan Frances", nick: "Hernan", pos: "Boya", phrase: "Imparable en 2 metros.", photo: "./jugadores/HernanFrances.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 10, name: "Jorge Ortiz", nick: "Jorge", pos: "Extremo", phrase: "Tú no pasas.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 11, name: "Jose Rodas", nick: "Jose", pos: "Extremo", phrase: "El futuro es hoy.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 12, name: "Josep Baeza", nick: "Josep", pos: "Boya", phrase: "No me ves venir.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 13, name: "Pablo Ferrer", nick: "Pablo", pos: "Lateral", phrase: "Redes seguras.", photo: "./jugadores/PabloFerrer.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 14, name: "Raul Benitez", nick: "Raul", pos: "Extremo", phrase: "Lucha hasta el final.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 15, name: "Teo Vicente", nick: "Teo", pos: "Boya", phrase: "Fuerza bruta.", photo: "./jugadores/predeterminado.png", stats: { goles: 2, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 16, name: "Victor Medina", nick: "Victor", pos: "Contraboya", phrase: "Trucos bajo el agua.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } },
+            { id: 17, name: "Vivien Chavanelle", nick: "Vivien", pos: "Contraboya", phrase: "Talento mediterráneo.", photo: "./jugadores/predeterminado.png", stats: { goles: 0, penaltis: 0, tiros: 0, paradas: 0 } }
+        ];
+
+        // GLOBAL LIVE DATA
+        let playersData = [];
+
+        // LOGIC: Calculate Points
+        // LOGIC: Calculate Points
+        // LOGIC: Calculate Points Helpers
+        const calcMatchPoints = (pos, s) => {
+            if (!s) return 0;
+            let pts = 0;
+            // COMMON
+            pts += (s.partidos || 0) * 1;
+            pts += (s.tarjetas || 0) * -5;
+            pts += (s.expulsiones || 0) * -1;
+
+            if (pos === 'Portero') {
+                // GOALIE
+                pts += (s.paradas || 0) * 2;
+                pts += (s.goles_contra || 0) * -1;
+                pts += (s.penaltis_parados || 0) * 3;
+            } else {
+                // FIELD
+                pts += (s.goles || 0) * 6;
+                pts += (s.penaltis || 0) * 4;
+                pts += (s.tiros || 0) * 2;
+                pts += (s.penaltis_fallados || 0) * -3;
+            }
+            return pts;
+        }
+
+        const calcPoints = (p) => {
+            // New History Logic
+            // If history exists (even if empty), use it. Don't fallback to legacy if history is []
+            if (p.historial && Array.isArray(p.historial)) {
+                return p.historial.reduce((sum, entry) => sum + (entry.puntos || 0), 0);
+            }
+
+            // Fallback (Legacy Flat Stats) - Only for players with NO history array
+            return calcMatchPoints(p.pos, p.stats);
+        };
+
+        // -----------------------------------------------------------
+        // APP STATE & DOM UI
+        // -----------------------------------------------------------
+        let currentUser = null;
+        let isLoginMode = true;
+
+        const authScreen = document.getElementById('auth-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const authForm = document.getElementById('auth-form');
+        const authBtn = document.getElementById('auth-btn');
+        const toggleAuth = document.getElementById('toggle-auth');
+        const authError = document.getElementById('auth-error');
+        const authModeTitle = document.getElementById('auth-mode-title');
+        const authName = document.getElementById('auth-name');
+
+        // Toggle Login / Signup
+        toggleAuth.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authBtn.textContent = isLoginMode ? "Entrar" : "Crear Equipo";
+            toggleAuth.textContent = isLoginMode ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Entra";
+            authModeTitle.textContent = isLoginMode ? "Inicia Sesión" : "Regístrate";
+            authError.textContent = "";
+
+            // Toggle Name Field
+            if (isLoginMode) {
+                authName.classList.add('hidden');
+                authName.disabled = true;
+            } else {
+                authName.classList.remove('hidden');
+                authName.disabled = false;
+            }
+        });
+
+        // HANDLE AUTH
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = authName.value; // Capture Name
+
+            authError.textContent = "Procesando...";
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    await handleNewUserDraft(userCred.user, name); // Pass Name
+                }
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/invalid-login-credentials' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    authError.textContent = "Error: Credenciales inválidas. ¿Tienes cuenta? Si no, pulsa 'Regístrate' abajo.";
+                } else if (error.code === 'auth/email-already-in-use') {
+                    authError.textContent = "Error: Ese email ya está en uso.";
+                } else if (error.code === 'auth/weak-password') {
+                    authError.textContent = "Error: La contraseña es muy débil (mín. 6 caracteres).";
+                } else {
+                    authError.textContent = "Error: " + error.message;
+                }
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+        // AUTH LISTENER & INIT FLOW
+        onAuthStateChanged(auth, async (user) => {
+            // 1. Fetch Players Data First (Critical)
+            await initPlayersData();
+
+            if (user) {
+                currentUser = user;
+                authScreen.classList.add('hidden');
+                dashboardScreen.classList.remove('hidden');
+                loadDashboard();
+            } else {
+                currentUser = null;
+                authScreen.classList.remove('hidden');
+                dashboardScreen.classList.add('hidden');
+            }
+        });
+
+        // -----------------------------------------------------------
+        // DATA SYNC LOGIC
+        // -----------------------------------------------------------
+        async function initPlayersData() {
+            try {
+                // Check if collection has docs
+                const q = query(collection(db, "jugadores"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    console.log("DB vacía. Subiendo datos semilla...");
+                    // Upload Seed Data
+                    const batchCalls = seedPlayersData.map(p => {
+                        // Use ID as doc ID for easy access
+                        return setDoc(doc(db, "jugadores", p.id.toString()), p);
+                    });
+                    await Promise.all(batchCalls);
+                    playersData = [...seedPlayersData]; // Load local
+                    alert("Base de datos inicializada correctamente.");
+                } else {
+                    console.log("Cargando datos de Firestore...");
+                    playersData = [];
+                    querySnapshot.forEach((doc) => {
+                        playersData.push(doc.data());
+                    });
+                    // Sort by ID to ensure order doesn't jump
+                    playersData.sort((a, b) => a.id - b.id);
+                }
+            } catch (e) {
+                console.error("Error cargando jugadores:", e);
+                alert("Error crítico cargando datos. Revisa consola.");
+            }
+        }
+
+        // -----------------------------------------------------------
+        // GAME LOGIC
+        // -----------------------------------------------------------
+
+        // DRAFT: 1 Goalie + 6 Field Players
+        async function handleNewUserDraft(user, customName) {
+
+            const goalies = playersData.filter(p => p.pos === 'Portero');
+            const field = playersData.filter(p => p.pos !== 'Portero');
+
+            // Pick 1 Goalie
+            const myGoalie = goalies[Math.floor(Math.random() * goalies.length)];
+
+            // Pick 6 Field
+            let shuffledField = field.sort(() => 0.5 - Math.random());
+            const myField = shuffledField.slice(0, 6);
+
+            const teamIds = [myGoalie.id, ...myField.map(p => p.id)];
+
+            // Calculate Initial Total Points
+            let totalPts = 0;
+            teamIds.forEach(id => {
+                const p = playersData.find(x => x.id === id);
+                totalPts += calcPoints(p);
+            });
+
+            // Save to Firestore
+            await setDoc(doc(db, "usuarios", user.uid), {
+                email: user.email,
+                nombre: customName || user.email.split('@')[0],
+                equipo: teamIds,
+                puntos: totalPts,
+                createdAt: new Date()
+            });
+        }
+
+        async function loadDashboard() {
+            // Get user data
+            const docRef = doc(db, "usuarios", currentUser.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                // RECALCULATE POINTS (Source of truth is playersData)
+                let currentTotalPoints = 0;
+                if (data.equipo && Array.isArray(data.equipo)) {
+                    data.equipo.forEach(id => {
+                        const p = playersData.find(x => x.id === id);
+                        if (p) currentTotalPoints += calcPoints(p);
+                    });
+                }
+
+                // Update UI
+                document.getElementById('user-total-points').textContent = currentTotalPoints;
+                renderPool(data.equipo);
+                renderUserHistory(data.equipo); // New logic
+
+                // Sync with Firestore if different (e.g. stats changed or first load after reset)
+                if (data.puntos !== currentTotalPoints) {
+                    // Update quietly in background
+                    updateDoc(docRef, { puntos: currentTotalPoints }).catch(console.error);
+                }
+
+            } else {
+                // Fail-safe if data missing but user exists (shouldn't happen with correct flow)
+                console.warn("No data for user, drafting now...");
+                await handleNewUserDraft(currentUser);
+                loadDashboard();
+            }
+
+            loadRanking(); // Fetch ranking in background
+        }
+
+        function renderPool(teamIds) {
+            // Clear Rows
+            ['row-1', 'row-2', 'row-3', 'row-4'].forEach(id => document.getElementById(id).innerHTML = '');
+
+            // STRICT ORDER MAPPING
+            // Index 0: Portero (Row 4) - FIXED
+            // Index 1: Boya (Row 1)
+            // Index 2,3: Wings (Row 2)
+            // Index 4,5,6: Defense (Row 3)
+
+            const players = teamIds.map(id => playersData.find(p => p.id === id)).filter(p => p); // Filter nulls just in case
+
+            if (players.length < 7) return; // Safety check
+
+            // Helper to create Node
+            const createNode = (p, index) => {
+                const div = document.createElement('div');
+                div.className = `player-node ${p.pos === 'Portero' ? 'goalie' : ''}`;
+                div.innerHTML = `
+                    <img src="${p.photo}" alt="${p.nick}" style="pointer-events: none;">
+                    <div class="node-label" style="pointer-events: none; user-select: none; -webkit-user-select: none;">${p.nick}</div>
+                `;
+
+                // CLICK TO VIEW DETAILS
+                div.onclick = () => openModal(p);
+
+                // DRAG & DROP LOGIC (Skip for Goalie at Index 0)
+                if (index !== 0) {
+                    div.draggable = true;
+                    div.style.cursor = "grab";
+
+                    div.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', index);
+                        div.style.opacity = '0.5';
+                        div.style.transform = 'scale(0.9)';
+                    });
+
+                    div.addEventListener('dragend', () => {
+                        div.style.opacity = '1';
+                        div.style.transform = 'scale(1)';
+                    });
+
+                    div.addEventListener('dragover', (e) => {
+                        e.preventDefault(); // Allow Drop
+                        e.dataTransfer.dropEffect = "move";
+                    });
+
+                    div.addEventListener('drop', async (e) => {
+                        e.preventDefault();
+                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                        const toIndex = index;
+
+                        if (fromIndex === toIndex) return;
+                        if (toIndex === 0) return; // Cannot drop onto Goalie specific slot logic if strict
+
+                        // SWAP LOGIC
+                        const newTeam = [...teamIds];
+                        [newTeam[fromIndex], newTeam[toIndex]] = [newTeam[toIndex], newTeam[fromIndex]];
+
+                        // Optimistic UI Update
+                        renderPool(newTeam);
+
+                        // Save to Firestore
+                        try {
+                            const userRef = doc(db, "usuarios", currentUser.uid);
+                            await updateDoc(userRef, { equipo: newTeam });
+                            console.log("Team order updated!");
+                        } catch (error) {
+                            console.error("Error swapping players:", error);
+                            alert("Error al guardar la posición.");
+                            renderPool(teamIds); // Revert on error
+                        }
+                    });
+                } else {
+                    div.style.cursor = "not-allowed"; // Goalie Visual Cue
+                    div.title = "El portero no se puede mover";
+                }
+
+                return div;
+            };
+
+            // RENDER BY INDEX
+            // Row 4: Goalie (Idx 0)
+            const r4 = document.getElementById('row-4');
+            if (players[0]) r4.appendChild(createNode(players[0], 0));
+
+            // Row 1: Boya (Idx 1)
+            const r1 = document.getElementById('row-1');
+            if (players[1]) r1.appendChild(createNode(players[1], 1));
+
+            // Row 2: Wings (Idx 2,3)
+            const r2 = document.getElementById('row-2');
+            if (players[2]) r2.appendChild(createNode(players[2], 2));
+            if (players[3]) r2.appendChild(createNode(players[3], 3));
+
+            // Row 3: Defense (Idx 4,5,6)
+            const r3 = document.getElementById('row-3');
+            if (players[4]) r3.appendChild(createNode(players[4], 4));
+            if (players[5]) r3.appendChild(createNode(players[5], 5));
+            if (players[6]) r3.appendChild(createNode(players[6], 6));
+        }
+
+        function renderUserHistory(teamIds) {
+            const container = document.getElementById('user-jornadas-list');
+            container.innerHTML = "";
+
+            const teamPlayers = teamIds.map(id => playersData.find(p => p.id === id)).filter(p => p);
+
+            const jornadasMap = {};
+
+            teamPlayers.forEach(p => {
+                if (p.historial && Array.isArray(p.historial)) {
+                    p.historial.forEach(h => {
+                        jornadasMap[h.jornada] = (jornadasMap[h.jornada] || 0) + h.puntos;
+                    });
+                }
+            });
+
+            const sortedJornadas = Object.keys(jornadasMap).sort((a, b) => parseInt(a) - parseInt(b));
+
+            if (sortedJornadas.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; font-style:italic; padding:20px;">No hay jornadas jugadas o registradas.</div>';
+                return;
+            }
+
+            sortedJornadas.forEach(j => {
+                const row = document.createElement('div');
+                row.className = "jornada-row";
+                row.innerHTML = `
+                    <div style="font-weight:bold; color:#ccc;">JORNADA ${j}</div>
+                    <div style="font-weight:bold; color:var(--accent); font-size:1.1rem;">${jornadasMap[j]} pts</div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        async function loadRanking() {
+            const q = query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            const tbody = document.getElementById('ranking-body');
+            tbody.innerHTML = "";
+
+            let pos = 1;
+            querySnapshot.forEach((doc) => {
+                const d = doc.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="rank-pos">${pos++}</td>
+                    <td>${d.nombre || d.email.split('@')[0] + ' FC'}</td>
+                    <td style="font-weight:bold; color:var(--accent);">${d.puntos}</td>
+                `;
+                // Add click event to view team
+                tr.onclick = () => openOpponentModal(d);
+                tbody.appendChild(tr);
+            });
+        }
+
+        // TAB SWITCHING
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.getElementById('view-pool').classList.add('hidden');
+                document.getElementById('view-ranking').classList.add('hidden');
+                document.getElementById('view-profile').classList.add('hidden');
+                document.getElementById('view-players').classList.add('hidden');
+
+                document.getElementById(btn.dataset.tab).classList.remove('hidden');
+
+                if (btn.dataset.tab === 'view-ranking') loadRanking();
+                if (btn.dataset.tab === 'view-players') renderAllPlayers();
+                if (btn.dataset.tab === 'view-profile') loadProfile();
+            });
+        });
+
+        // PROFILE LOGIC
+        function loadProfile() {
+            if (!currentUser) return;
+            document.getElementById('p-email').value = currentUser.email;
+            document.getElementById('p-name').value = currentUser.displayName || "";
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('p-name').value;
+            const btn = e.target.querySelector('button');
+            const originalText = btn.textContent;
+
+            btn.textContent = "Guardando...";
+            btn.disabled = true;
+
+            try {
+                // 1. Update Auth
+                await updateProfile(currentUser, { displayName: newName });
+
+                // 2. Update Firestore
+                await updateDoc(doc(db, "usuarios", currentUser.uid), {
+                    nombre: newName
+                });
+
+                alert("¡Perfil actualizado correctamente!");
+            } catch (error) {
+                console.error(error);
+                alert("Error al actualizar: " + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // DELETE ACCOUNT LOGIC
+        const modalDelete = document.getElementById('modal-delete-confirm');
+        const btnDeleteInit = document.getElementById('btn-delete-account');
+        const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+        const btnCancelDelete = document.getElementById('btn-cancel-delete');
+
+        btnDeleteInit.addEventListener('click', () => modalDelete.classList.add('active'));
+        btnCancelDelete.addEventListener('click', () => modalDelete.classList.remove('active'));
+
+        btnConfirmDelete.addEventListener('click', async () => {
+            if (!currentUser) return;
+            const originalText = btnConfirmDelete.textContent;
+            btnConfirmDelete.textContent = "Borrando...";
+            btnConfirmDelete.disabled = true;
+
+            try {
+                const uid = currentUser.uid;
+
+                // 1. Delete Firestore Data
+                await deleteDoc(doc(db, "usuarios", uid));
+
+                // 2. Delete Auth User
+                await deleteUser(currentUser);
+
+                // Success handled by onAuthStateChanged (user becomes null)
+                modalDelete.classList.remove('active');
+                alert("Cuenta eliminada correctamente.");
+
+            } catch (error) {
+                console.error(error);
+                let msg = "Error al eliminar cuenta: " + error.message;
+                if (error.code === 'auth/requires-recent-login') {
+                    msg = "Por seguridad, necesitas haber iniciado sesión recientemente. Por favor, sal y vuelve a entrar para eliminar tu cuenta.";
+                }
+                alert(msg);
+                modalDelete.classList.remove('active');
+            } finally {
+                btnConfirmDelete.textContent = originalText;
+                btnConfirmDelete.disabled = false;
+            }
+        });
+
+        // MODAL LOGIC (PLAYER)
+        const modal = document.getElementById('modal-player');
+        function openModal(p) {
+            document.getElementById('m-photo').src = p.photo;
+            document.getElementById('m-name').textContent = p.name;
+            document.getElementById('m-pos').textContent = p.pos.toUpperCase();
+            document.getElementById('m-phrase').textContent = `"${p.phrase}"`;
+
+            // DYNAMIC STATS DISPLAY
+            const statsContainer = document.querySelector('.card-stats');
+            let statsHTML = '';
+
+            // Common Stats
+            statsHTML += `<div class="stat-item"><span>Partidos</span><strong>${p.stats.partidos || 0}</strong></div>`;
+            statsHTML += `<div class="stat-item"><span>Tarjetas</span><strong>${p.stats.tarjetas || 0}</strong></div>`;
+            statsHTML += `<div class="stat-item"><span>Expulsiones</span><strong>${p.stats.expulsiones || 0}</strong></div>`;
+
+            if (p.pos === 'Portero') {
+                statsHTML += `<div class="stat-item"><span>Paradas</span><strong>${p.stats.paradas || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Goles Contra</span><strong>${p.stats.goles_contra || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Pen. Parados</span><strong>${p.stats.penaltis_parados || 0}</strong></div>`;
+            } else {
+                statsHTML += `<div class="stat-item"><span>Goles</span><strong>${p.stats.goles || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Tiros</span><strong>${p.stats.tiros || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Pen. Marcados</span><strong>${p.stats.penaltis || 0}</strong></div>`;
+                statsHTML += `<div class="stat-item"><span>Pen. Fallados</span><strong>${p.stats.penaltis_fallados || 0}</strong></div>`;
+            }
+
+            statsContainer.innerHTML = statsHTML;
+            document.getElementById('m-points').textContent = calcPoints(p);
+
+            // RENDER HISTORY (OUTSIDE STATS BOX)
+            const histContainer = document.getElementById('m-history-container');
+            let histHTML = '<div style="text-align:left; border-top:1px solid #333; padding-top:10px;">';
+            histHTML += '<h4 style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">JORNADAS</h4>';
+
+            if (p.historial && p.historial.length > 0) {
+                p.historial.sort((a, b) => a.jornada - b.jornada).forEach(h => {
+                    histHTML += `
+                        <div style="display:flex; justify-content:space-between; font-size:0.9rem; padding:5px 0; border-bottom:1px solid #222;">
+                            <span>Jornada ${h.jornada}</span>
+                            <span style="color:var(--accent); font-weight:bold;">${h.puntos} pts</span>
+                        </div>
+                    `;
+                });
+            } else {
+                histHTML += '<div style="color:#666; font-style:italic;">Sin datos de historial.</div>';
+            }
+            histHTML += '</div>';
+            histContainer.innerHTML = histHTML;
+
+            modal.classList.add('active');
+        }
+        document.querySelector('.close-modal').addEventListener('click', () => modal.classList.remove('active'));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+
+        // OPPONENT MODAL LOGIC
+        const modalOpponent = document.getElementById('modal-opponent-team');
+        document.getElementById('close-opponent-modal').onclick = () => modalOpponent.classList.remove('active');
+        modalOpponent.onclick = (e) => {
+            if (e.target === modalOpponent) modalOpponent.classList.remove('active');
+        };
+
+        function openOpponentModal(userData) {
+            document.getElementById('opp-team-name').textContent = userData.nombre || "Equipo Rival";
+            document.getElementById('opp-team-points').textContent = userData.puntos;
+            renderOpponentPool(userData.equipo);
+            renderOpponentHistory(userData.equipo); // New
+            modalOpponent.classList.add('active');
+        }
+
+        function renderOpponentHistory(teamIds) {
+            const container = document.getElementById('opp-jornadas-list');
+            container.innerHTML = '<h4 style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">JORNADAS</h4>';
+
+            if (!teamIds || !Array.isArray(teamIds)) return;
+
+            const teamPlayers = teamIds.map(id => playersData.find(p => p.id === id)).filter(p => p);
+
+            const jornadasMap = {};
+            teamPlayers.forEach(p => {
+                if (p.historial && Array.isArray(p.historial)) {
+                    p.historial.forEach(h => {
+                        jornadasMap[h.jornada] = (jornadasMap[h.jornada] || 0) + h.puntos;
+                    });
+                }
+            });
+
+            const sortedJornadas = Object.keys(jornadasMap).sort((a, b) => parseInt(a) - parseInt(b));
+            if (sortedJornadas.length === 0) {
+                container.innerHTML += '<div style="color:#666; font-style:italic;">Sin datos.</div>';
+                return;
+            }
+
+            sortedJornadas.forEach(j => {
+                const div = document.createElement('div');
+                div.style.display = "flex";
+                div.style.justifyContent = "space-between";
+                div.style.padding = "5px 0";
+                div.style.borderBottom = "1px solid #222";
+                div.style.fontSize = "0.9rem";
+                div.innerHTML = `
+                    <span>Jornada ${j}</span>
+                    <span style="color:var(--accent); font-weight:bold;">${jornadasMap[j]} pts</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderOpponentPool(teamIds) {
+            // Clear Rows
+            ['opp-row-1', 'opp-row-2', 'opp-row-3', 'opp-row-4'].forEach(id => document.getElementById(id).innerHTML = '');
+
+            if (!teamIds || !Array.isArray(teamIds)) return;
+
+            const teamPlayers = teamIds.map(id => playersData.find(p => p.id === id)).filter(p => p); // filter undefined
+
+            // LOGIC TO PLACE PLAYERS IN 1-2-3-1 (Reused logic)
+            const goalie = teamPlayers.find(p => p.pos === 'Portero') || teamPlayers[0];
+            const others = teamPlayers.filter(p => p.id !== goalie.id);
+            const boyaIndex = others.findIndex(p => p.pos === 'Boya');
+            const boya = boyaIndex !== -1 ? others[boyaIndex] : others[0];
+            const others2 = others.filter(p => p.id !== boya.id);
+            const midPlayers = others2.slice(0, 2);
+            const defPlayers = others2.slice(2, 5);
+
+            const createNode = (p) => {
+                const div = document.createElement('div');
+                div.className = `player-node ${p.pos === 'Portero' ? 'goalie' : ''}`;
+                div.innerHTML = `
+                    <img src="${p.photo}" alt="${p.nick}">
+                    <div class="node-label">${p.nick}</div>
+                `;
+                // Allow opening details for opponent players too
+                div.onclick = (e) => {
+                    e.stopPropagation(); // Prevent bubbling to modal background
+                    openModal(p);
+                };
+                return div;
+            };
+
+            if (goalie) document.getElementById('opp-row-4').appendChild(createNode(goalie));
+            if (boya) document.getElementById('opp-row-1').appendChild(createNode(boya));
+            midPlayers.forEach(p => document.getElementById('opp-row-2').appendChild(createNode(p)));
+            defPlayers.forEach(p => document.getElementById('opp-row-3').appendChild(createNode(p)));
+        }
+
+
+
+        // -----------------------------------------------------------
+        // ADMIN PANEL LOGIC
+        // -----------------------------------------------------------
+        const adminTrigger = document.getElementById('admin-trigger');
+        const adminView = document.getElementById('view-admin');
+        const adminGrid = document.getElementById('admin-players-grid');
+        const adminSearch = document.getElementById('admin-search');
+
+        // ADMIN SECTIONS
+        const tabPlayers = document.getElementById('tab-admin-players');
+        const tabUsers = document.getElementById('tab-admin-users');
+        const secPlayers = document.getElementById('admin-section-players');
+        const secUsers = document.getElementById('admin-section-users');
+
+        tabPlayers.onclick = () => { switchAdminTab('players'); };
+        tabUsers.onclick = () => { switchAdminTab('users'); };
+
+        function switchAdminTab(tab) {
+            if (tab === 'players') {
+                secPlayers.classList.remove('hidden');
+                secUsers.classList.add('hidden');
+
+                // Active Style
+                tabPlayers.style.background = "#555";
+                tabPlayers.style.color = "white";
+                tabPlayers.style.border = "none";
+
+                // Inactive Style
+                tabUsers.style.background = "transparent";
+                tabUsers.style.color = "#888";
+                tabUsers.style.border = "1px solid #555";
+
+            } else {
+                secPlayers.classList.add('hidden');
+                secUsers.classList.remove('hidden');
+
+                // Active Style
+                tabUsers.style.background = "#555";
+                tabUsers.style.color = "white";
+                tabUsers.style.border = "none";
+
+                // Inactive Style
+                tabPlayers.style.background = "transparent";
+                tabPlayers.style.color = "#888";
+                tabPlayers.style.border = "1px solid #555";
+
+                renderAdminUsers();
+            }
+        }
+
+
+
+        async function deleteJornadaData() {
+            const jornadaInput = document.getElementById('admin-jornada');
+            const jornada = parseInt(jornadaInput.value);
+
+            if (!confirm(`⚠️ PELIGRO ⚠️\n\n¿Estás seguro de que quieres BORRAR TODOS los datos de la JORNADA ${jornada}?\n\nSe eliminarán los puntos de TODOS los jugadores para esta jornada.\nEsta acción no se puede deshacer.`)) return;
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = "Borrando...";
+            btn.disabled = true;
+
+            try {
+                let updatedCount = 0;
+                // Delete from DB
+                for (const p of playersData) {
+                    if (p.historial && Array.isArray(p.historial)) {
+                        const originalLength = p.historial.length;
+                        const newHistorial = p.historial.filter(h => h.jornada !== jornada);
+
+                        if (newHistorial.length !== originalLength) {
+                            // Found data to delete
+
+                            // RECALCULATE TOTAL STATS (Root 'stats' field)
+                            // We must re-sum the remaining history to update the totals.
+                            const totalStats = newHistorial.reduce((acc, h) => {
+                                const s = h.stats || {};
+                                return {
+                                    partidos: (acc.partidos || 0) + (s.partidos || 0),
+                                    goles: (acc.goles || 0) + (s.goles || 0),
+                                    penaltis: (acc.penaltis || 0) + (s.penaltis || 0),
+                                    tarjetas: (acc.tarjetas || 0) + (s.tarjetas || 0),
+                                    expulsiones: (acc.expulsiones || 0) + (s.expulsiones || 0),
+                                    tiros: (acc.tiros || 0) + (s.tiros || 0),
+                                    penaltis_fallados: (acc.penaltis_fallados || 0) + (s.penaltis_fallados || 0),
+                                    paradas: (acc.paradas || 0) + (s.paradas || 0),
+                                    goles_contra: (acc.goles_contra || 0) + (s.goles_contra || 0),
+                                    penaltis_parados: (acc.penaltis_parados || 0) + (s.penaltis_parados || 0)
+                                };
+                            }, {});
+
+                            await updateDoc(doc(db, "jugadores", String(p.id)), {
+                                historial: newHistorial,
+                                stats: totalStats // Update root stats
+                            });
+
+                            // Update local cache
+                            p.historial = newHistorial;
+                            p.stats = totalStats; // Update local stats
+                            p.puntos = calcPoints(p); // Recalc totals
+                            updatedCount++;
+                        }
+                    }
+                }
+
+                // Recalculate users ranking too? Maybe optional, but good practice.
+                await recalculateGlobalRanking();
+
+                alert(`✅ Datos de la Jornada ${jornada} eliminados en ${updatedCount} jugadores.\nEl ranking global también ha sido actualizado.`);
+                window.location.reload(); // Force reload to ensure fresh data
+
+            } catch (error) {
+                console.error(error);
+                alert("Error al borrar jornada: " + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+        window.deleteJornadaData = deleteJornadaData;
+
+        // ALL PLAYERS RENDER LOGIC
+        function renderAllPlayers(filter = "") {
+            const container = document.getElementById('all-players-grid');
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!playersData || playersData.length === 0) {
+                container.innerHTML = "No hay datos.";
+                return;
+            }
+
+            const normalizedFilter = filter.toLowerCase().trim();
+
+            const sortedPlayers = [...playersData]
+                .filter(p => {
+                    const searchStr = (p.name + " " + (p.nick || "")).toLowerCase();
+                    return !filter || searchStr.includes(normalizedFilter);
+                })
+                .sort((a, b) => calcPoints(b) - calcPoints(a));
+
+            if (sortedPlayers.length === 0) {
+                container.innerHTML = "<div style='color:#888; text-align:center;'>No se encontraron jugadores.</div>";
+                return;
+            }
+
+            sortedPlayers.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "player-list-item";
+                div.innerHTML = `
+                    <img src="${p.photo}" class="player-list-img" style="border-color: ${p.pos === 'Portero' ? '#ff4757' : 'var(--primary)'}">
+                    <div style="flex-grow:1;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#fff;">${p.nick}</div>
+                        <div style="font-size:0.8rem; color:#888;">${p.name}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="background:#333; padding:2px 8px; border-radius:4px; font-size:0.7rem; color:#ccc;">${p.pos.toUpperCase()}</span>
+                        <div style="font-size:0.9rem; color:var(--accent); font-weight:bold; margin-top:2px;">${calcPoints(p)} pts</div>
+                    </div>
+                 `;
+                div.onclick = () => openModal(p);
+                container.appendChild(div);
+            });
+        }
+
+        // Search Listener
+        const searchInput = document.getElementById('players-view-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                renderAllPlayers(e.target.value);
+            });
+        }
+
+        function renderAdminPlayers() {
+            const grid = document.getElementById('admin-players-grid');
+            grid.innerHTML = "";
+
+            playersData.forEach(p => {
+                const div = document.createElement('div');
+                div.style.background = "rgba(255,255,255,0.05)";
+                div.style.padding = "10px";
+                div.style.borderRadius = "8px";
+                div.style.marginBottom = "10px";
+                div.style.display = "flex";
+                div.style.flexDirection = "column";
+                div.style.gap = "10px";
+
+                // Header: Name & Edit Button
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight:bold; color:var(--accent);">${p.nick}</span>
+                            <span style="color:#666; font-size:0.8rem;">(${p.pos})</span>
+                        </div>
+                        <button onclick="openEditPlayerModal(${p.id})" style="background:#555; border:none; color:white; padding:2px 8px; border-radius:4px; cursor:pointer;">✏️</button>
+                    </div>
+                `;
+
+                // Stats Controls
+                const statsDiv = document.createElement('div');
+                statsDiv.style.display = "grid";
+                statsDiv.style.gridTemplateColumns = "repeat(2, 1fr)";
+                statsDiv.style.gap = "5px";
+
+                // Helper to create control
+                const createControl = (label, statKey) => {
+                    const row = document.createElement('div');
+                    row.style.display = "flex";
+                    row.style.justifyContent = "space-between";
+                    row.style.alignItems = "center";
+                    row.style.background = "rgba(0,0,0,0.3)";
+                    row.style.padding = "4px";
+                    row.style.borderRadius = "4px";
+
+                    // Show current stat for SELECTED JORNADA or Total?
+                    // Ideally we are editing a SPECIFIC JORNADA.
+                    const jornadaInput = document.getElementById('admin-jornada');
+                    const jornada = parseInt(jornadaInput ? jornadaInput.value : 1);
+
+                    // Find stat in history
+                    let currentVal = 0;
+                    if (p.historial) {
+                        const h = p.historial.find(x => x.jornada === jornada);
+                        if (h && h.stats) currentVal = h.stats[statKey] || 0;
+                    }
+
+                    row.innerHTML = `
+                        <span style="font-size:0.8rem; color:#aaa;">${label}</span>
+                        <div style="display:flex; gap:5px; align-items:center;">
+                            <button onclick="updatePlayerStat(${p.id}, '${statKey}', -1)" style="width:20px; height:20px; background:#444; border:none; color:white; display:flex; justify-content:center; align-items:center; cursor:pointer;">-</button>
+                            <span style="font-weight:bold; width:20px; text-align:center;">${currentVal}</span>
+                            <button onclick="updatePlayerStat(${p.id}, '${statKey}', 1)" style="width:20px; height:20px; background:var(--secondary); border:none; color:black; display:flex; justify-content:center; align-items:center; cursor:pointer;">+</button>
+                        </div>
+                    `;
+                    return row;
+                };
+
+                // Render specific controls based on POS
+                if (p.pos === 'Portero') {
+                    statsDiv.appendChild(createControl("Paradas", "paradas"));
+                    statsDiv.appendChild(createControl("Goles Con.", "goles_contra"));
+                    statsDiv.appendChild(createControl("Pen. Parados", "penaltis_parados"));
+                } else {
+                    statsDiv.appendChild(createControl("Goles", "goles"));
+                    statsDiv.appendChild(createControl("Tiros", "tiros"));
+                    statsDiv.appendChild(createControl("Penaltis", "penaltis"));
+                    statsDiv.appendChild(createControl("Pen. Fallados", "penaltis_fallados"));
+                }
+                // Common
+                statsDiv.appendChild(createControl("Expulsiones", "expulsiones"));
+                statsDiv.appendChild(createControl("Tarjetas", "tarjetas"));
+                statsDiv.appendChild(createControl("Partidos", "partidos"));
+
+                div.appendChild(statsDiv);
+                grid.appendChild(div);
+            });
+        }
+
+        async function renderAdminUsers() {
+            const list = document.getElementById('admin-users-list');
+            list.innerHTML = "Cargando...";
+
+            try {
+                const snap = await getDocs(collection(db, "usuarios"));
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const item = document.createElement('div');
+                    item.className = "auth-container";
+                    item.style.textAlign = "left";
+                    item.style.padding = "10px";
+                    item.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-weight:bold; color:var(--accent);">${d.nombre || 'Sin Nombre'}</div>
+                                <div style="font-size:0.8rem; color:#888;">${d.email}</div>
+                            </div>
+                            <div style="display:flex; gap: 5px;">
+                                <button class="btn" style="padding: 5px 10px; font-size:0.8rem;" onclick="openAdminUserTeam('${doc.id}', '${d.nombre}')">Ver Equipo</button>
+                                <button class="btn" style="padding: 5px 10px; font-size:0.8rem; background-color: #e74c3c; border-color: #c0392b;" onclick="deleteAdminUser('${doc.id}', '${d.nombre}')">Eliminar</button>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            } catch (e) {
+                list.innerHTML = "Error cargando usuarios.";
+                console.error(e);
+            }
+        }
+
+        window.deleteAdminUser = async (userId, userName) => {
+            if (!confirm(`¿Estás seguro de que quieres eliminar al usuario "${userName}" PERMANENTEMENTE? Esta acción no se puede deshacer.`)) return;
+
+            try {
+                await deleteDoc(doc(db, "usuarios", userId));
+                alert(`Usuario "${userName}" eliminado correctamente.`);
+                renderAdminUsers(); // Refresh list
+            } catch (e) {
+                console.error(e);
+                alert("Error al eliminar usuario: " + e.message);
+            }
+        };
+
+        // USER TEAM EDITOR LOGIC
+        let currentAdminUserId = null;
+        let currentSwapOldId = null;
+
+        const modalUserTeam = document.getElementById('modal-admin-user-team');
+        const modalSelector = document.getElementById('modal-player-selector');
+
+        document.getElementById('close-admin-user-team').onclick = () => modalUserTeam.classList.remove('active');
+        document.getElementById('close-player-selector').onclick = () => modalSelector.classList.remove('active');
+
+        window.openAdminUserTeam = async (userId, userName) => {
+            currentAdminUserId = userId;
+            document.getElementById('adm-user-team-name').textContent = `Equipo de: ${userName || 'Usuario'}`;
+            modalUserTeam.classList.add('active');
+            renderUserTeamEditor(userId);
+        };
+
+        async function renderUserTeamEditor(userId) {
+            const container = document.getElementById('adm-user-team-grid');
+            container.innerHTML = "Cargando...";
+
+            const docSnap = await getDoc(doc(db, "usuarios", userId));
+            if (!docSnap.exists()) return;
+            const data = docSnap.data();
+
+            container.innerHTML = "";
+            let teamPoints = 0;
+
+            if (data.equipo && Array.isArray(data.equipo)) {
+                data.equipo.forEach(pId => {
+                    const p = playersData.find(x => x.id === pId);
+                    if (!p) return;
+                    teamPoints += calcPoints(p);
+
+                    const div = document.createElement('div');
+                    div.style.display = "flex";
+                    div.style.alignItems = "center";
+                    div.style.justifyContent = "space-between";
+                    div.style.background = "rgba(255,255,255,0.05)";
+                    div.style.padding = "5px";
+                    div.style.borderRadius = "4px";
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${p.photo}" style="width:30px; height:30px; border-radius:50%;">
+                            <span>${p.nick} <small style="color:#aaa;">(${p.pos})</small></span>
+                        </div>
+                        <button onclick="initiateSwap(${pId})" style="background:#444; color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">🔄</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            container.innerHTML += `<div style="margin-top:10px; text-align:right; color:var(--secondary);">Puntos Totales: ${teamPoints}</div>`;
+        }
+
+        window.initiateSwap = (oldId) => {
+            currentSwapOldId = oldId;
+            // Show selector
+            renderPlayerSelector();
+            modalSelector.classList.add('active');
+        };
+
+        function renderPlayerSelector(filter = "") {
+            const list = document.getElementById('selector-list');
+            list.innerHTML = "";
+            const term = filter.toLowerCase();
+
+            playersData.forEach(p => {
+                if (filter && !p.nick.toLowerCase().includes(term)) return;
+
+                const div = document.createElement('div');
+                div.style.display = "flex";
+                div.style.alignItems = "center";
+                div.style.justifyContent = "space-between";
+                div.style.padding = "10px";
+                div.style.borderBottom = "1px solid #333";
+                div.style.cursor = "pointer";
+                div.innerHTML = `
+                     <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${p.photo}" style="width:30px; height:30px; border-radius:50%;">
+                        <span>${p.nick} <small>(${p.pos})</small></span>
+                     </div>
+                `;
+                div.onclick = () => confirmSwap(p.id);
+                list.appendChild(div);
+            });
+        }
+
+        document.getElementById('selector-search').addEventListener('input', (e) => renderPlayerSelector(e.target.value));
+
+        async function confirmSwap(newId) {
+            if (!currentAdminUserId || !currentSwapOldId) return;
+
+            try {
+                const userRef = doc(db, "usuarios", currentAdminUserId);
+                const snap = await getDoc(userRef);
+                const data = snap.data();
+                let team = data.equipo || [];
+
+                // SWAP
+                const index = team.indexOf(currentSwapOldId);
+                if (index !== -1) {
+                    team[index] = newId;
+                }
+
+                // RECALC USER POINTS
+                let newPoints = 0;
+                team.forEach(id => {
+                    const p = playersData.find(x => x.id === id);
+                    if (p) newPoints += calcPoints(p);
+                });
+
+                await updateDoc(userRef, {
+                    equipo: team,
+                    puntos: newPoints
+                });
+
+                alert("Jugador cambiado con éxito.");
+                modalSelector.classList.remove('active');
+                renderUserTeamEditor(currentAdminUserId); // Refresh Team View
+
+            } catch (e) {
+                console.error(e);
+                alert("Error cambiando jugador: " + e.message);
+            }
+        }
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        adminTrigger.addEventListener('dblclick', async () => {
+            const pass = prompt("Contraseña de Administrador:");
+            if (!pass) return;
+
+            const hash = await sha256(pass);
+            const correctHash = "9eee6f1de156e0732ebbf80436ab6c7297a3536ed0c6e6e82792a95f0ea1ac81"; // admin_sharks201
+
+            if (hash === correctHash) {
+                renderAdminPanel();
+                adminView.classList.remove('hidden');
+            } else {
+                alert("Acceso denegado.");
+            }
+        });
+
+        adminSearch.addEventListener('input', (e) => {
+            renderAdminPanel(e.target.value);
+        });
+
+        function renderAdminPanel(filter = "") {
+            adminGrid.innerHTML = "";
+            const term = filter.toLowerCase();
+
+            playersData.forEach(p => {
+                if (filter && !p.name.toLowerCase().includes(term) && !p.nick.toLowerCase().includes(term)) return;
+
+                const card = document.createElement('div');
+                card.className = "auth-container"; // Reuse style
+                card.style.padding = "15px";
+                card.style.textAlign = "left";
+
+                // Helper for stat control
+                const createControl = (label, key, step = 1) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:0.9rem;">
+                        <span style="color:#aaa;">${label}:</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button onclick="updatePlayerStat(${p.id}, '${key}', -${step})" style="padding:2px 8px; background:#444; color:white; border:none; border-radius:4px;">-</button>
+                            <span style="font-weight:bold; width:20px; text-align:center;">${p.stats[key] || 0}</span>
+                            <button onclick="updatePlayerStat(${p.id}, '${key}', ${step})" style="padding:2px 8px; background:var(--primary); color:var(--dark); border:none; border-radius:4px;">+</button>
+                        </div>
+                    </div>
+                `;
+
+                let statsControls = "";
+                // Common
+                statsControls += createControl("Partidos", "partidos");
+                statsControls += createControl("Tarjetas", "tarjetas");
+                statsControls += createControl("Expulsiones", "expulsiones");
+
+                if (p.pos === 'Portero') {
+                    statsControls += createControl("Paradas", "paradas");
+                    statsControls += createControl("Goles Contra", "goles_contra");
+                    statsControls += createControl("Pen. Parados", "penaltis_parados");
+                } else {
+                    statsControls += createControl("Goles", "goles");
+                    statsControls += createControl("Tiros", "tiros");
+                    statsControls += createControl("Penaltis (Gol)", "penaltis");
+                    statsControls += createControl("Pen. Fallados", "penaltis_fallados");
+                }
+
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:10px;">
+                        <img src="${p.photo}" style="width:40px; height:40px; border-radius:50%;">
+                        <div style="flex-grow:1;">
+                            <div style="font-weight:bold; color:var(--primary);">${p.nick}</div>
+                            <div style="font-size:0.8rem; color:#888;">${p.pos}</div>
+                        </div>
+                        <button onclick="openEditPlayerModal(${p.id})" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">✏️</button>
+                    </div>
+                    <div>${statsControls}</div>
+                `;
+                adminGrid.appendChild(card);
+            });
+        }
+
+        // Global function for onclick access
+        window.updatePlayerStat = async (id, key, delta) => {
+            const p = playersData.find(x => x.id === id);
+            if (!p) return;
+
+            const jornadaInput = document.getElementById('admin-jornada');
+            const currentJornada = parseInt(jornadaInput.value) || 1;
+
+            // Ensure schema
+            if (!p.historial) p.historial = [];
+
+            // Find specific round entry
+            let entry = p.historial.find(h => h.jornada === currentJornada);
+            if (!entry) {
+                // Create new if invalid
+                entry = { jornada: currentJornada, stats: { goles: 0, penaltis: 0, TIROS: 0, paradas: 0, partidos: 0, tarjetas: 0, expulsiones: 0 }, puntos: 0 };
+                p.historial.push(entry);
+            }
+            // Ensure stats object exists in entry
+            if (!entry.stats) entry.stats = {};
+
+            // Update Value
+            entry.stats[key] = (entry.stats[key] || 0) + delta;
+            if (entry.stats[key] < 0) entry.stats[key] = 0; // Prevent negatives
+
+            // Recalc Only This Round
+            entry.puntos = calcMatchPoints(p.pos, entry.stats);
+
+            // NOTE: We also update the total flat 'stats' for backward compatibility or total display if needed, 
+            // but the SOURCE OF TRUTH for Points is now HISTORIAL.
+            // For valid total stats display, we should sum all histories.
+            const totalStats = {};
+            p.historial.forEach(h => {
+                for (const k in h.stats) {
+                    totalStats[k] = (totalStats[k] || 0) + h.stats[k];
+                }
+            });
+            p.stats = totalStats; // Sync flat object
+
+            // Update UI immediately (Optimistic)
+            renderAdminPanel(document.getElementById('admin-search').value);
+            recalcMyPoints();
+
+            // Update DB
+            try {
+                const playerRef = doc(db, "jugadores", id.toString());
+                const updatePayload = {
+                    historial: p.historial,
+                    stats: p.stats // Sync totals to DB too
+                };
+
+                await updateDoc(playerRef, updatePayload);
+                console.log(`Stat ${key} updated for ${p.nick} (Jornada ${currentJornada})`);
+
+            } catch (e) {
+                console.error("Error actualizando DB:", e);
+                alert("Error al guardar cambio en DB");
+            }
+        };
+
+        // RECALCULATE MY POINTS (Optimistic UI)
+        function recalcMyPoints() {
+            if (!currentUser) return;
+            // Re-run the dashboard logic which calculates points from playersData
+            loadDashboard();
+        }
+
+        // AUTO SYNC (Local Server)
+        async function triggerAutoSync() {
+            const btn = document.getElementById('btn-auto-sync');
+            btn.disabled = true;
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ Sincronizando...";
+
+            try {
+                // Call Local Server created in scraper/server.js
+                // Requires 'npm run serve' running in background
+                const res = await fetch('http://localhost:3000/api/scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("✅ Sincronización Completada.\n" + data.message);
+                    location.reload(); // Reload to show new stats
+                } else {
+                    alert("❌ Error en el servidor: " + data.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("⚠️ Error de conexión.\n\nAsegúrate de que el servidor local está corriendo:\n1. Abre terminal\n2. Ve a /scraper\n3. Ejecuta 'npm run serve'");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        // GLOBAL RANKING RECALCULATION (Batch Operation)
+        window.recalculateGlobalRanking = async () => {
+            const confirmed = confirm("¿Seguro que quieres recalcular los puntos de TODOS los usuarios? Esto puede tardar unos segundos.");
+            if (!confirmed) return;
+
+            const btn = document.querySelector('#view-admin button[onclick="recalculateGlobalRanking()"]');
+            const originalText = btn.textContent;
+            btn.textContent = "Calculando...";
+            btn.disabled = true;
+
+            try {
+                const usersSnap = await getDocs(collection(db, "usuarios"));
+                let updatedCount = 0;
+
+                const updates = [];
+                usersSnap.forEach(userDoc => {
+                    const userData = userDoc.data();
+                    if (userData.equipo && Array.isArray(userData.equipo)) {
+                        let newPoints = 0;
+                        userData.equipo.forEach(pId => {
+                            const p = playersData.find(x => x.id === pId);
+                            if (p) newPoints += calcPoints(p);
+                        });
+
+                        // Only update if changed
+                        if (newPoints !== userData.puntos) {
+                            updates.push(updateDoc(userDoc.ref, { puntos: newPoints }));
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                await Promise.all(updates);
+                alert(`¡Ranking actualizado! Se han corregido los puntos de ${updatedCount} usuarios.`);
+
+            } catch (e) {
+                console.error("Error recalculando ranking:", e);
+                alert("Error durante el recalculo masivo: " + e.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // -----------------------------------------------------------
+        // ADMIN EDIT PLAYER LOGIC
+        // -----------------------------------------------------------
+        const modalEdit = document.getElementById('modal-admin-edit');
+        document.getElementById('close-admin-edit').onclick = () => modalEdit.classList.remove('active');
+
+        window.openEditPlayerModal = (id) => {
+            const p = playersData.find(x => x.id === id);
+            if (!p) return;
+
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-name').value = p.name;
+            document.getElementById('edit-nick').value = p.nick;
+            document.getElementById('edit-phrase').value = p.phrase;
+            document.getElementById('edit-photo').value = p.photo;
+            document.getElementById('edit-pos').value = p.pos;
+
+            modalEdit.classList.add('active');
+        };
+
+        document.getElementById('form-admin-edit').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-id').value);
+
+            const updates = {
+                name: document.getElementById('edit-name').value,
+                nick: document.getElementById('edit-nick').value,
+                phrase: document.getElementById('edit-phrase').value,
+                photo: document.getElementById('edit-photo').value,
+                pos: document.getElementById('edit-pos').value
+            };
+
+            const p = playersData.find(x => x.id === id);
+            if (p) {
+                // Update Local
+                Object.assign(p, updates);
+
+                // Update Firestore
+                try {
+                    await updateDoc(doc(db, "jugadores", id.toString()), updates);
+                    alert("Jugador actualizado.");
+                    modalEdit.classList.remove('active');
+                    renderAdminPanel(document.getElementById('admin-search').value);
+                    loadDashboard(); // Refresh UI
+                } catch (err) {
+                    console.error(err);
+                    alert("Error guardando cambios.");
+                }
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>

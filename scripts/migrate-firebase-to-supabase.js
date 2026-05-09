@@ -47,7 +47,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const FIREBASE_BASE =
   'https://firestore.googleapis.com/v1/projects/sharks-fantasy/databases/(default)/documents';
-const FIREBASE_API_KEY = 'AIzaSyCtKaONmU_RiTjjVvpN4XyJZAUY-ZgafIM';
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyCtKaONmU_RiTjjVvpN4XyJZAUY-ZgafIM';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -177,6 +177,11 @@ async function migrateJugadores(rawJugadores) {
 
   const numeroToId = new Map(inserted.map((r) => [r.numero, r.id]));
   for (const p of players) p._supabaseId = numeroToId.get(p.numero);
+
+  const missing = players.filter((p) => !p._supabaseId);
+  if (missing.length) {
+    console.warn(`  WARNING: no Supabase id for players: ${missing.map((p) => p.numero).join(', ')} — their historial will be skipped`);
+  }
 
   for (const p of players) {
     console.log(`  #${String(p.numero).padStart(2, ' ')}  ${p.name} (${p.pos})`);

@@ -1,0 +1,15 @@
+{
+  "name": "sharks-fantasy-migration",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "One-shot migration scripts: Firebase Firestore -> Supabase PostgreSQL",
+  "scripts": {
+    "migrate": "node migrate-firebase-to-supabase.js",
+    "check": "node check-supabase.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5"
+  }
+}

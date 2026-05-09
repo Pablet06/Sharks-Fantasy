@@ -144,6 +144,13 @@ export async function syncTeamStats(): Promise<void> {
     const hasChanges = Object.values(delta).some(v => v !== 0)
     if (!hasChanges) continue
 
+    // Guard against negative deltas (e.g. website corrects a stat downward)
+    if (Object.values(delta).some(v => v < 0)) {
+      console.warn(`  ⚠️ Negative delta for ${p.name as string} — skipping to avoid phantom negative jornada. Manual admin correction needed.`)
+      console.warn(`     Delta:`, delta)
+      continue
+    }
+
     console.log(`  Update ${p.name as string}: +${delta.goles}g +${delta.partidos}pj`)
     const puntos = calcMatchPoints(p.pos as Position, delta)
 

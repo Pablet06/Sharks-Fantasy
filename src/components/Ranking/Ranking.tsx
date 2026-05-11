@@ -9,6 +9,9 @@ interface Props {
   currentUserId: string
 }
 
+const MEDAL: Record<number, string> = { 0: '🥇', 1: '🥈', 2: '🥉' }
+const RANK_CLASS: Record<number, string> = { 0: 'rank-gold', 1: 'rank-silver', 2: 'rank-bronze' }
+
 export function Ranking({ jugadores, currentUserId }: Props) {
   const [ranking, setRanking] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,17 +36,21 @@ export function Ranking({ jugadores, currentUserId }: Props) {
     <div className="ranking">
       <h2 className="section-title">Top 10</h2>
       <ol className="ranking-list">
-        {ranking.map((u, i) => (
-          <li
-            key={u.id}
-            className={`ranking-item ${u.id === currentUserId ? 'current-user' : ''}`}
-            onClick={() => setViewTeam(u)}
-          >
-            <span className="rank-pos">#{i + 1}</span>
-            <span className="rank-name">{u.nombre}</span>
-            <span className="rank-pts">{u.puntos} pts</span>
-          </li>
-        ))}
+        {ranking.map((u, i) => {
+          const isMedal = i < 3
+          const isCurrentUser = u.id === currentUserId
+          return (
+            <li
+              key={u.id}
+              className={`ranking-item ${isCurrentUser ? 'current-user' : ''} ${isMedal ? RANK_CLASS[i] : ''}`}
+              onClick={() => setViewTeam(u)}
+            >
+              <span className="rank-pos">{isMedal ? MEDAL[i] : `#${i + 1}`}</span>
+              <span className="rank-name">{u.nombre}</span>
+              <span className="rank-pts">{u.puntos} pts</span>
+            </li>
+          )
+        })}
       </ol>
 
       {viewTeam && (

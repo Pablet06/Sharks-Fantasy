@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { Jugador, Usuario } from '../../types'
+import { Shell } from './Shell'
+import type { Tab } from './Shell'
 import { Pool } from './Pool'
 import { Ranking } from '../Ranking/Ranking'
 import { Players } from '../Players/Players'
@@ -13,24 +15,15 @@ interface Props {
   jugadores: Jugador[]
   onSignOut: () => void
   onUpdateNombre: (nombre: string) => Promise<unknown>
+  onUpdateEquipo: (equipo: number[]) => Promise<unknown>
 }
 
-type Tab = 'team' | 'ranking' | 'players' | 'profile'
-
-export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre }: Props) {
+export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre, onUpdateEquipo }: Props) {
   const [tab, setTab] = useState<Tab>('team')
   const [showAdmin, setShowAdmin] = useState(false)
   const [adminClickCount, setAdminClickCount] = useState(0)
-  const [localJugadores] = useState(jugadores)
 
-  const tabLabels: Record<Tab, string> = {
-    team: 'Mi Equipo',
-    ranking: 'Ranking',
-    players: 'Jugadores',
-    profile: 'Perfil',
-  }
-
-  const handleAdminFooterClick = () => {
+  const handleAdminTrigger = () => {
     const next = adminClickCount + 1
     setAdminClickCount(next)
     if (next >= 2) {
@@ -41,29 +34,11 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre 
   }
 
   return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <img src="/Sharks-Fantasy/logo.png" alt="Sharks" className="header-logo" />
-        <h1 className="header-title">SHARKS FANTASY</h1>
-        <button onClick={onSignOut} className="signout-btn">Salir</button>
-      </header>
-
-      <nav className="tabs">
-        {(Object.keys(tabLabels) as Tab[]).map(t => (
-          <button
-            key={t}
-            className={`tab-btn ${tab === t ? 'active' : ''}`}
-            onClick={() => setTab(t)}
-          >
-            {tabLabels[t]}
-          </button>
-        ))}
-      </nav>
-
-      <main className="dashboard-main">
-        {tab === 'team' && <Pool usuario={usuario} jugadores={localJugadores} />}
-        {tab === 'ranking' && <Ranking jugadores={localJugadores} currentUserId={usuario.id} />}
-        {tab === 'players' && <Players jugadores={localJugadores} />}
+    <>
+      <Shell tab={tab} onTabChange={setTab} onSignOut={onSignOut}>
+        {tab === 'team'    && <Pool usuario={usuario} jugadores={jugadores} onUpdateEquipo={onUpdateEquipo} />}
+        {tab === 'ranking' && <Ranking jugadores={jugadores} currentUserId={usuario.id} />}
+        {tab === 'players' && <Players jugadores={jugadores} />}
         {tab === 'profile' && (
           <Profile
             usuario={usuario}
@@ -72,27 +47,21 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre 
             onSignOut={onSignOut}
           />
         )}
-      </main>
+      </Shell>
 
-      <footer className="dashboard-footer">
-        <span
-          className="admin-trigger"
-          onClick={handleAdminFooterClick}
-          title=""
-        >
-          ·
-        </span>
-      </footer>
+      {/* Hidden admin trigger — fixed bottom-right, invisible */}
+      <span
+        style={{ position: 'fixed', bottom: 8, right: 12, zIndex: 200, fontSize: '0.7rem', color: 'transparent', userSelect: 'none', cursor: 'default' }}
+        onClick={handleAdminTrigger}
+      >·</span>
 
       {showAdmin && (
         <AdminPanel
-          jugadores={localJugadores}
+          jugadores={jugadores}
           onClose={() => setShowAdmin(false)}
-          onRefresh={() => {
-            window.location.reload()
-          }}
+          onRefresh={() => window.location.reload()}
         />
       )}
-    </div>
+    </>
   )
 }

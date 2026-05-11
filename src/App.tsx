@@ -7,7 +7,7 @@ import { Dashboard } from './components/Dashboard/Dashboard'
 export function App() {
   const { user, loading: authLoading, signOut } = useAuth()
   const { jugadores, loading: jugadoresLoading, error: jugadoresError } = useJugadores()
-  const { usuario, loading: usuarioLoading, updateNombre } = useUsuario(user?.id)
+  const { usuario, loading: usuarioLoading, updateNombre, updateEquipo } = useUsuario(user?.id)
 
   if (authLoading || jugadoresLoading) {
     return (
@@ -52,6 +52,7 @@ export function App() {
       jugadores={jugadores}
       onSignOut={signOut}
       onUpdateNombre={updateNombre}
+      onUpdateEquipo={updateEquipo}
     />
   )
 }

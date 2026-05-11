@@ -24,7 +24,8 @@ export function Ranking({ jugadores, currentUserId }: Props) {
       .select('*')
       .order('puntos', { ascending: false })
       .limit(10)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('Ranking fetch error:', error)
         if (data) setRanking(data as Usuario[])
         setLoading(false)
       })

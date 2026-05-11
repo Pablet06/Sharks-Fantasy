@@ -27,8 +27,13 @@ export function Profile({ usuario, userEmail, onUpdate, onSignOut }: Props) {
 
   const handleDelete = async () => {
     setDeleting(true)
-    // Account deletion via Supabase Edge Function (service role required)
     const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      alert('Sesión expirada. Vuelve a iniciar sesión.')
+      setDeleting(false)
+      setConfirmDelete(false)
+      return
+    }
     const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
       method: 'POST',
       headers: {

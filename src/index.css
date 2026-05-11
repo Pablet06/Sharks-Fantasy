@@ -320,38 +320,6 @@ button:focus-visible {
   color: var(--bg-dark);
 }
 
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  padding: 16px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.tab-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: var(--text-muted);
-  padding: 8px 22px;
-  border-radius: 22px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  transition: all 0.18s;
-}
-
-.tab-btn:hover {
-  color: #fff;
-  border-color: var(--primary);
-}
-
-.tab-btn.active {
-  background: linear-gradient(90deg, var(--secondary), var(--primary));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 4px 16px rgba(0, 210, 255, 0.3);
-}
 
 .dashboard-main {
   flex: 1;
@@ -361,24 +329,6 @@ button:focus-visible {
   margin: 0 auto;
 }
 
-.dashboard-footer {
-  padding: 18px;
-  text-align: center;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.08);
-}
-
-.admin-trigger {
-  cursor: pointer;
-  user-select: none;
-  padding: 6px 18px;
-  border-radius: 12px;
-  transition: color 0.18s;
-}
-
-.admin-trigger:hover {
-  color: rgba(255, 255, 255, 0.4);
-}
 
 .section-title {
   font-family: 'Teko', sans-serif;
@@ -1444,8 +1394,6 @@ button:focus-visible {
   .header-title { font-size: 1.3rem; letter-spacing: 1px; }
 
   .dashboard-main { padding: 18px 14px 100px; }
-  .tabs { padding: 12px 8px; gap: 6px; }
-  .tab-btn { padding: 6px 14px; font-size: 0.85rem; }
 
   .player-node { width: 64px; height: 64px; }
   .player-node-name { font-size: 0.6rem; }

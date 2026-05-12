@@ -2,12 +2,13 @@ import { useAuth } from './hooks/useAuth'
 import { useJugadores } from './hooks/useJugadores'
 import { useUsuario } from './hooks/useUsuario'
 import { Auth } from './components/Auth/Auth'
+import { Onboarding } from './components/Auth/Onboarding'
 import { Dashboard } from './components/Dashboard/Dashboard'
 
 export function App() {
   const { user, loading: authLoading, signOut } = useAuth()
   const { jugadores, loading: jugadoresLoading, error: jugadoresError } = useJugadores()
-  const { usuario, loading: usuarioLoading, updateNombre, updateEquipo } = useUsuario(user?.id)
+  const { usuario, loading: usuarioLoading, needsOnboarding, updateNombre, updateEquipo, createProfile } = useUsuario(user?.id)
 
   if (authLoading || jugadoresLoading) {
     return (
@@ -26,13 +27,22 @@ export function App() {
     )
   }
 
-  if (!user) return <Auth jugadores={jugadores} />
+  if (!user) return <Auth />
 
   if (usuarioLoading) {
     return (
       <div className="loading-screen">
         <p>Cargando equipo...</p>
       </div>
+    )
+  }
+
+  if (needsOnboarding) {
+    return (
+      <Onboarding
+        jugadores={jugadores}
+        onComplete={(nombre) => createProfile(nombre, jugadores)}
+      />
     )
   }
 

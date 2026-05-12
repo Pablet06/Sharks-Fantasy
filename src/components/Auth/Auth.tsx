@@ -1,13 +1,8 @@
 import { useState } from 'react'
 import { LoginForm } from './LoginForm'
 import { SignupForm } from './SignupForm'
-import type { Jugador } from '../../types'
 
-interface Props {
-  jugadores: Jugador[]
-}
-
-export function Auth({ jugadores }: Props) {
+export function Auth() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
 
   return (
@@ -19,7 +14,7 @@ export function Auth({ jugadores }: Props) {
       </div>
       {mode === 'login'
         ? <LoginForm onSwitch={() => setMode('signup')} />
-        : <SignupForm jugadores={jugadores} onSwitch={() => setMode('login')} />
+        : <SignupForm onSwitch={() => setMode('login')} />
       }
     </div>
   )

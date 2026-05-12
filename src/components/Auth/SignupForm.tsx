@@ -31,8 +31,8 @@ export function SignupForm({ onSwitch }: Props) {
       <div className="auth-form">
         <h2>Revisa tu email</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.5 }}>
-          Te hemos enviado un enlace de confirmación a <strong style={{ color: '#fff' }}>{email}</strong>.
-          Haz clic en él para activar tu cuenta y luego inicia sesión.
+          Recibirás un email de confirmación de <strong style={{ color: '#fff' }}>Supabase Auth</strong> en <strong style={{ color: '#fff' }}>{email}</strong>.
+          Haz clic en el enlace para activar tu cuenta y luego inicia sesión aquí.
         </p>
         <button type="button" onClick={onSwitch} className="auth-btn" style={{ marginTop: 8 }}>
           Ir al login

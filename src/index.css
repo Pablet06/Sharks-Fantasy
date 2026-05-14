@@ -1411,3 +1411,196 @@ button:focus-visible {
 
   .stats-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ==========================================================================
+   DESKTOP-ONLY / MOBILE-ONLY HELPERS
+   ========================================================================== */
+
+.desktop-only { display: none; }
+/* .mobile-only needs no base rule — elements are visible by default */
+
+/* ==========================================================================
+   DESKTOP LAYOUT (≥768px)
+   ========================================================================== */
+
+@media (min-width: 768px) {
+  /* --- Navigation --- */
+  .bottom-nav   { display: none; }
+  .mobile-only  { display: none; }
+  .desktop-only { display: flex; } /* overridden per-element when block/grid needed */
+
+  .dashboard-main { padding-bottom: 24px; } /* remove bottom-nav clearance */
+
+  /* Desktop nav tabs inside header */
+  .desktop-nav {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .desktop-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 18px;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: color 0.18s, background 0.18s;
+  }
+
+  .desktop-nav-btn:hover {
+    color: #fff;
+  }
+
+  .desktop-nav-btn.active {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: #fff;
+  }
+
+  /* --- Pool 2-column layout --- */
+  .pool-container { max-width: none; }
+
+  .pool-desktop-layout {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  .pool-desktop-layout .pool-container {
+    flex: 0 0 420px;
+    max-width: 420px;
+  }
+
+  .pool-stats-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    max-width: 340px;
+  }
+
+  .pool-stats-panel-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .pool-stats-player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s;
+  }
+
+  .pool-stats-player-row:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--primary);
+  }
+
+  .pool-stats-player-photo {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(0, 210, 255, 0.4);
+    flex-shrink: 0;
+  }
+
+  .pool-stats-player-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .pool-stats-player-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pool-stats-player-pts {
+    font-family: 'Teko', sans-serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* --- Players 2-panel layout --- */
+  .players-browser { max-width: none; }
+
+  .players-desktop-layout {
+    display: flex;
+    gap: 0;
+    max-width: 980px;
+    margin: 0 auto;
+    min-height: 70vh;
+  }
+
+  .players-list-panel {
+    width: 340px;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(0, 210, 255, 0.1);
+    padding-right: 20px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+
+  .players-detail-panel {
+    flex: 1;
+    padding-left: 28px;
+  }
+
+  .players-detail-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 400px;
+    color: var(--text-muted);
+    gap: 12px;
+    text-align: center;
+  }
+
+  .players-detail-placeholder .placeholder-icon {
+    font-size: 3rem;
+    opacity: 0.3;
+  }
+
+  .players-detail-placeholder p {
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* Player card inline (no modal wrapper on desktop) */
+  .player-card-inline {
+    background: linear-gradient(135deg, #1e2a3a, #0a0a1a);
+    border: 1px solid var(--primary);
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 0 50px rgba(0, 210, 255, 0.15);
+  }
+
+  /* --- Wider content areas --- */
+  .ranking  { max-width: 860px; }
+  .profile  { max-width: 680px; }
+}

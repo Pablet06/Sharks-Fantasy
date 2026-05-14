@@ -24,7 +24,6 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
 
   const handleDragStart = (slotIndex: number) => {
     dragSlot.current = slotIndex
-    // Timeout so the browser captures ghost before we dim the source
     setTimeout(() => setDraggingSlot(slotIndex), 0)
   }
 
@@ -74,11 +73,11 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
   }
 
   const goalkeeper = teamPlayers[0]
-  const row1 = teamPlayers.slice(1, 3)
-  const row2 = teamPlayers.slice(3, 6)
-  const row3 = teamPlayers.slice(6, 7)
+  const line2m = teamPlayers.slice(1, 4)
+  const line5m = teamPlayers.slice(4, 6)
+  const lineTop = teamPlayers.slice(6, 7)
 
-  return (
+  const poolContent = (
     <div className="pool-container">
       <div className="team-total-pts">
         <span>{usuario.nombre}</span>
@@ -86,31 +85,79 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
       </div>
 
       <div className="pool">
-        {row3.length > 0 && (
+        <div className="pool-halfline" />
+
+        {lineTop.length > 0 && (
           <div className="pool-row">
-            {row3.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={6 + i} />)}
+            {lineTop.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={6 + i} />)}
           </div>
         )}
-        {row2.length > 0 && (
+
+        {line5m.length > 0 && (
           <div className="pool-row">
-            {row2.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={3 + i} />)}
+            {line5m.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={4 + i} />)}
           </div>
         )}
-        {row1.length > 0 && (
-          <div className="pool-row">
-            {row1.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={1 + i} />)}
-          </div>
+
+        {line2m.length > 0 && (
+          <>
+            <div className="pool-zone-line fivemeter" />
+            <div className="pool-row">
+              {line2m.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={1 + i} />)}
+            </div>
+          </>
         )}
+
+        <div className="pool-zone-line twometer" />
+
         {goalkeeper && (
           <div className="pool-row goalkeeper-row">
             <PlayerNode player={goalkeeper} slotIndex={0} />
           </div>
         )}
+
+        <div className="pool-goal" />
       </div>
 
       <p className="pool-drag-hint">Arrastra los jugadores para intercambiar posiciones</p>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Desktop: pool + stats panel side by side */}
+      <div className="pool-desktop-layout desktop-only">
+        {poolContent}
+
+        <aside className="pool-stats-panel">
+          <p className="pool-stats-panel-title">Tu equipo</p>
+          {teamPlayers.map(player => (
+            <button
+              key={player.id}
+              className="pool-stats-player-row"
+              onClick={() => setSelected(player)}
+            >
+              <img
+                src={player.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'}
+                alt={player.nick || player.name}
+                className="pool-stats-player-photo"
+              />
+              <div className="pool-stats-player-info">
+                <span className="pool-stats-player-name">{player.nick || player.name}</span>
+                <span className={`pos-badge pos-${player.pos.toLowerCase()}`}>{player.pos}</span>
+              </div>
+              <span className="pool-stats-player-pts">{calcTotalPoints(player.historial || [])} pts</span>
+            </button>
+          ))}
+        </aside>
+      </div>
+
+      {/* Mobile: single column (unchanged) */}
+      <div className="mobile-only">
+        {poolContent}
+      </div>
 
       {selected && <PlayerCard jugador={selected} onClose={() => setSelected(null)} />}
-    </div>
+    </>
   )
 }

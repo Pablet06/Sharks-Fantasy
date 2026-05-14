@@ -389,44 +389,91 @@ button:focus-visible {
 .pool {
   position: relative;
   width: 100%;
-  aspect-ratio: 2 / 3;
   background:
     radial-gradient(ellipse at center, rgba(0, 168, 255, 0.18), rgba(0, 168, 255, 0.05) 70%),
     linear-gradient(180deg, rgba(0, 168, 255, 0.08), rgba(0, 168, 255, 0.02));
   border: 4px solid rgba(255, 255, 255, 0.1);
   border-radius: 22px;
-  padding: 22px 16px;
-  display: grid;
-  grid-template-rows: 1fr 1fr 1fr 1fr;
-  gap: 8px;
+  padding: 0 0 6px;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 0;
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
 
-.pool::before {
-  content: '';
+.pool::before,
+.pool::after { display: none; }
+
+/* Half-pool line (green dotted) — fixed at top of pool */
+.pool-halfline {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 0;
   width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-50%);
+  height: 0;
+  border-top: 3px dashed rgba(30, 180, 60, 0.4);
   pointer-events: none;
 }
 
-.pool::after {
+/* Zone lines */
+.pool-zone-line {
+  position: relative;
+  width: 100%;
+  height: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 2px 0;
+}
+
+.pool-zone-line.fivemeter {
+  border-top: 3px dashed rgba(255, 215, 0, 0.85);
+  margin-top: 28px;
+}
+
+.pool-zone-line.twometer {
+  border-top: 3px dashed rgba(220, 30, 30, 0.85);
+}
+
+.pool-zone-label {
+  position: absolute;
+  right: 6px;
+  top: -9px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+/* Goal at bottom */
+.pool-goal {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border-top: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.pool-goal::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 38%;
-  height: 28px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-bottom: none;
-  border-radius: 6px 6px 0 0;
-  pointer-events: none;
+  width: 36%;
+  height: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-top: none;
+  border-radius: 0 0 5px 5px;
 }
 
 .pool-row {
@@ -436,6 +483,7 @@ button:focus-visible {
   gap: 8px;
   position: relative;
   z-index: 1;
+  padding: 10px 10px;
 }
 
 .player-node {
@@ -499,6 +547,10 @@ button:focus-visible {
   padding: 2px 6px;
   border-radius: 8px;
   letter-spacing: 0.3px;
+}
+
+.goalkeeper-row {
+  padding-bottom: 6px;
 }
 
 .goalkeeper-row .player-node {
@@ -1399,7 +1451,9 @@ button:focus-visible {
   .player-node-name { font-size: 0.6rem; }
   .player-node-pts { font-size: 0.55rem; padding: 1px 5px; }
 
-  .pool { padding: 16px 10px; gap: 4px; }
+  .pool { border-width: 4px; }
+  .pool-row { padding: 8px 6px; }
+  .pool-goal { height: 14px; }
 
   .ranking-item {
     grid-template-columns: 44px 1fr auto;
@@ -1591,13 +1645,11 @@ button:focus-visible {
     letter-spacing: 0.5px;
   }
 
-  /* Player card inline (no modal wrapper on desktop) */
-  .player-card-inline {
-    background: linear-gradient(135deg, #1e2a3a, #0a0a1a);
-    border: 1px solid var(--primary);
-    border-radius: 20px;
-    padding: 28px 24px;
-    box-shadow: 0 0 50px rgba(0, 210, 255, 0.15);
+  /* Player card inside the detail panel — remove modal size constraints */
+  .players-detail-panel .player-card-modal {
+    max-width: none;
+    max-height: none;
+    overflow-y: visible;
   }
 
   /* --- Wider content areas --- */

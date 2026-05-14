@@ -131,7 +131,7 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
 
         <aside className="pool-stats-panel">
           <p className="pool-stats-panel-title">Tu equipo</p>
-          {teamPlayers.map(player => (
+          {[...teamPlayers].reverse().map(player => (
             <button
               key={player.id}
               className="pool-stats-player-row"

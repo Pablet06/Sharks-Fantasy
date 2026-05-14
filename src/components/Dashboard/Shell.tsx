@@ -22,6 +22,21 @@ export function Shell({ tab, onTabChange, onSignOut, children }: ShellProps) {
       <header className="dashboard-header">
         <img src="/Sharks-Fantasy/logo.png" alt="Sharks" className="header-logo" />
         <h1 className="header-title">SHARKS FANTASY</h1>
+
+        {/* Desktop nav — hidden on mobile via CSS */}
+        <nav className="desktop-only desktop-nav">
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.tab}
+              className={`desktop-nav-btn ${tab === item.tab ? 'active' : ''}`}
+              onClick={() => onTabChange(item.tab)}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
         <button onClick={onSignOut} className="signout-btn">Salir</button>
       </header>
 
@@ -29,7 +44,8 @@ export function Shell({ tab, onTabChange, onSignOut, children }: ShellProps) {
         {children}
       </main>
 
-      <nav className="bottom-nav">
+      {/* Mobile bottom nav — hidden on desktop via CSS */}
+      <nav className="bottom-nav mobile-only">
         {NAV_ITEMS.map(item => (
           <button
             key={item.tab}

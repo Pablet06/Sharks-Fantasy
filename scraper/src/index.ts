@@ -68,7 +68,7 @@ export async function syncTeamStats(): Promise<void> {
   table.find('tbody tr').each((_, row) => {
     const cols = $(row).find('td')
     if (cols.length === 0) return
-    let rawName = $(cols[idx.name]).text().trim()
+    const rawName = $(cols[idx.name]).text().trim()
     let name = rawName.replace(/^Ver\s+/i, '').replace(/Ver$/i, '').trim()
     if (name.includes('\n')) {
       name = name.split('\n').map((s: string) => s.trim()).filter((s: string) => s.length > 2).pop() || name

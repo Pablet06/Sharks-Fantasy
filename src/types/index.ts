@@ -40,4 +40,5 @@ export interface Usuario {
   equipo: number[]
   puntos: number
   created_at: string
+  is_admin: boolean
 }

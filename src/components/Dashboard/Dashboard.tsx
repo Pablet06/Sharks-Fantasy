@@ -49,18 +49,22 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre,
         )}
       </Shell>
 
-      {/* Hidden admin trigger — fixed bottom-right, invisible */}
-      <span
-        style={{ position: 'fixed', bottom: 8, right: 12, zIndex: 200, fontSize: '0.7rem', color: 'transparent', userSelect: 'none', cursor: 'default' }}
-        onClick={handleAdminTrigger}
-      >·</span>
+      {usuario.is_admin && (
+        <>
+          {/* Hidden admin trigger — fixed bottom-right, invisible */}
+          <span
+            style={{ position: 'fixed', bottom: 8, right: 12, zIndex: 200, fontSize: '0.7rem', color: 'transparent', userSelect: 'none', cursor: 'default' }}
+            onClick={handleAdminTrigger}
+          >·</span>
 
-      {showAdmin && (
-        <AdminPanel
-          jugadores={jugadores}
-          onClose={() => setShowAdmin(false)}
-          onRefresh={() => window.location.reload()}
-        />
+          {showAdmin && (
+            <AdminPanel
+              jugadores={jugadores}
+              onClose={() => setShowAdmin(false)}
+              onRefresh={() => window.location.reload()}
+            />
+          )}
+        </>
       )}
     </>
   )

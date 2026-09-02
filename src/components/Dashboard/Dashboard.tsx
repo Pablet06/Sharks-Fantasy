@@ -21,21 +21,16 @@ interface Props {
 export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre, onUpdateEquipo }: Props) {
   const [tab, setTab] = useState<Tab>('team')
   const [showAdmin, setShowAdmin] = useState(false)
-  const [adminClickCount, setAdminClickCount] = useState(0)
-
-  const handleAdminTrigger = () => {
-    const next = adminClickCount + 1
-    setAdminClickCount(next)
-    if (next >= 2) {
-      setShowAdmin(true)
-      setAdminClickCount(0)
-    }
-    setTimeout(() => setAdminClickCount(0), 800)
-  }
 
   return (
     <>
-      <Shell tab={tab} onTabChange={setTab} onSignOut={onSignOut}>
+      <Shell
+        tab={tab}
+        onTabChange={setTab}
+        onSignOut={onSignOut}
+        isAdmin={usuario.is_admin}
+        onAdminClick={() => setShowAdmin(true)}
+      >
         {tab === 'team'    && <Pool usuario={usuario} jugadores={jugadores} onUpdateEquipo={onUpdateEquipo} />}
         {tab === 'ranking' && <Ranking jugadores={jugadores} currentUserId={usuario.id} />}
         {tab === 'players' && <Players jugadores={jugadores} />}
@@ -49,22 +44,12 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre,
         )}
       </Shell>
 
-      {usuario.is_admin && (
-        <>
-          {/* Hidden admin trigger — fixed bottom-right, invisible */}
-          <span
-            style={{ position: 'fixed', bottom: 8, right: 12, zIndex: 200, fontSize: '0.7rem', color: 'transparent', userSelect: 'none', cursor: 'default' }}
-            onClick={handleAdminTrigger}
-          >·</span>
-
-          {showAdmin && (
-            <AdminPanel
-              jugadores={jugadores}
-              onClose={() => setShowAdmin(false)}
-              onRefresh={() => window.location.reload()}
-            />
-          )}
-        </>
+      {usuario.is_admin && showAdmin && (
+        <AdminPanel
+          jugadores={jugadores}
+          onClose={() => setShowAdmin(false)}
+          onRefresh={() => window.location.reload()}
+        />
       )}
     </>
   )

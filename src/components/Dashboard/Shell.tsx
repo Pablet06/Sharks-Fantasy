@@ -6,6 +6,8 @@ interface ShellProps {
   tab: Tab
   onTabChange: (t: Tab) => void
   onSignOut: () => void
+  isAdmin?: boolean
+  onAdminClick?: () => void
   children: ReactNode
 }
 
@@ -16,7 +18,7 @@ const NAV_ITEMS: { tab: Tab; icon: string; label: string }[] = [
   { tab: 'profile', icon: '👤', label: 'Perfil'     },
 ]
 
-export function Shell({ tab, onTabChange, onSignOut, children }: ShellProps) {
+export function Shell({ tab, onTabChange, onSignOut, isAdmin, onAdminClick, children }: ShellProps) {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -37,6 +39,7 @@ export function Shell({ tab, onTabChange, onSignOut, children }: ShellProps) {
           ))}
         </nav>
 
+        {isAdmin && <button onClick={onAdminClick} className="admin-btn">Admin</button>}
         <button onClick={onSignOut} className="signout-btn">Salir</button>
       </header>
 

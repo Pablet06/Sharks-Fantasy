@@ -320,6 +320,23 @@ button:focus-visible {
   color: var(--bg-dark);
 }
 
+.admin-btn {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  padding: 6px 16px;
+  border-radius: 22px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-right: 8px;
+}
+
+.admin-btn:hover {
+  background: var(--accent);
+  color: var(--bg-dark);
+}
+
 
 .dashboard-main {
   flex: 1;

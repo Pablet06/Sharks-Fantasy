@@ -1,0 +1,156 @@
+import { supabase } from './supabase.js'
+import { getRounds, getRoundMatches, type Round } from './leverade.js'
+import { fetchMatchStats, SHARKS_TEAM_NAME, type RawPlayer } from './fncv.js'
+import { resolvePlayer, type DbPlayer } from './match.js'
+import { calcMatchPoints, EMPTY_STATS, type PlayerStats, type Position } from './points.js'
+import { getTournamentId, setConfig } from './config.js'
+
+const STAT_KEYS = Object.keys(EMPTY_STATS) as (keyof PlayerStats)[]
+
+export function rawToStats(raw: RawPlayer, golesContra: number): PlayerStats {
+  return {
+    partidos: raw.jugo ? 1 : 0,
+    goles: raw.G,
+    goles_penalti: raw.GP,
+    penaltis_fallados: raw.PF,
+    faltas_penalti: raw.P,
+    tarjetas: raw.TA + raw.TR,
+    expulsiones: raw.EX,
+    expulsiones_graves: raw.ED + raw.EB + raw.EN + raw.EP,
+    goles_contra: raw.jugo ? golesContra : 0,
+  }
+}
+
+async function getDbPlayers(): Promise<(DbPlayer & { pos: Position })[]> {
+  const { data, error } = await supabase
+    .from('jugadores')
+    .select('id, name, nick, pos, numero, leverade_id')
+  if (error || !data) throw new Error(`jugadores fetch failed: ${error?.message}`)
+  return data as unknown as (DbPlayer & { pos: Position })[]
+}
+
+export async function syncJornada(
+  tournamentId: string,
+  round: Round,
+  dbPlayers: (DbPlayer & { pos: Position })[],
+): Promise<{ jornada: number; rows: number; unmatched: string[] } | null> {
+  const matches = await getRoundMatches(round.id)
+  const finished = matches.filter(m => m.finished)
+
+  let sharksMatch: Awaited<ReturnType<typeof fetchMatchStats>> | null = null
+  let matchDate: string | null = null
+  for (const m of finished) {
+    const stats = await fetchMatchStats(tournamentId, m.id)
+    if (stats.local === SHARKS_TEAM_NAME || stats.visitante === SHARKS_TEAM_NAME) {
+      sharksMatch = stats
+      matchDate = m.date
+      break
+    }
+  }
+  if (!sharksMatch) return null
+
+  const golesContra =
+    sharksMatch.sharks === 'local' ? sharksMatch.golesVisitante : sharksMatch.golesLocal
+
+  const unmatched: string[] = []
+  const byPlayerId = new Map<number, PlayerStats>()
+  for (const rp of sharksMatch.jugadores) {
+    const db = resolvePlayer(rp, dbPlayers)
+    if (!db) { unmatched.push(`J${round.jornada}: ${rp.nombre} (${rp.leveradeId ?? 'sin id'})`); continue }
+    byPlayerId.set(db.id, rawToStats(rp, golesContra))
+  }
+
+  // Dense historial: every rostered player gets a row, 0s if absent.
+  const upserts = dbPlayers.map(db => {
+    const stats = byPlayerId.get(db.id) ?? { ...EMPTY_STATS }
+    return {
+      jugador_id: db.id,
+      jornada: round.jornada,
+      stats,
+      puntos: calcMatchPoints(db.pos, stats),
+      date: matchDate ?? new Date().toISOString(),
+    }
+  })
+
+  const { error } = await supabase
+    .from('historial')
+    .upsert(upserts, { onConflict: 'jugador_id,jornada' })
+  if (error) throw new Error(`historial upsert J${round.jornada}: ${error.message}`)
+
+  return { jornada: round.jornada, rows: upserts.length, unmatched }
+}
+
+export async function recalc(): Promise<void> {
+  const { data: hist } = await supabase.from('historial').select('jugador_id, stats, puntos')
+  const { data: jugadores } = await supabase.from('jugadores').select('id, numero')
+  const { data: usuarios } = await supabase.from('usuarios').select('id, equipo')
+  if (!hist || !jugadores || !usuarios) throw new Error('recalc: fetch failed')
+
+  // Accumulated stats per player (goles_contra kept at 0 — per-match only).
+  const acc = new Map<number, PlayerStats>()
+  const puntosByPlayer = new Map<number, number>()
+  for (const h of hist) {
+    const cur = acc.get(h.jugador_id) ?? { ...EMPTY_STATS }
+    const s = h.stats as PlayerStats
+    for (const k of STAT_KEYS) cur[k] += s[k] ?? 0
+    cur.goles_contra = 0
+    acc.set(h.jugador_id, cur)
+    puntosByPlayer.set(h.jugador_id, (puntosByPlayer.get(h.jugador_id) ?? 0) + (h.puntos ?? 0))
+  }
+
+  for (const j of jugadores) {
+    await supabase.from('jugadores')
+      .update({ stats: acc.get(j.id) ?? { ...EMPTY_STATS } })
+      .eq('id', j.id)
+  }
+
+  const puntosByNumero = new Map<number, number>()
+  for (const j of jugadores) puntosByNumero.set(j.numero, puntosByPlayer.get(j.id) ?? 0)
+
+  for (const u of usuarios) {
+    const puntos = (u.equipo as number[]).reduce((sum, n) => sum + (puntosByNumero.get(n) ?? 0), 0)
+    await supabase.from('usuarios').update({ puntos }).eq('id', u.id)
+  }
+  console.log(`recalc: ${jugadores.length} jugadores, ${usuarios.length} usuarios`)
+}
+
+export async function runSync(opts: { backfill?: boolean; jornada?: number }): Promise<void> {
+  const tournamentId = await getTournamentId()
+  const dbPlayers = await getDbPlayers()
+  const rounds = await getRounds(tournamentId)
+
+  if (opts.backfill) {
+    console.log('backfill: wiping historial')
+    await supabase.from('historial').delete().neq('jugador_id', -1)
+  }
+
+  const targets = opts.jornada
+    ? rounds.filter(r => r.jornada === opts.jornada)
+    : rounds
+
+  const allUnmatched: string[] = []
+  for (const round of targets) {
+    if (!opts.backfill && !opts.jornada) {
+      // incremental: skip jornadas already present in historial
+      const { count } = await supabase
+        .from('historial')
+        .select('*', { count: 'exact', head: true })
+        .eq('jornada', round.jornada)
+      if ((count ?? 0) > 0) continue
+    }
+    if (opts.jornada) {
+      await supabase.from('historial').delete().eq('jornada', round.jornada)
+    }
+    const res = await syncJornada(tournamentId, round, dbPlayers)
+    if (!res) { console.log(`J${round.jornada}: no finished Sharks match`); continue }
+    console.log(`J${res.jornada}: ${res.rows} rows, ${res.unmatched.length} unmatched`)
+    allUnmatched.push(...res.unmatched)
+  }
+
+  await recalc()
+  await setConfig('last_sync_at', new Date().toISOString())
+  await setConfig('unmatched_players', JSON.stringify(allUnmatched))
+  if (allUnmatched.length) {
+    console.warn('UNMATCHED FEDERATION PLAYERS:\n' + allUnmatched.join('\n'))
+  }
+}

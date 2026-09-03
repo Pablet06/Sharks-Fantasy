@@ -8,22 +8,20 @@ interface Props {
 }
 
 function getKeyStats(pos: Position, stats: PlayerStats) {
+  const base = [
+    { label: 'Faltas penalti', value: stats.faltas_penalti },
+    { label: 'Tarjetas', value: stats.tarjetas },
+    { label: 'Expulsiones', value: stats.expulsiones },
+    { label: 'Expuls. graves', value: stats.expulsiones_graves },
+  ]
   if (pos === 'Portero') {
-    return [
-      { label: 'Paradas', value: stats.paradas },
-      { label: 'G. Encajados', value: stats.goles_contra },
-      { label: 'P. Parados', value: stats.penaltis_parados },
-      { label: 'Tarjetas', value: stats.tarjetas },
-      { label: 'Expulsiones', value: stats.expulsiones },
-    ]
+    return [{ label: 'G. Encajados (equipo)', value: stats.goles_contra }, ...base]
   }
   return [
     { label: 'Goles', value: stats.goles },
-    { label: 'Penaltis', value: stats.penaltis },
-    { label: 'Tiros', value: stats.tiros },
-    { label: 'P. Fallados', value: stats.penaltis_fallados },
-    { label: 'Tarjetas', value: stats.tarjetas },
-    { label: 'Expulsiones', value: stats.expulsiones },
+    { label: 'Goles penalti', value: stats.goles_penalti },
+    { label: 'Penaltis fallados', value: stats.penaltis_fallados },
+    ...base,
   ]
 }
 
@@ -59,22 +57,17 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
       <div className="stats-section-label">Estadísticas generales</div>
       <div className="stats-grid">
         <div className="stat-item"><span>Partidos</span><strong>{s.partidos}</strong></div>
-        {jugador.pos === 'Portero' ? (
-          <>
-            <div className="stat-item"><span>Paradas</span><strong>{s.paradas}</strong></div>
-            <div className="stat-item"><span>G. Encajados</span><strong>{s.goles_contra}</strong></div>
-            <div className="stat-item"><span>P. Parados</span><strong>{s.penaltis_parados}</strong></div>
-          </>
-        ) : (
+        {jugador.pos !== 'Portero' && (
           <>
             <div className="stat-item"><span>Goles</span><strong>{s.goles}</strong></div>
-            <div className="stat-item"><span>Penaltis</span><strong>{s.penaltis}</strong></div>
-            <div className="stat-item"><span>Tiros</span><strong>{s.tiros}</strong></div>
+            <div className="stat-item"><span>Goles penalti</span><strong>{s.goles_penalti}</strong></div>
             <div className="stat-item"><span>P. Fallados</span><strong>{s.penaltis_fallados}</strong></div>
           </>
         )}
+        <div className="stat-item"><span>Faltas penalti</span><strong>{s.faltas_penalti}</strong></div>
         <div className="stat-item"><span>Tarjetas</span><strong>{s.tarjetas}</strong></div>
         <div className="stat-item"><span>Expulsiones</span><strong>{s.expulsiones}</strong></div>
+        <div className="stat-item"><span>Expuls. graves</span><strong>{s.expulsiones_graves}</strong></div>
       </div>
 
       <div className="player-card-total">

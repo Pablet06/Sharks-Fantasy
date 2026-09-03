@@ -14,8 +14,9 @@ export function AdminPanel({ jugadores, onClose, onRefresh }: Props) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [jornada, setJornada] = useState(1)
   const [stats, setStats] = useState({
-    partidos: 0, goles: 0, penaltis: 0, tarjetas: 0, expulsiones: 0,
-    tiros: 0, penaltis_fallados: 0, paradas: 0, goles_contra: 0, penaltis_parados: 0
+    partidos: 0, goles: 0, goles_penalti: 0, penaltis_fallados: 0,
+    faltas_penalti: 0, tarjetas: 0, expulsiones: 0, expulsiones_graves: 0,
+    goles_contra: 0,
   })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -55,7 +56,7 @@ export function AdminPanel({ jugadores, onClose, onRefresh }: Props) {
           return Object.fromEntries(
             Object.keys(acc).map(k => [k, (acc as Record<string,number>)[k] + ((s as Record<string,number>)[k] ?? 0)])
           ) as typeof stats
-        }, { partidos: 0, goles: 0, penaltis: 0, tarjetas: 0, expulsiones: 0, tiros: 0, penaltis_fallados: 0, paradas: 0, goles_contra: 0, penaltis_parados: 0 })
+        }, { partidos: 0, goles: 0, goles_penalti: 0, penaltis_fallados: 0, faltas_penalti: 0, tarjetas: 0, expulsiones: 0, expulsiones_graves: 0, goles_contra: 0 })
 
         await supabase.from('jugadores').update({ stats: totals }).eq('id', jugador.id)
       }

@@ -8,7 +8,7 @@ export function useUsuario(userId: string | undefined) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return }
+    if (!userId) return
 
     supabase
       .from('usuarios')

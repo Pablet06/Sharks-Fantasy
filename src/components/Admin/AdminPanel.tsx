@@ -9,19 +9,7 @@ interface Props {
   onRefresh: () => void
 }
 
-// Generate hash: echo -n 'yourpassword' | sha256sum — store only hash, never plaintext
-const ADMIN_HASH = import.meta.env.VITE_ADMIN_HASH ?? ''
-
-async function sha256(str: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
 export function AdminPanel({ jugadores, onClose, onRefresh }: Props) {
-  const [authed, setAuthed] = useState(false)
-  const [password, setPassword] = useState('')
-  const [authError, setAuthError] = useState(false)
-
   // Stat editor state
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [jornada, setJornada] = useState(1)
@@ -31,16 +19,6 @@ export function AdminPanel({ jugadores, onClose, onRefresh }: Props) {
   })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-
-  const checkPassword = async () => {
-    const hash = await sha256(password)
-    if (hash === ADMIN_HASH) {
-      setAuthed(true)
-    } else {
-      setAuthError(true)
-      setTimeout(() => setAuthError(false), 2000)
-    }
-  }
 
   const handleSaveStats = async () => {
     if (!selectedId) return
@@ -86,27 +64,6 @@ export function AdminPanel({ jugadores, onClose, onRefresh }: Props) {
       onRefresh()
     }
     setSaving(false)
-  }
-
-  if (!authed) {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="admin-auth" onClick={e => e.stopPropagation()}>
-          <h3>Admin Panel</h3>
-          <input
-            type="password"
-            placeholder="Contraseña admin"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && checkPassword()}
-            className="auth-input"
-          />
-          {authError && <p className="auth-error">Contraseña incorrecta</p>}
-          <button onClick={checkPassword} className="auth-btn">Acceder</button>
-          <button onClick={onClose} className="cancel-btn">Cancelar</button>
-        </div>
-      </div>
-    )
   }
 
   const selectedJugador = jugadores.find(j => j.numero === selectedId)

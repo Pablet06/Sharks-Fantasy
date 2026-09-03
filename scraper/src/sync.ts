@@ -24,7 +24,7 @@ export function rawToStats(raw: RawPlayer, golesContra: number): PlayerStats {
 async function getDbPlayers(): Promise<(DbPlayer & { pos: Position })[]> {
   const { data, error } = await supabase
     .from('jugadores')
-    .select('id, name, nick, pos, numero, leverade_id')
+    .select('id, name, nick, pos, leverade_id')
   if (error || !data) throw new Error(`jugadores fetch failed: ${error?.message}`)
   return data as unknown as (DbPlayer & { pos: Position })[]
 }
@@ -98,10 +98,12 @@ export async function recalc(): Promise<void> {
     puntosByPlayer.set(h.jugador_id, (puntosByPlayer.get(h.jugador_id) ?? 0) + (h.puntos ?? 0))
   }
 
+  const failed: string[] = []
   for (const j of jugadores) {
-    await supabase.from('jugadores')
+    const { error } = await supabase.from('jugadores')
       .update({ stats: acc.get(j.id) ?? { ...EMPTY_STATS } })
       .eq('id', j.id)
+    if (error) failed.push(`jugadores id=${j.id}: ${error.message}`)
   }
 
   const puntosByNumero = new Map<number, number>()
@@ -109,8 +111,10 @@ export async function recalc(): Promise<void> {
 
   for (const u of usuarios) {
     const puntos = (u.equipo as number[]).reduce((sum, n) => sum + (puntosByNumero.get(n) ?? 0), 0)
-    await supabase.from('usuarios').update({ puntos }).eq('id', u.id)
+    const { error } = await supabase.from('usuarios').update({ puntos }).eq('id', u.id)
+    if (error) failed.push(`usuarios id=${u.id}: ${error.message}`)
   }
+  if (failed.length) throw new Error(`recalc: ${failed.length} write(s) failed:\n${failed.join('\n')}`)
   console.log(`recalc: ${jugadores.length} jugadores, ${usuarios.length} usuarios`)
 }
 
@@ -129,22 +133,31 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
     : rounds
 
   const allUnmatched: string[] = []
+  const failedJornadas: string[] = []
   for (const round of targets) {
-    if (!opts.backfill && !opts.jornada) {
-      // incremental: skip jornadas already present in historial
-      const { count } = await supabase
-        .from('historial')
-        .select('*', { count: 'exact', head: true })
-        .eq('jornada', round.jornada)
-      if ((count ?? 0) > 0) continue
+    try {
+      if (!opts.backfill && !opts.jornada) {
+        // incremental: skip jornadas already present in historial
+        const { count } = await supabase
+          .from('historial')
+          .select('*', { count: 'exact', head: true })
+          .eq('jornada', round.jornada)
+        if ((count ?? 0) > 0) continue
+      }
+      if (opts.jornada) {
+        await supabase.from('historial').delete().eq('jornada', round.jornada)
+      }
+      const res = await syncJornada(tournamentId, round, dbPlayers)
+      if (!res) { console.log(`J${round.jornada}: no finished Sharks match`); continue }
+      console.log(`J${res.jornada}: ${res.rows} rows, ${res.unmatched.length} unmatched`)
+      allUnmatched.push(...res.unmatched)
+    } catch (e) {
+      // Keep going: a mid-backfill throw must not leave historial half-written
+      // AND jugadores/usuarios stale. Recalc + config writes still run below.
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`J${round.jornada}: sync failed: ${msg}`)
+      failedJornadas.push(`J${round.jornada}: ${msg}`)
     }
-    if (opts.jornada) {
-      await supabase.from('historial').delete().eq('jornada', round.jornada)
-    }
-    const res = await syncJornada(tournamentId, round, dbPlayers)
-    if (!res) { console.log(`J${round.jornada}: no finished Sharks match`); continue }
-    console.log(`J${res.jornada}: ${res.rows} rows, ${res.unmatched.length} unmatched`)
-    allUnmatched.push(...res.unmatched)
   }
 
   await recalc()
@@ -152,5 +165,9 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   await setConfig('unmatched_players', JSON.stringify(allUnmatched))
   if (allUnmatched.length) {
     console.warn('UNMATCHED FEDERATION PLAYERS:\n' + allUnmatched.join('\n'))
+  }
+  if (failedJornadas.length) {
+    console.error('FAILED JORNADAS:\n' + failedJornadas.join('\n'))
+    process.exitCode = 1
   }
 }

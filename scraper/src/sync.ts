@@ -132,6 +132,7 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
 
   const allUnmatched: string[] = []
   const failedJornadas: string[] = []
+  const failedJornadaNums: number[] = []
   const syncedJornadas = new Set<number>()
   for (const round of targets) {
     try {
@@ -155,6 +156,7 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
       const msg = e instanceof Error ? e.message : String(e)
       console.error(`J${round.jornada}: sync failed: ${msg}`)
       failedJornadas.push(`J${round.jornada}: ${msg}`)
+      failedJornadaNums.push(round.jornada)
     }
   }
 
@@ -176,9 +178,11 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   }
 
   if (opts.backfill) {
-    // Drop only jornadas the backfill did NOT rewrite (stale/renumbered rounds).
-    // Failed jornadas keep their prior rows rather than vanishing.
-    const keep = [...syncedJornadas].join(',')
+    // Drop rows only for jornadas that are neither freshly synced nor failed
+    // this run — i.e. genuinely stale (renumbered/removed rounds). A jornada
+    // that failed this run keeps whatever rows it already had; the exit-1
+    // below tells the caller the backfill is incomplete.
+    const keep = [...new Set([...syncedJornadas, ...failedJornadaNums])].join(',')
     const { error } = await supabase.from('historial').delete().not('jornada', 'in', `(${keep})`)
     if (error) throw new Error(`backfill cleanup: ${error.message}`)
   }

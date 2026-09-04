@@ -75,12 +75,17 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
         <strong className="total-pts">{totalPoints} pts</strong>
       </div>
 
-      {(jugador.historial || []).length > 0 && (
+      {(() => {
+        // Historial is dense (a row per rostered player per jornada). Only show
+        // jornadas this player actually dressed for.
+        const played = [...(jugador.historial || [])]
+          .filter(h => h.stats.partidos > 0)
+          .sort((a, b) => a.jornada - b.jornada)
+        return played.length > 0 && (
         <div className="historial-list">
           <h4>Por jornada</h4>
           <ul>
-            {[...(jugador.historial || [])]
-              .sort((a, b) => a.jornada - b.jornada)
+            {played
               .map(h => {
                 const keyStats = getKeyStats(jugador.pos, h.stats).filter(st => st.value > 0)
                 return (
@@ -93,7 +98,7 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
                               {st.label}: {st.value}
                             </span>
                           ))
-                        : <span className="historial-no-stats">Sin estadísticas</span>
+                        : <span className="historial-no-stats">Jugó, sin estadísticas</span>
                       }
                     </div>
                     <span className={h.puntos >= 0 ? 'pts-positive' : 'pts-negative'}>
@@ -104,7 +109,8 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
               })}
           </ul>
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 

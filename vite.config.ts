@@ -7,5 +7,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
+    // Frontend tests only. The scraper has its own vitest project (node env,
+    // file:// fixture loading) run via `cd scraper && npm test`.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 })

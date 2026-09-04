@@ -47,7 +47,10 @@ export async function syncJornada(
       break
     }
   }
-  if (!sharksMatch) return null
+  // Spec A4: a found-but-empty /stats sheet (parse regression, page not yet
+  // populated) must NOT write dense zero rows — incremental mode would then
+  // never revisit the jornada. Treat it like "no match".
+  if (!sharksMatch || sharksMatch.jugadores.length === 0) return null
 
   const golesContra =
     sharksMatch.sharks === 'local' ? sharksMatch.golesVisitante : sharksMatch.golesLocal
@@ -123,17 +126,13 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   const dbPlayers = await getDbPlayers()
   const rounds = await getRounds(tournamentId)
 
-  if (opts.backfill) {
-    console.log('backfill: wiping historial')
-    await supabase.from('historial').delete().neq('jugador_id', -1)
-  }
-
   const targets = opts.jornada
     ? rounds.filter(r => r.jornada === opts.jornada)
     : rounds
 
   const allUnmatched: string[] = []
   const failedJornadas: string[] = []
+  const syncedJornadas = new Set<number>()
   for (const round of targets) {
     try {
       if (!opts.backfill && !opts.jornada) {
@@ -144,20 +143,44 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
           .eq('jornada', round.jornada)
         if ((count ?? 0) > 0) continue
       }
-      if (opts.jornada) {
-        await supabase.from('historial').delete().eq('jornada', round.jornada)
-      }
       const res = await syncJornada(tournamentId, round, dbPlayers)
-      if (!res) { console.log(`J${round.jornada}: no finished Sharks match`); continue }
+      if (!res) { console.log(`J${round.jornada}: no finished Sharks match or empty stats`); continue }
+      // syncJornada upserts all 17 dense rows on (jugador_id, jornada), so an
+      // existing jornada is overwritten in place — no pre-delete needed, and a
+      // jornada that turns out unfinished/empty keeps its prior rows untouched.
+      syncedJornadas.add(res.jornada)
       console.log(`J${res.jornada}: ${res.rows} rows, ${res.unmatched.length} unmatched`)
       allUnmatched.push(...res.unmatched)
     } catch (e) {
-      // Keep going: a mid-backfill throw must not leave historial half-written
-      // AND jugadores/usuarios stale. Recalc + config writes still run below.
       const msg = e instanceof Error ? e.message : String(e)
       console.error(`J${round.jornada}: sync failed: ${msg}`)
       failedJornadas.push(`J${round.jornada}: ${msg}`)
     }
+  }
+
+  // Every jornada threw (network down, Cloudflare block): do NOT wipe, recalc,
+  // or timestamp — that reports false success and, for --backfill, erases the
+  // season. Exit non-zero so CI flags it.
+  if (syncedJornadas.size === 0 && failedJornadas.length > 0) {
+    console.error(`FAILED JORNADAS (all of them):\n${failedJornadas.join('\n')}`)
+    process.exitCode = 1
+    return
+  }
+
+  // Nothing new to write (incremental run, everything already present). The
+  // check succeeded, so bump last_sync_at, but skip recalc/cleanup.
+  if (syncedJornadas.size === 0) {
+    console.log('sync: nothing new')
+    await setConfig('last_sync_at', new Date().toISOString())
+    return
+  }
+
+  if (opts.backfill) {
+    // Drop only jornadas the backfill did NOT rewrite (stale/renumbered rounds).
+    // Failed jornadas keep their prior rows rather than vanishing.
+    const keep = [...syncedJornadas].join(',')
+    const { error } = await supabase.from('historial').delete().not('jornada', 'in', `(${keep})`)
+    if (error) throw new Error(`backfill cleanup: ${error.message}`)
   }
 
   await recalc()

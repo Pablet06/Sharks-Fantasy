@@ -7,7 +7,7 @@ import { Pool } from './Pool'
 import { Ranking } from '../Ranking/Ranking'
 import { Players } from '../Players/Players'
 import { Profile } from '../Profile/Profile'
-import { AdminPanel } from '../Admin/AdminPanel'
+import { AdminView } from '../Admin/AdminView'
 
 interface Props {
   user: User
@@ -23,30 +23,31 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre,
   const [showAdmin, setShowAdmin] = useState(false)
 
   return (
-    <>
-      <Shell
-        tab={tab}
-        onTabChange={setTab}
-        onSignOut={onSignOut}
-        isAdmin={usuario.is_admin}
-        onAdminClick={() => setShowAdmin(true)}
-      >
-        {tab === 'team'    && <Pool usuario={usuario} jugadores={jugadores} onUpdateEquipo={onUpdateEquipo} />}
-        {tab === 'ranking' && <Ranking jugadores={jugadores} currentUserId={usuario.id} />}
-        {tab === 'players' && <Players jugadores={jugadores} />}
-        {tab === 'profile' && (
-          <Profile
-            usuario={usuario}
-            userEmail={user.email ?? ''}
-            onUpdate={onUpdateNombre}
-            onSignOut={onSignOut}
-          />
-        )}
-      </Shell>
-
-      {usuario.is_admin && showAdmin && (
-        <AdminPanel onClose={() => setShowAdmin(false)} />
+    <Shell
+      tab={tab}
+      onTabChange={setTab}
+      onSignOut={onSignOut}
+      isAdmin={usuario.is_admin}
+      onAdminClick={() => setShowAdmin(true)}
+      hideNav={showAdmin}
+    >
+      {showAdmin && usuario.is_admin ? (
+        <AdminView onExit={() => setShowAdmin(false)} />
+      ) : (
+        <>
+          {tab === 'team'    && <Pool usuario={usuario} jugadores={jugadores} onUpdateEquipo={onUpdateEquipo} />}
+          {tab === 'ranking' && <Ranking jugadores={jugadores} currentUserId={usuario.id} />}
+          {tab === 'players' && <Players jugadores={jugadores} />}
+          {tab === 'profile' && (
+            <Profile
+              usuario={usuario}
+              userEmail={user.email ?? ''}
+              onUpdate={onUpdateNombre}
+              onSignOut={onSignOut}
+            />
+          )}
+        </>
       )}
-    </>
+    </Shell>
   )
 }

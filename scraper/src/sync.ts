@@ -83,6 +83,12 @@ export async function syncJornada(
   return { jornada: round.jornada, rows: upserts.length, unmatched }
 }
 
+// ponytail: this duplicates the recalc_puntos() Postgres RPC (Phase B). Kept
+// because the scraper runs headless with the service role and the RPC has an
+// is_admin(auth.uid()) guard. Unify only when the scraper is next touched:
+// either drop the guard for a NULL auth.uid() (service role) or expose an
+// unguarded recalc the scraper alone may call. Parity is verified in the
+// Phase B plan Task 2 Step 3.
 export async function recalc(): Promise<void> {
   const { data: hist } = await supabase.from('historial').select('jugador_id, stats, puntos')
   const { data: jugadores } = await supabase.from('jugadores').select('id, numero')

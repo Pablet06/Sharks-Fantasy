@@ -230,3 +230,8 @@ whole-branch review + scoped re-review of fixes).
 
 frontend `tsc -b` 0 · scraper `tsc --noEmit` 0 · frontend vitest 9/9 ·
 scraper vitest 32/32 · lint clean · `npm run build` passes.
+
+## Phase B — 2026-09-09
+
+Task 5: AdminView shell wired; nav hides on entry; 5 placeholder sections;
+AdminPanel deleted. Manual check passed.

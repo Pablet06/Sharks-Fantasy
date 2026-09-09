@@ -13,6 +13,6 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     // Frontend tests only. The scraper has its own vitest project (node env,
     // file:// fixture loading) run via `cd scraper && npm test`.
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'supabase/functions/**/*.test.ts'],
   },
 })

@@ -45,11 +45,7 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre,
       </Shell>
 
       {usuario.is_admin && showAdmin && (
-        <AdminPanel
-          jugadores={jugadores}
-          onClose={() => setShowAdmin(false)}
-          onRefresh={() => window.location.reload()}
-        />
+        <AdminPanel onClose={() => setShowAdmin(false)} />
       )}
     </>
   )

@@ -158,3 +158,75 @@ npm run sync -- --discover      # list federation players + leverade_id-mapping 
 
 `--backfill` and `--jornada` end with a full `recalc()` (rebuilds
 `jugadores.stats` + `usuarios.puntos`) and bump `config.last_sync_at`.
+
+## Session — 2026-09-08 close
+
+Free-mode session. **Phase A shipped as PR #2** (`feature/federation-sync` →
+`develop`), not yet merged. The 14-task plan
+`docs/superpowers/plans/2026-09-03-federation-sync.md` was executed via
+Subagent-Driven Development (fresh implementer per task + per-task review +
+whole-branch review + scoped re-review of fixes).
+
+### What was done
+
+- Full scraper rewrite landed on the branch (Leverade JSON:API enumeration +
+  cheerio `/stats` parsing, 9-field stat model, new scoring formula shared by
+  `scraper/src/points.ts` and `src/lib/points.ts`, `--backfill / --jornada /
+  --discover` CLI, `discover.ts` split out to break a circular import).
+- Migration `20260904000000_federation_sync.sql` applied to prod
+  (`leverade_id`, `historial` UNIQUE(jugador_id, jornada), `config` table + RLS).
+- Season 25-26 backfilled directly through a browser + Supabase MCP (Cloudflare
+  blocks this repo's IP): 272 `historial` rows over 16 jornadas (J3, J8
+  postponed), `jugadores.stats` rebuilt to the 9-field model,
+  `usuarios.puntos` recalculated (Pablo 301, charly 120 — both were 0).
+- Verified: the 4 Sharks on the federation's public statistics page match the
+  backfill exactly on PJ/G/GP/EX/P/PF; cross-checked all 17 vs the old
+  scraper's accumulated totals.
+- Frontend moved to the new model (`PlayerCard`, `src/lib/points.ts`, types);
+  full admin rework deferred to Phase B.
+- CI: `.github/workflows/scraper.yml` runs the weekly incremental sync.
+
+### Decisions made
+
+- R1 `http.ts` exposes `setRetryBackoffMs()` test hook.
+- R2 `discover.ts` created to break a circular import with `index.ts`.
+- R3 implementers locate edit sites by symbol, not line number.
+- R4 `match.ts` `normalize()` strips a trailing "(c)" captain suffix.
+- R5 `rawToStats` test uses `expulsiones_graves: 2` (plan typo was 3).
+- R6 `--backfill` gets per-round try/catch + `recalc()` error-checking.
+- R7 `package.json` `"build"` → `"tsc -b && vite build"` (bare `tsc` was a
+  no-op under project references).
+- R8 "convocado vs jugó": a player with a dorsal on the match stats sheet
+  counts as `partidos = 1` (matches the federation's PJ column).
+
+### What's left (Phase A)
+
+- User reviews + merges PR #2 to `develop`, then `develop` → `main`.
+- **Risk 1:** `.env` `SUPABASE_SERVICE_ROLE_KEY` is not a real service-role key
+  (46 chars, RLS still applies) — the scraper cannot write. Regenerate the
+  `service_role` secret in Supabase, update the GitHub Actions secret + local
+  `.env`, or the weekly cron fails.
+- **Risk 2:** the scraper's fetch + orchestration path (`syncJornada`, CLI,
+  config read/write) has never run end-to-end — Cloudflare blocks this repo's
+  IP on `waterpolo.fncv.es`. The Saturday cron is its first real execution;
+  watch it.
+- **Risk 3 (data gap):** Jornada 12 (match 143423240) has a roster but zero
+  per-player stats federation-side — stored faithfully (13 players
+  `partidos=1`, else 0).
+- Pre-existing, out of scope: root `package.json` `"test": "vitest"` is watch
+  mode (scraper uses `vitest run`).
+
+### Carry-over notes for Phase B (extended admin panel)
+
+- `config` RLS uses bare `auth.uid()` (should be `(SELECT auth.uid())`) and is
+  `FOR ALL` (should be `FOR INSERT, UPDATE`).
+- `AdminPanel` sums `goles_contra` in accumulation while the scraper forces it
+  to 0.
+- `AdminPanel` never updates `usuarios.puntos` after an edit.
+- `historial.date` gets two formats from two code paths.
+- Spec Subproject B has the design.
+
+### Verification at session end
+
+frontend `tsc -b` 0 · scraper `tsc --noEmit` 0 · frontend vitest 9/9 ·
+scraper vitest 32/32 · lint clean · `npm run build` passes.

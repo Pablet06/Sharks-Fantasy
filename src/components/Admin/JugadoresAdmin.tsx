@@ -55,9 +55,6 @@ export function JugadoresAdmin({ data }: Props) {
       : ''
     if (!confirm(`¿Borrar a ${j.name}? Se borrará también su historial.${warn}`)) return
     setMsg('')
-    // historial rows FK-cascade or must go first depending on the constraint;
-    // delete them explicitly to be safe.
-    await supabase.from('historial').delete().eq('jugador_id', j.id)
     const { error } = await supabase.from('jugadores').delete().eq('id', j.id)
     if (error) { setMsg(`Error: ${error.message}`); return }
     data.refetch()
@@ -77,7 +74,7 @@ export function JugadoresAdmin({ data }: Props) {
             const val = (f: keyof Jugador) => (d[f] ?? j[f] ?? '') as string | number
             return (
               <tr key={j.id}>
-                <td><input type="number" value={val('numero')} onChange={e => patch(j.id, 'numero', Number(e.target.value))} /></td>
+                <td><input type="number" value={val('numero')} onChange={e => patch(j.id, 'numero', e.target.value === '' ? j.numero : Number(e.target.value))} /></td>
                 <td><input value={val('name')} onChange={e => patch(j.id, 'name', e.target.value)} /></td>
                 <td><input value={val('nick')} onChange={e => patch(j.id, 'nick', e.target.value)} /></td>
                 <td>
@@ -87,7 +84,7 @@ export function JugadoresAdmin({ data }: Props) {
                 </td>
                 <td><input value={val('phrase')} onChange={e => patch(j.id, 'phrase', e.target.value)} /></td>
                 <td><input value={val('photo')} onChange={e => patch(j.id, 'photo', e.target.value)} /></td>
-                <td><input type="number" value={val('leverade_id')} onChange={e => patch(j.id, 'leverade_id', Number(e.target.value))} /></td>
+                <td><input type="number" value={val('leverade_id')} onChange={e => patch(j.id, 'leverade_id', e.target.value === '' ? null : Number(e.target.value))} /></td>
                 <td className="admin-row-actions">
                   <button className="admin-subnav-btn" disabled={!draft[j.id]} onClick={() => save(j)}>Guardar</button>
                   <button className="admin-subnav-btn admin-danger" onClick={() => borrar(j)}>Borrar</button>

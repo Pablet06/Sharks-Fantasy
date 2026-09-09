@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { EMPTY_STATS } from '../../lib/points'
 import type { useAdminData } from '../../hooks/useAdminData'
 
 interface Props { data: ReturnType<typeof useAdminData> }
@@ -20,31 +19,35 @@ export function TemporadaAdmin({ data }: Props) {
     setMsg('')
 
     // 1. Export historial as a JSON download (browser Blob).
-    const { data: hist, error: expErr } = await supabase.from('historial').select('*')
-    if (expErr) {
-      setMsg(`Export falló, abortado: ${expErr.message}`)
+    const { data: hist, error: expErr, count } = await supabase.from('historial').select('*', { count: 'exact' })
+    if (expErr || hist == null || hist.length !== count) {
+      setMsg('Export incompleto, abortado — no se ha borrado nada.')
       setBusy(false)
       return
     }
     const blob = new Blob([JSON.stringify(hist, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `historial-${data.config.tournament_id}-${new Date().toISOString().slice(0, 10)}.json`
+    const url = URL.createObjectURL(blob)
+    const a = Object.assign(document.createElement('a'), {
+      href: url,
+      download: `historial-${data.config.tournament_id}-${new Date().toISOString().slice(0, 10)}.json`,
+    })
+    document.body.appendChild(a)
     a.click()
-    URL.revokeObjectURL(a.href)
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
 
     // 2. Wipe.
-    // ponytail: the "match-everything" filters below are load-bearing — Supabase
-    // requires a filter on every delete/update. jornada>=0, id>=0 and
-    // puntos>=INT_MIN all match every row today; revisit if column semantics change.
+    // ponytail: the "match-everything" filter below is load-bearing — Supabase
+    // requires a filter on every delete. jornada>=0 matches every row today;
+    // revisit if column semantics change.
     const del = await supabase.from('historial').delete().gte('jornada', 0)
     if (del.error) {
       setMsg(`Borrado historial falló: ${del.error.message}`)
       setBusy(false)
       return
     }
-    await supabase.from('jugadores').update({ stats: EMPTY_STATS }).gte('id', 0)
-    await supabase.from('usuarios').update({ puntos: 0 }).gte('puntos', -2147483648)
+    const { error: recalcErr } = await supabase.rpc('recalc_puntos')
+    if (recalcErr) { setMsg(`historial borrado pero el recálculo falló: ${recalcErr.message}`); setBusy(false); return }
 
     setMsg('✓ Temporada terminada. historial vaciado, stats y puntos a cero.')
     setConfirmEnd('')

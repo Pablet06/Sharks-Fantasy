@@ -86,7 +86,7 @@ export function HistorialAdmin({ data }: Props) {
     <div className="admin-scroll">
       <h3>Historial por jornada</h3>
       <div className="admin-view-topbar">
-        <label>Jornada <input type="number" min={1} value={jornada} onChange={e => setJornada(Number(e.target.value))} /></label>
+        <label>Jornada <input type="number" min={1} value={jornada} onChange={e => { setEdits({}); setJornada(Number(e.target.value)) }} /></label>
         <span className="admin-msg">Con datos: {allJornadas.join(', ') || '—'}</span>
         <button className="admin-subnav-btn admin-danger" disabled={busy || rows.length === 0} onClick={deleteJornada}>
           Borrar jornada entera

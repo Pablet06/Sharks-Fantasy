@@ -14,8 +14,6 @@ export function useAdminData() {
 
   useEffect(() => {
     let cancelled = false
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true)
     Promise.all([
       supabase.from('jugadores').select('*, historial(*)').order('numero'),
       supabase.from('usuarios').select('*').order('puntos', { ascending: false }),

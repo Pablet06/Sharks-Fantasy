@@ -27,13 +27,12 @@ Pages), and the weekly scraper cron actually working. Then plan Phase B
       found + fixed a data-loss bug — AdminPanel jornada editor never loaded the
       existing historial row, so saving overwrote it with zeros. Editor disabled
       until Phase B (commit `915c83b`).
-- [ ] `develop` → `main` promoted and GitHub Pages deploy verified — DEFERRED by user
+- [x] `develop` → `main` promoted (`60f6f8f`) — GitHub Pages deploy verified (title + fresh JS bundle live at pablet06.github.io/Sharks-Fantasy)
 - [x] `service_role` key done: `sb_secret_…` in local `.env` + GH Actions secret
       (updated 2026-09-09), verified it bypasses RLS on `config`
-- [ ] Scheduled workflow re-enabled on `main` (still `disabled_inactivity`; also
-      `main` still has the OLD scraper.yml until develop→main)
-- [ ] First real weekly sync run observed green (or root-caused)
+- [x] Scheduled workflow re-enabled on `main` (auto-reactivated by the main push; new `scraper.yml` now on main)
+- [ ] First real weekly sync run observed green — **Saturday 2026-09-12 22:00 UTC** (watch: Cloudflare IP block risk, orchestration never run end-to-end)
 - [x] Phase B plan written — `docs/superpowers/plans/2026-09-09-admin-panel.md`
-      (12 tasks + Task 0; covers B1–B4 and all 4 carry-over bugs)
+- [x] **Phase B executed** — PR #3 merged (`5b6309e`). AdminView + 5 sections replace the disabled AdminPanel; `is_admin()`/`recalc_puntos()` on prod; `delete-account` v3; + a CRITICAL security fix (usuarios self-promotion, migration `20260910000000`). All 4 carry-over bugs closed. SDD ledger: `.superpowers/sdd/2026-09-09-admin-panel/progress.md`
 
 ## Sessions

@@ -22,13 +22,18 @@ Pages), and the weekly scraper cron actually working. Then plan Phase B
 
 ## Acceptance criteria
 - [x] PR #2 code-reviewed; blocking findings fixed (H1/H2/H7 + vitest env, commits `bb40138`, `87f2c61`)
-- [ ] PR #2 merged to `develop`
-- [ ] `develop` → `main` promoted and GitHub Pages deploy verified
-- [ ] Scraper cron: real `service_role` key in place (Supabase secret + GH
-      Actions secret + local `.env`); scheduled workflow re-enabled on `main`
+- [x] PR #2 merged to `develop` (merge commit `7715f2a`)
+- [x] Frontend verified locally vs prod DB (Dashboard/PlayerCard/Ranking/Players);
+      found + fixed a data-loss bug — AdminPanel jornada editor never loaded the
+      existing historial row, so saving overwrote it with zeros. Editor disabled
+      until Phase B (commit `915c83b`).
+- [ ] `develop` → `main` promoted and GitHub Pages deploy verified — DEFERRED by user
+- [x] `service_role` key done: `sb_secret_…` in local `.env` + GH Actions secret
+      (updated 2026-09-09), verified it bypasses RLS on `config`
+- [ ] Scheduled workflow re-enabled on `main` (still `disabled_inactivity`; also
+      `main` still has the OLD scraper.yml until develop→main)
 - [ ] First real weekly sync run observed green (or root-caused)
-- [ ] Phase B plan written (extended admin panel + logged carry-over bugs:
-      `config` RLS `auth.uid()`/`FOR ALL`, AdminPanel `goles_contra` sum,
-      AdminPanel not updating `usuarios.puntos`, `historial.date` two formats)
+- [x] Phase B plan written — `docs/superpowers/plans/2026-09-09-admin-panel.md`
+      (12 tasks + Task 0; covers B1–B4 and all 4 carry-over bugs)
 
 ## Sessions

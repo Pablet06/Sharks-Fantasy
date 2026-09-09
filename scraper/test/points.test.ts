@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcMatchPoints, calcTotalPoints, EMPTY_STATS } from './points'
+import { calcMatchPoints, EMPTY_STATS } from '../src/points'
 
 const stats = (o: Partial<typeof EMPTY_STATS>) => ({ ...EMPTY_STATS, ...o })
 
@@ -38,19 +38,5 @@ describe('calcMatchPoints', () => {
   it('goalkeeper still loses points for their own cards/exclusions', () => {
     // 1 + 2 + max(0,10-5) + (-3) = 5
     expect(calcMatchPoints('Portero', stats({ partidos: 1, goles_contra: 5, tarjetas: 1 }))).toBe(5)
-  })
-})
-
-describe('calcTotalPoints', () => {
-  it('sums puntos from historial', () => {
-    expect(calcTotalPoints([
-      { puntos: 5 },
-      { puntos: -2 },
-      { puntos: 10 }
-    ])).toBe(13)
-  })
-
-  it('returns 0 for empty historial', () => {
-    expect(calcTotalPoints([])).toBe(0)
   })
 })

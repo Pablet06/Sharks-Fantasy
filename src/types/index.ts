@@ -1,14 +1,13 @@
 export interface PlayerStats {
   partidos: number
   goles: number
-  penaltis: number
+  goles_penalti: number
+  penaltis_fallados: number
+  faltas_penalti: number
   tarjetas: number
   expulsiones: number
-  tiros: number
-  penaltis_fallados: number
-  paradas: number
+  expulsiones_graves: number
   goles_contra: number
-  penaltis_parados: number
 }
 
 export type Position = 'Portero' | 'Boya' | 'Extremo' | 'Lateral' | 'Contraboya'
@@ -30,6 +29,7 @@ export interface Jugador {
   pos: Position
   phrase: string | null
   photo: string | null
+  leverade_id: number | null
   stats: PlayerStats
   historial?: HistorialEntry[]
 }

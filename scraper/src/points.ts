@@ -1,32 +1,39 @@
 export interface PlayerStats {
   partidos: number
   goles: number
-  penaltis: number
+  goles_penalti: number
+  penaltis_fallados: number
+  faltas_penalti: number
   tarjetas: number
   expulsiones: number
-  tiros: number
-  penaltis_fallados: number
-  paradas: number
+  expulsiones_graves: number
   goles_contra: number
-  penaltis_parados: number
 }
 
 export type Position = 'Portero' | 'Boya' | 'Extremo' | 'Lateral' | 'Contraboya'
 
+export const EMPTY_STATS: PlayerStats = {
+  partidos: 0, goles: 0, goles_penalti: 0, penaltis_fallados: 0,
+  faltas_penalti: 0, tarjetas: 0, expulsiones: 0, expulsiones_graves: 0,
+  goles_contra: 0,
+}
+
 export function calcMatchPoints(pos: Position, s: PlayerStats): number {
   let pts = s.partidos * 1
-  pts += s.tarjetas * -5
+  pts += s.faltas_penalti * -1
   pts += s.expulsiones * -1
+  pts += s.tarjetas * -3
+  pts += s.expulsiones_graves * -5
 
   if (pos === 'Portero') {
-    pts += s.paradas * 2
-    pts += s.goles_contra * -1
-    pts += s.penaltis_parados * 3
+    if (s.partidos > 0) {
+      pts += 2
+      pts += Math.max(0, 10 - s.goles_contra)
+    }
   } else {
-    pts += s.goles * 6
-    pts += s.penaltis * 4
-    pts += s.tiros * 2
-    pts += s.penaltis_fallados * -3
+    pts += s.goles * 5
+    pts += s.goles_penalti * 3
+    pts += s.penaltis_fallados * -2
   }
   return pts
 }

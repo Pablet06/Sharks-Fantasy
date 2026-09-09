@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { resolveTarget } from './resolve-target.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,11 +39,29 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Optional JSON body — { target_user_id?: string }. Absent → caller deletes self.
+    const body = await req.json().catch(() => null) as { target_user_id?: string } | null
+
+    let callerIsAdmin = false
+    {
+      const { data } = await supabase.from('usuarios').select('is_admin').eq('id', user.id).single()
+      callerIsAdmin = !!data?.is_admin
+    }
+
+    const resolved = resolveTarget(user.id, callerIsAdmin, body)
+    if ('error' in resolved) {
+      return new Response(JSON.stringify({ error: resolved.error }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const targetId = resolved.id
+
     // Delete the usuarios row first (FK safe)
     const { error: dbError } = await supabase
       .from('usuarios')
       .delete()
-      .eq('id', user.id)
+      .eq('id', targetId)
 
     if (dbError) {
       console.error('DB delete error:', dbError)
@@ -53,7 +72,7 @@ Deno.serve(async (req) => {
     }
 
     // Delete the auth user
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(targetId)
     if (deleteError) {
       console.error('Auth delete error:', deleteError)
       return new Response(JSON.stringify({ error: 'Failed to delete auth user' }), {

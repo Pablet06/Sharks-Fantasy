@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Usuario } from '../../types'
 import type { useAdminData } from '../../hooks/useAdminData'
@@ -9,6 +9,9 @@ export function UsuariosAdmin({ data }: Props) {
   const [draft, setDraft] = useState<Record<string, Partial<Usuario>>>({})
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+  const [myId, setMyId] = useState<string | null>(null)
+
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id ?? null)) }, [])
 
   const byNumero = new Map(data.jugadores.map(j => [j.numero, j]))
 
@@ -82,7 +85,7 @@ export function UsuariosAdmin({ data }: Props) {
               <tr key={u.id}>
                 <td><input value={draft[u.id]?.nombre ?? u.nombre} onChange={e => patch(u.id, 'nombre', e.target.value)} onBlur={() => saveNombre(u)} /></td>
                 <td>{u.puntos}</td>
-                <td><input type="checkbox" checked={u.is_admin} onChange={() => toggleAdmin(u)} /></td>
+                <td><input type="checkbox" checked={u.is_admin} disabled={u.id === myId} onChange={() => toggleAdmin(u)} /></td>
                 <td>
                   <div className="admin-row-actions">
                     {equipo.map((n, i) => (

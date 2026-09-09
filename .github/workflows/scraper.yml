@@ -18,12 +18,12 @@ jobs:
           cache-dependency-path: scraper/package-lock.json
 
       - name: Install scraper dependencies
-        run: npm install
+        run: npm ci
         working-directory: scraper
 
-      - name: Run stats sync
+      - name: Run stats sync (incremental)
         # No .env file here — env vars injected below. dotenv no-ops on missing file.
-        run: node --import tsx/esm src/index.ts
+        run: npm run sync:prod
         working-directory: scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

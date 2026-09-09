@@ -8,22 +8,20 @@ interface Props {
 }
 
 function getKeyStats(pos: Position, stats: PlayerStats) {
+  const base = [
+    { label: 'Faltas penalti', value: stats.faltas_penalti },
+    { label: 'Tarjetas', value: stats.tarjetas },
+    { label: 'Expulsiones', value: stats.expulsiones },
+    { label: 'Expuls. graves', value: stats.expulsiones_graves },
+  ]
   if (pos === 'Portero') {
-    return [
-      { label: 'Paradas', value: stats.paradas },
-      { label: 'G. Encajados', value: stats.goles_contra },
-      { label: 'P. Parados', value: stats.penaltis_parados },
-      { label: 'Tarjetas', value: stats.tarjetas },
-      { label: 'Expulsiones', value: stats.expulsiones },
-    ]
+    return [{ label: 'G. Encajados (equipo)', value: stats.goles_contra }, ...base]
   }
   return [
     { label: 'Goles', value: stats.goles },
-    { label: 'Penaltis', value: stats.penaltis },
-    { label: 'Tiros', value: stats.tiros },
-    { label: 'P. Fallados', value: stats.penaltis_fallados },
-    { label: 'Tarjetas', value: stats.tarjetas },
-    { label: 'Expulsiones', value: stats.expulsiones },
+    { label: 'Goles penalti', value: stats.goles_penalti },
+    { label: 'Penaltis fallados', value: stats.penaltis_fallados },
+    ...base,
   ]
 }
 
@@ -59,22 +57,17 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
       <div className="stats-section-label">Estadísticas generales</div>
       <div className="stats-grid">
         <div className="stat-item"><span>Partidos</span><strong>{s.partidos}</strong></div>
-        {jugador.pos === 'Portero' ? (
-          <>
-            <div className="stat-item"><span>Paradas</span><strong>{s.paradas}</strong></div>
-            <div className="stat-item"><span>G. Encajados</span><strong>{s.goles_contra}</strong></div>
-            <div className="stat-item"><span>P. Parados</span><strong>{s.penaltis_parados}</strong></div>
-          </>
-        ) : (
+        {jugador.pos !== 'Portero' && (
           <>
             <div className="stat-item"><span>Goles</span><strong>{s.goles}</strong></div>
-            <div className="stat-item"><span>Penaltis</span><strong>{s.penaltis}</strong></div>
-            <div className="stat-item"><span>Tiros</span><strong>{s.tiros}</strong></div>
+            <div className="stat-item"><span>Goles penalti</span><strong>{s.goles_penalti}</strong></div>
             <div className="stat-item"><span>P. Fallados</span><strong>{s.penaltis_fallados}</strong></div>
           </>
         )}
+        <div className="stat-item"><span>Faltas penalti</span><strong>{s.faltas_penalti}</strong></div>
         <div className="stat-item"><span>Tarjetas</span><strong>{s.tarjetas}</strong></div>
         <div className="stat-item"><span>Expulsiones</span><strong>{s.expulsiones}</strong></div>
+        <div className="stat-item"><span>Expuls. graves</span><strong>{s.expulsiones_graves}</strong></div>
       </div>
 
       <div className="player-card-total">
@@ -82,12 +75,17 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
         <strong className="total-pts">{totalPoints} pts</strong>
       </div>
 
-      {(jugador.historial || []).length > 0 && (
+      {(() => {
+        // Historial is dense (a row per rostered player per jornada). Only show
+        // jornadas this player actually dressed for.
+        const played = [...(jugador.historial || [])]
+          .filter(h => h.stats.partidos > 0)
+          .sort((a, b) => a.jornada - b.jornada)
+        return played.length > 0 && (
         <div className="historial-list">
           <h4>Por jornada</h4>
           <ul>
-            {[...(jugador.historial || [])]
-              .sort((a, b) => a.jornada - b.jornada)
+            {played
               .map(h => {
                 const keyStats = getKeyStats(jugador.pos, h.stats).filter(st => st.value > 0)
                 return (
@@ -100,7 +98,7 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
                               {st.label}: {st.value}
                             </span>
                           ))
-                        : <span className="historial-no-stats">Sin estadísticas</span>
+                        : <span className="historial-no-stats">Jugó, sin estadísticas</span>
                       }
                     </div>
                     <span className={h.puntos >= 0 ? 'pts-positive' : 'pts-negative'}>
@@ -111,7 +109,8 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
               })}
           </ul>
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 

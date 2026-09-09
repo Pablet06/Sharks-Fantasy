@@ -9,6 +9,45 @@ interface Props {
   onUpdateEquipo: (equipo: number[]) => Promise<unknown>
 }
 
+interface PlayerNodeProps {
+  player: Jugador
+  slotIndex: number
+  draggingSlot: number | null
+  dragOverSlot: number | null
+  handleDragStart: (slotIndex: number) => void
+  handleDrop: (dropSlotIndex: number) => void
+  handleDragEnd: () => void
+  setSelected: (player: Jugador) => void
+  setDragOverSlot: (slotIndex: number | null) => void
+}
+
+function PlayerNode({ player, slotIndex, draggingSlot, dragOverSlot, handleDragStart, handleDrop, handleDragEnd, setSelected, setDragOverSlot }: PlayerNodeProps) {
+  const isDragging = draggingSlot === slotIndex
+  const isOver = dragOverSlot === slotIndex && draggingSlot !== slotIndex
+
+  return (
+    <button
+      className={`player-node ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''}`}
+      draggable
+      onClick={() => setSelected(player)}
+      onDragStart={() => handleDragStart(slotIndex)}
+      onDragEnter={e => { e.preventDefault(); setDragOverSlot(slotIndex) }}
+      onDragOver={e => e.preventDefault()}
+      onDrop={() => handleDrop(slotIndex)}
+      onDragEnd={handleDragEnd}
+      title="Arrastra para intercambiar posición"
+    >
+      <img
+        src={player.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'}
+        alt={player.nick || player.name}
+        className="player-node-photo"
+      />
+      <span className="player-node-name">{player.nick || player.name}</span>
+      <span className="player-node-pts">{calcTotalPoints(player.historial || [])} pts</span>
+    </button>
+  )
+}
+
 export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
   const [selected, setSelected] = useState<Jugador | null>(null)
   const [localEquipo, setLocalEquipo] = useState<number[]>(usuario.equipo)
@@ -45,32 +84,7 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
     setDragOverSlot(null)
   }
 
-  const PlayerNode = ({ player, slotIndex }: { player: Jugador; slotIndex: number }) => {
-    const isDragging = draggingSlot === slotIndex
-    const isOver = dragOverSlot === slotIndex && draggingSlot !== slotIndex
-
-    return (
-      <button
-        className={`player-node ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''}`}
-        draggable
-        onClick={() => setSelected(player)}
-        onDragStart={() => handleDragStart(slotIndex)}
-        onDragEnter={e => { e.preventDefault(); setDragOverSlot(slotIndex) }}
-        onDragOver={e => e.preventDefault()}
-        onDrop={() => handleDrop(slotIndex)}
-        onDragEnd={handleDragEnd}
-        title="Arrastra para intercambiar posición"
-      >
-        <img
-          src={player.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'}
-          alt={player.nick || player.name}
-          className="player-node-photo"
-        />
-        <span className="player-node-name">{player.nick || player.name}</span>
-        <span className="player-node-pts">{calcTotalPoints(player.historial || [])} pts</span>
-      </button>
-    )
-  }
+  const nodeProps = { draggingSlot, dragOverSlot, handleDragStart, handleDrop, handleDragEnd, setSelected, setDragOverSlot }
 
   const goalkeeper = teamPlayers[0]
   const line2m = teamPlayers.slice(1, 4)
@@ -89,13 +103,13 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
 
         {lineTop.length > 0 && (
           <div className="pool-row">
-            {lineTop.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={6 + i} />)}
+            {lineTop.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={6 + i} {...nodeProps} />)}
           </div>
         )}
 
         {line5m.length > 0 && (
           <div className="pool-row">
-            {line5m.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={4 + i} />)}
+            {line5m.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={4 + i} {...nodeProps} />)}
           </div>
         )}
 
@@ -103,7 +117,7 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
           <>
             <div className="pool-zone-line fivemeter" />
             <div className="pool-row">
-              {line2m.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={1 + i} />)}
+              {line2m.map((p, i) => <PlayerNode key={p.id} player={p} slotIndex={1 + i} {...nodeProps} />)}
             </div>
           </>
         )}
@@ -112,7 +126,7 @@ export function Pool({ usuario, jugadores, onUpdateEquipo }: Props) {
 
         {goalkeeper && (
           <div className="pool-row goalkeeper-row">
-            <PlayerNode player={goalkeeper} slotIndex={0} />
+            <PlayerNode player={goalkeeper} slotIndex={0} {...nodeProps} />
           </div>
         )}
 

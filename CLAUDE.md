@@ -25,18 +25,20 @@ Un juego de fantasy basado en la liga de waterpolo del equipo "Los Sharks". Cada
 ## Commands
 
 ### Dev
-N/A — static frontend + Node.js scraper (`node scraper/server.js`)
+`npm run dev` (Vite, http://localhost:5173) — needs `.env` with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+Scraper sync (manual): `cd scraper && npm run sync`
 
 ### Test
-N/A
+`npm run test` (Vitest) · `npm run lint` (ESLint) · `npm run build`
 
 ## Stack
-- **Frontend**: Vanilla HTML/CSS/JavaScript (`index.html`)
-- **Scraper/Backend**: Node.js (`scraper/`)
+- **Frontend**: React 19 + TypeScript + Vite, deployed as a static build to GitHub Pages via `.github/workflows/deploy.yml`
+- **Backend**: Supabase (Postgres + Auth + RLS + Edge Functions in `supabase/functions/`) — no custom server
+- **Scraper**: Node.js + TypeScript (`scraper/src/`), run on a weekly GitHub Actions cron (`.github/workflows/scraper.yml`), writes via the Supabase service role key
 - No Python — skip all Python toolchain steps
 
 ## Architecture
-See `docs/ADRs.md` for architecture decision records (maintained by the `architect-deployer` agent). Deployment topology and resource configuration live in IaC files (`terraform/`, `cdk/`).
+See `docs/ADRs.md` for architecture decision records. No IaC — infra is entirely managed through the Supabase and GitHub Pages dashboards/CLIs; there is no `terraform/`/`cdk/` in this repo.
 
 ## Workflow
 

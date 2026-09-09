@@ -1673,3 +1673,20 @@ button:focus-visible {
   .ranking  { max-width: 860px; }
   .profile  { max-width: 680px; }
 }
+
+/* ===== Admin (Phase B) ===== */
+.admin-view { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.admin-view-topbar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1rem; }
+.admin-back-btn { background: none; border: 1px solid currentColor; border-radius: 999px; padding: .35rem .8rem; color: inherit; cursor: pointer; }
+.admin-subnav { display: flex; flex-wrap: wrap; gap: .4rem; }
+.admin-subnav-btn { background: var(--bg-card); border: 0; border-radius: 999px; padding: .35rem .8rem; color: inherit; cursor: pointer; }
+.admin-subnav-btn.active { background: var(--primary); color: var(--bg-dark); font-weight: 700; }
+.admin-section-body { display: flex; flex-direction: column; gap: 1rem; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.admin-table th, .admin-table td { padding: .4rem .5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
+.admin-table input, .admin-table select { width: 100%; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; color: inherit; padding: .25rem .4rem; }
+.admin-row-actions { display: flex; gap: .4rem; }
+.admin-danger { color: var(--error); border-color: var(--error) !important; }
+.admin-view .admin-msg { margin: 0; padding: 0; background: none; border: 0; color: inherit; opacity: .8; }
+.admin-view .admin-msg.admin-error { color: var(--error); opacity: 1; }
+.admin-scroll { overflow-x: auto; }

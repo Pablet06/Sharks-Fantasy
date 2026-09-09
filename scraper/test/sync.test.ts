@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 // touches no DB, so a bare stub is enough.
 vi.mock('../src/supabase', () => ({ supabase: {} }))
 
-import { rawToStats } from '../src/sync'
+import { rawToStats, runSync, staleJornadas } from '../src/sync'
 import type { RawPlayer } from '../src/fncv'
 
 const raw = (o: Partial<RawPlayer>): RawPlayer => ({
@@ -31,5 +31,28 @@ describe('rawToStats', () => {
 
   it('sets partidos 0 when the player did not dress', () => {
     expect(rawToStats(raw({ jugo: false }), 9).partidos).toBe(0)
+  })
+})
+
+describe('runSync guards', () => {
+  it('rejects --backfill combined with --jornada (would wipe every other jornada)', async () => {
+    await expect(runSync({ backfill: true, jornada: 5 })).rejects.toThrow(
+      /mutuamente excluyentes/,
+    )
+  })
+})
+
+describe('staleJornadas', () => {
+  it('returns only historial jornadas absent from the current Leverade calendar', () => {
+    expect(staleJornadas([1, 2, 3], [1, 2, 3, 4, 99])).toEqual([4, 99])
+  })
+
+  it('keeps a calendar jornada that produced no rows this run', () => {
+    // J3 is a postponed round: still on the calendar, synced 0 rows — must not be deleted.
+    expect(staleJornadas([1, 2, 3], [1, 2, 3])).toEqual([])
+  })
+
+  it('deletes nothing when the calendar came back empty (failed enumeration)', () => {
+    expect(staleJornadas([], [1, 2, 3])).toEqual([])
   })
 })

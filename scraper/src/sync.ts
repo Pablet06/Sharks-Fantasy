@@ -121,7 +121,20 @@ export async function recalc(): Promise<void> {
   console.log(`recalc: ${jugadores.length} jugadores, ${usuarios.length} usuarios`)
 }
 
+/** historial jornadas that are no longer on the current Leverade calendar. */
+export function staleJornadas(calendarJornadas: number[], historialJornadas: number[]): number[] {
+  // Empty calendar = failed enumeration, not "every jornada is stale". Never delete.
+  if (calendarJornadas.length === 0) return []
+  const keep = new Set(calendarJornadas)
+  return [...new Set(historialJornadas)].filter(j => !keep.has(j))
+}
+
 export async function runSync(opts: { backfill?: boolean; jornada?: number }): Promise<void> {
+  if (opts.backfill && opts.jornada != null) {
+    // --backfill rewrites the whole season; the post-loop cleanup would then
+    // delete every jornada except the one --jornada narrowed us to.
+    throw new Error('runSync: --backfill y --jornada son mutuamente excluyentes')
+  }
   const tournamentId = await getTournamentId()
   const dbPlayers = await getDbPlayers()
   const rounds = await getRounds(tournamentId)
@@ -132,7 +145,6 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
 
   const allUnmatched: string[] = []
   const failedJornadas: string[] = []
-  const failedJornadaNums: number[] = []
   const syncedJornadas = new Set<number>()
   for (const round of targets) {
     try {
@@ -156,7 +168,6 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
       const msg = e instanceof Error ? e.message : String(e)
       console.error(`J${round.jornada}: sync failed: ${msg}`)
       failedJornadas.push(`J${round.jornada}: ${msg}`)
-      failedJornadaNums.push(round.jornada)
     }
   }
 
@@ -178,13 +189,21 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   }
 
   if (opts.backfill) {
-    // Drop rows only for jornadas that are neither freshly synced nor failed
-    // this run — i.e. genuinely stale (renumbered/removed rounds). A jornada
-    // that failed this run keeps whatever rows it already had; the exit-1
-    // below tells the caller the backfill is incomplete.
-    const keep = [...new Set([...syncedJornadas, ...failedJornadaNums])].join(',')
-    const { error } = await supabase.from('historial').delete().not('jornada', 'in', `(${keep})`)
-    if (error) throw new Error(`backfill cleanup: ${error.message}`)
+    // Drop rows only for jornadas no longer on the Leverade calendar
+    // (renumbered/removed rounds). A calendar jornada that failed or returned
+    // no rows this run keeps whatever it already had; exit-1 below flags the
+    // incomplete backfill.
+    const { data: histRows, error: readErr } = await supabase.from('historial').select('jornada')
+    if (readErr) throw new Error(`backfill cleanup read: ${readErr.message}`)
+    const stale = staleJornadas(
+      rounds.map(r => r.jornada),
+      (histRows ?? []).map(h => h.jornada as number),
+    )
+    if (stale.length) {
+      const { error } = await supabase.from('historial').delete().in('jornada', stale)
+      if (error) throw new Error(`backfill cleanup: ${error.message}`)
+      console.log(`backfill cleanup: dropped stale jornada(s) ${stale.join(', ')}`)
+    }
   }
 
   await recalc()

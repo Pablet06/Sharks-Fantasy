@@ -74,14 +74,18 @@ export function parseMatchStats(html: string): MatchStats {
   const golesLocal = goalNums[0] ?? 0
   const golesVisitante = goalNums[1] ?? 0
 
-  // Two player tables, each preceded by an <h4 class="... h5"> with the team name.
-  const headings = $('h4.h5')
-    .map((_, el) => $(el).text().replace(/\s+/g, ' ').trim())
-    .get()
-
+  // Each player table sits in a .ml-table wrapper directly preceded by an
+  // <h4 class="... h5"> with the team name. Match by DOM proximity, not by a
+  // page-wide h4.h5 index — an extra heading elsewhere would shift that.
   const teams: { name: string; players: RawPlayer[] }[] = []
-  $('table.tabletype-public').each((tableIdx, table) => {
-    const name = headings[tableIdx] ?? ''
+  $('table.tabletype-public').each((_tableIdx, table) => {
+    const name = $(table)
+      .closest('.ml-table')
+      .prevAll('h4.h5')
+      .first()
+      .text()
+      .replace(/\s+/g, ' ')
+      .trim()
     const players: RawPlayer[] = []
 
     $(table)

@@ -47,4 +47,16 @@ describe('parseMatchStats', () => {
     expect(m.jugadores.every(p => !p.nombre.includes('MILO MARABESE'))).toBe(true)
     expect(m.jugadores.every(p => p.leveradeId !== null)).toBe(true)
   })
+
+  it('matches team tables by DOM proximity, not global heading index', () => {
+    // An extra <h4 class="h5"> anywhere above the stat tables must not shift
+    // the heading-to-table mapping (FNCV/Clupik could add one to the template).
+    const perturbed = html.replace(
+      '<h3 class="h4 padd padd-top">Estadísticas</h3>',
+      '<h4 class="h5">Patrocinador</h4><h3 class="h4 padd padd-top">Estadísticas</h3>',
+    )
+    const p = parseMatchStats(perturbed)
+    expect(p.jugadores).toHaveLength(14)
+    expect(p.jugadores.every(pl => !pl.nombre.includes('MILO MARABESE'))).toBe(true)
+  })
 })

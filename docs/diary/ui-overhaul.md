@@ -20,3 +20,19 @@
 - Push to `main` to trigger GitHub Pages deploy.
 - Deploy the account-deletion Edge Function to Supabase.
 - User must add GitHub Secrets for CI/CD (manual step).
+
+## 2026-05-11 — style-C overhaul completado
+
+Ejecutado el plan `docs/superpowers/plans/2026-05-11-style-c-overhaul.md`
+(spec `docs/superpowers/specs/2026-05-11-style-c-overhaul-design.md`):
+
+- `Shell.tsx` — chrome de layout: header slim + nav flotante inferior (mobile) +
+  nav superior en desktop (commits `264fbc2`, `938f7a2`, `a95361b`).
+- `Dashboard.tsx` — orquestador fino que monta la pestaña activa dentro de `Shell`.
+- `Ranking.tsx` — lista con medallas 🥇🥈🥉 y bordes oro/plata/bronce (`ec30d64`).
+- `Players.tsx` — chips de filtro por posición + layout de 2 paneles en desktop (`57f4ac1`).
+- `Profile.tsx` — sin cambios estructurales; `Shell` lo enmarca (por diseño).
+- `index.css` — `.bottom-nav`, `.filter-chip`, `.rank-gold/silver/bronze` + layouts desktop.
+- `supabase/functions/delete-account/` creada y desplegada.
+
+Todo en `develop` y `main`. Rediseño de UI cerrado.

@@ -13,9 +13,9 @@ Sharks Fantasy: fantasy game sobre la liga de waterpolo del equipo "Los Sharks".
 - Fases ya completadas y documentadas en `docs/superpowers/plans/`: migración a Supabase, refactor a React, automatización del scraper, rediseño de UI (estilo "C" — nav flotante inmersivo).
 - Auditoría completa del estado del código, seguridad y estructura: sesión 2026-09-02/03 (ver `docs/ADRs.md` ADR-004 para el hallazgo de seguridad que salió de ahí, ya corregido).
 
-## Qué falta del rediseño de UI (de `docs/diary/ui-overhaul.md`)
+## Rediseño de UI — completado
 
-- Overhaul de estilo "C" completo solo en Pool + PlayerCard. Dashboard shell, Ranking, Players y Profile no se han pasado a ese estilo todavía.
+- Overhaul de estilo "C" aplicado a todas las pantallas: Pool, PlayerCard, Dashboard shell (nav flotante), Ranking (medallas), Players (chips de filtro) y Profile. Ver `docs/superpowers/plans/2026-05-11-style-c-overhaul.md` y `docs/diary/ui-overhaul.md`.
 
 ## No es un plan de features futuras
 

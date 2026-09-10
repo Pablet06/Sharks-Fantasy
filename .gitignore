@@ -30,10 +30,12 @@ scraper/debug_*.js
 # Legacy backup
 index.html.legacy.bak
 
-# Editor directories and files
+# Editor / local tooling directories
 .vscode/*
 !.vscode/extensions.json
 .idea
+.obsidian/
+.claude/
 .DS_Store
 *.suo
 *.ntvs*

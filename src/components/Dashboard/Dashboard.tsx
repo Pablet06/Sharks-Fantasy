@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import type { Jugador, Usuario } from '../../types'
 import { Shell } from './Shell'
 import type { Tab } from './Shell'
-import { Pool } from './Pool'
+import { Draft } from './Draft'
 import { Ranking } from '../Ranking/Ranking'
 import { Players } from '../Players/Players'
 import { Profile } from '../Profile/Profile'
@@ -15,10 +15,9 @@ interface Props {
   jugadores: Jugador[]
   onSignOut: () => void
   onUpdateNombre: (nombre: string) => Promise<unknown>
-  onUpdateEquipo: (equipo: number[]) => Promise<unknown>
 }
 
-export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre, onUpdateEquipo }: Props) {
+export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre }: Props) {
   const [tab, setTab] = useState<Tab>('team')
   const [showAdmin, setShowAdmin] = useState(false)
 
@@ -35,7 +34,7 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre,
         <AdminView onExit={() => setShowAdmin(false)} />
       ) : (
         <>
-          {tab === 'team'    && <Pool usuario={usuario} jugadores={jugadores} onUpdateEquipo={onUpdateEquipo} />}
+          {tab === 'team'    && <Draft usuario={usuario} jugadores={jugadores} />}
           {tab === 'ranking' && <Ranking jugadores={jugadores} currentUserId={usuario.id} />}
           {tab === 'players' && <Players jugadores={jugadores} />}
           {tab === 'profile' && (

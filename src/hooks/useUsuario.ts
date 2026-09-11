@@ -33,13 +33,6 @@ export function useUsuario(userId: string | undefined) {
     return error
   }
 
-  const updateEquipo = async (equipo: number[]): Promise<unknown> => {
-    if (!userId) return
-    const { error } = await supabase.from('usuarios').update({ equipo }).eq('id', userId)
-    if (!error) setUsuario(prev => prev ? { ...prev, equipo } : null)
-    return error
-  }
-
   const createProfile = async (nombre: string, jugadores: import('../types').Jugador[]): Promise<unknown> => {
     if (!userId) return
     const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5)
@@ -59,5 +52,5 @@ export function useUsuario(userId: string | undefined) {
     return error
   }
 
-  return { usuario, loading, needsOnboarding, updateNombre, updateEquipo, createProfile }
+  return { usuario, loading, needsOnboarding, updateNombre, createProfile }
 }

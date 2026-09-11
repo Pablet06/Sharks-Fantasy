@@ -2,9 +2,10 @@ import { describe, it, expect, vi } from 'vitest'
 
 // sync.ts imports ./supabase, which throws at load without env vars. rawToStats
 // touches no DB, so a bare stub is enough.
-vi.mock('../src/supabase', () => ({ supabase: {} }))
+vi.mock('../src/supabase', () => ({ supabase: { rpc: vi.fn() } }))
 
-import { rawToStats, runSync, staleJornadas } from '../src/sync'
+import { supabase } from '../src/supabase'
+import { rawToStats, resultadoJornada, resolverJornadas, runSync, staleJornadas } from '../src/sync'
 import type { RawPlayer } from '../src/fncv'
 
 const raw = (o: Partial<RawPlayer>): RawPlayer => ({
@@ -54,5 +55,47 @@ describe('staleJornadas', () => {
 
   it('deletes nothing when the calendar came back empty (failed enumeration)', () => {
     expect(staleJornadas([], [1, 2, 3])).toEqual([])
+  })
+})
+
+describe('resultadoJornada', () => {
+  it('gana cuando marcamos más goles que el rival', () => {
+    expect(resultadoJornada(10, 7)).toBe('gana')
+  })
+
+  it('pierde cuando marcamos menos', () => {
+    expect(resultadoJornada(5, 9)).toBe('pierde')
+  })
+
+  it('empata a los mismos goles', () => {
+    expect(resultadoJornada(8, 8)).toBe('empata')
+  })
+})
+
+describe('resolverJornadas', () => {
+  it('llama a resolver_jornada una vez por cada jornada sincronizada', async () => {
+    const rpc = vi.mocked(supabase.rpc)
+    rpc.mockClear()
+    rpc.mockResolvedValue({ error: null } as never)
+
+    await resolverJornadas([3, 5])
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'resolver_jornada', { p_jornada: 3 })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'resolver_jornada', { p_jornada: 5 })
+  })
+
+  it('sigue con las demás jornadas si una falla, sin lanzar', async () => {
+    const rpc = vi.mocked(supabase.rpc)
+    rpc.mockClear()
+    rpc.mockResolvedValueOnce({ error: { message: 'boom' } } as never)
+    rpc.mockResolvedValueOnce({ error: null } as never)
+    const prevExitCode = process.exitCode
+    process.exitCode = undefined
+
+    await expect(resolverJornadas([1, 2])).resolves.toBeUndefined()
+    expect(rpc).toHaveBeenCalledTimes(2)
+    expect(process.exitCode).toBe(1)
+
+    process.exitCode = prevExitCode
   })
 })

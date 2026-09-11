@@ -7,6 +7,8 @@ interface Props { data: ReturnType<typeof useAdminData> }
 export function SyncAdmin({ data }: Props) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [jornadaInput, setJornadaInput] = useState('')
+  const [resolviendo, setResolviendo] = useState(false)
 
   const jornadas = new Set(
     data.jugadores.flatMap(j => (j.historial ?? []).map(h => h.jornada))
@@ -27,6 +29,17 @@ export function SyncAdmin({ data }: Props) {
     setBusy(false)
   }
 
+  const resolverJornada = async () => {
+    const n = Number(jornadaInput)
+    if (!n) return
+    setResolviendo(true)
+    setMsg('')
+    const { error } = await supabase.rpc('resolver_jornada', { p_jornada: n })
+    setMsg(error ? `Error: ${error.message}` : `✓ Jornada ${n} resuelta`)
+    if (!error) data.refetch()
+    setResolviendo(false)
+  }
+
   return (
     <div>
       <h3>Estado de sincronización</h3>
@@ -38,6 +51,19 @@ export function SyncAdmin({ data }: Props) {
       <button onClick={recalc} disabled={busy} className="admin-subnav-btn">
         {busy ? 'Recalculando…' : 'Recalcular puntos'}
       </button>
+      <div className="admin-view-topbar">
+        <label>
+          Jornada:
+          <input
+            type="number"
+            value={jornadaInput}
+            onChange={e => setJornadaInput(e.target.value)}
+          />
+        </label>
+        <button onClick={resolverJornada} disabled={resolviendo || !jornadaInput} className="admin-subnav-btn">
+          {resolviendo ? 'Resolviendo…' : 'Reprocesar jornada'}
+        </button>
+      </div>
       {msg && <p className="admin-msg">{msg}</p>}
       <p className="admin-msg">
         Para re-sincronizar con la federación: <code>npm run sync</code> en local,

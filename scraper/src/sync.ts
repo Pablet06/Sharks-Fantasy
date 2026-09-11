@@ -21,6 +21,12 @@ export function rawToStats(raw: RawPlayer, golesContra: number): PlayerStats {
   }
 }
 
+export function resultadoJornada(golesFavor: number, golesContra: number): 'gana' | 'pierde' | 'empata' {
+  if (golesFavor > golesContra) return 'gana'
+  if (golesFavor < golesContra) return 'pierde'
+  return 'empata'
+}
+
 async function getDbPlayers(): Promise<(DbPlayer & { pos: Position })[]> {
   const { data, error } = await supabase
     .from('jugadores')
@@ -55,6 +61,9 @@ export async function syncJornada(
   const golesContra =
     sharksMatch.sharks === 'local' ? sharksMatch.golesVisitante : sharksMatch.golesLocal
 
+  const golesFavor =
+    sharksMatch.sharks === 'local' ? sharksMatch.golesLocal : sharksMatch.golesVisitante
+
   const unmatched: string[] = []
   const byPlayerId = new Map<number, PlayerStats>()
   for (const rp of sharksMatch.jugadores) {
@@ -74,6 +83,17 @@ export async function syncJornada(
       date: matchDate ?? new Date().toISOString(),
     }
   })
+
+  const { error: jError } = await supabase
+    .from('jornadas')
+    .upsert({
+      numero: round.jornada,
+      fecha_partido: matchDate,
+      resultado: resultadoJornada(golesFavor, golesContra),
+      goles_favor: golesFavor,
+      goles_contra: golesContra,
+    }, { onConflict: 'numero' })
+  if (jError) throw new Error(`jornadas upsert J${round.jornada}: ${jError.message}`)
 
   const { error } = await supabase
     .from('historial')
@@ -125,6 +145,21 @@ export async function recalc(): Promise<void> {
   }
   if (failed.length) throw new Error(`recalc: ${failed.length} write(s) failed:\n${failed.join('\n')}`)
   console.log(`recalc: ${jugadores.length} jugadores, ${usuarios.length} usuarios`)
+}
+
+// ponytail: corre en paralelo con el recalc() de equipo de arriba durante la
+// Fase A — nada escribe todavía en `alineaciones`, así que hoy es un no-op
+// sobre usuarios.puntos. La Fase B debe quitar la llamada a recalc() de
+// runSync en cuanto la UI de draft escriba alineaciones reales — ver
+// docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md.
+export async function resolverJornadas(jornadas: Iterable<number>): Promise<void> {
+  for (const jornada of jornadas) {
+    const { error } = await supabase.rpc('resolver_jornada', { p_jornada: jornada })
+    if (error) {
+      console.error(`resolver_jornada J${jornada} failed: ${error.message}`)
+      process.exitCode = 1
+    }
+  }
 }
 
 /** historial jornadas that are no longer on the current Leverade calendar. */
@@ -213,6 +248,7 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   }
 
   await recalc()
+  await resolverJornadas(syncedJornadas)
   await setConfig('last_sync_at', new Date().toISOString())
   await setConfig('unmatched_players', JSON.stringify(allUnmatched))
   if (allUnmatched.length) {

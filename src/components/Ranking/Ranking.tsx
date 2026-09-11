@@ -34,6 +34,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
   useEffect(() => {
     if (!viewTeam) return
     setViewAlineacion('none')
+    let cancelled = false
     supabase
       .from('alineaciones')
       .select('*')
@@ -42,7 +43,14 @@ export function Ranking({ jugadores, currentUserId }: Props) {
       .order('jornada', { ascending: false })
       .limit(1)
       .maybeSingle()
-      .then(({ data }) => setViewAlineacion((data as Alineacion) ?? null))
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Alineacion fetch error:', error)
+        setViewAlineacion((data as Alineacion) ?? null)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [viewTeam])
 
   if (loading) return <div className="loading-msg">Cargando ranking...</div>

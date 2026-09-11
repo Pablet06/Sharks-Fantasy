@@ -17,11 +17,6 @@ Un juego de fantasy basado en la liga de waterpolo del equipo "Los Sharks". Cada
 - PROJECT_TYPE: team (PRs required)
 - Remote: git@github.com:Pablet06/Sharks-Fantasy.git
 
-## Plane Integration
-- Workspace: none
-- Project: none
-- Default label filter: `` — no label filter configured
-
 ## Commands
 
 ### Dev
@@ -51,6 +46,7 @@ See `docs/ADRs.md` for architecture decision records. No IaC — infra is entire
 - Use subagents to keep the main context clean
 - One task per subagent
 - Throw more compute at hard problems — spawn a subagent rather than struggling in the main context
+- After `front-builder`, `back-builder`, `ai-builder`, `git-handler`, or `architect-deployer` finish a non-trivial change, hand off to `mentor` for a plain-language explanation — this project is also a learning exercise
 
 ### Autonomous Bug Fixing
 - When given a bug: go to logs, find the root cause, resolve it
@@ -58,9 +54,12 @@ See `docs/ADRs.md` for architecture decision records. No IaC — infra is entire
 
 ## Project Docs
 - `docs/plan.md` — high-level project plan (if present). Read at session start. **Never modify without explicit user confirmation.**
+- `docs/tasks/<slug>.md` — one file per managed-mode task (created/groomed at session start, session summaries appended at session end by `task-manager`)
 - `docs/ADRs.md` — architecture decision records
 - `docs/diary/<feature-or-ticket>.md` — per-feature session diary (read at session start, written at session end by `task-manager`)
 - `docs/features/<feature-name>/README.md` — feature documentation written when a feature is complete
+- `docs/learning/<topic>.md` — plain-language explanations written by `mentor`, a running personal knowledge base
+- `.claude/plans/<topic>.md` — implementation plans written by `planner` before non-trivial work
 
 ### Project Plan Rule
 If `docs/plan.md` exists and a development decision diverges from or extends it, **stop and discuss with the user before continuing**. Update `docs/plan.md` only after explicit user confirmation.

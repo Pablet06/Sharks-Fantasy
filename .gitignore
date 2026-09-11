@@ -35,7 +35,11 @@ index.html.legacy.bak
 !.vscode/extensions.json
 .idea
 .obsidian/
-.claude/
+
+# Claude Code: agents/commands/README are project config (tracked).
+# Sessions log + local machine settings are not.
+.claude/sessions/
+.claude/settings.local.json
 .DS_Store
 *.suo
 *.ntvs*

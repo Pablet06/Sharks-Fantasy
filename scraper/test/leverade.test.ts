@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { getRounds, getRoundMatches } from '../src/leverade'
+import { getRounds, getRoundMatches, getTeamName } from '../src/leverade'
 import { setMinDelayMs, setRetryBackoffMs } from '../src/http'
 
 const group = readFileSync(new URL('./fixtures/group.json', import.meta.url), 'utf8')
@@ -43,5 +43,24 @@ describe('getRoundMatches', () => {
     expect(matches.length).toBeGreaterThan(0)
     expect(matches[0]).toHaveProperty('finished')
     expect(matches.some(m => m.finished)).toBe(true)
+  })
+
+  it('incluye los ids de equipo local/visitante de cada partido', async () => {
+    stubFetch({ '/rounds/': round })
+    const matches = await getRoundMatches('19460842')
+    expect(matches[0].homeTeamId).toBe('15688434')
+    expect(matches[0].awayTeamId).toBe('15688435')
+  })
+})
+
+describe('getTeamName', () => {
+  it('devuelve el nombre del equipo', async () => {
+    stubFetch({
+      '/teams/15688434': JSON.stringify({
+        data: { type: 'team', id: '15688434', attributes: { name: 'C.W. Sharks A' } },
+      }),
+    })
+    const name = await getTeamName('15688434')
+    expect(name).toBe('C.W. Sharks A')
   })
 })

@@ -1,7 +1,7 @@
 # Fantasy dinámico — presupuesto, draft semanal, apuestas y power-ups
 
 **Fecha:** 2026-09-11
-**Estado:** Aprobado por el usuario, pendiente de plan de implementación
+**Estado:** Fase A implementada (en `main`). Fase B diseñada y aprobada, pendiente de plan de implementación.
 **Para:** temporada 26-27 (no la 25-26 en curso — hay margen para construir con calma)
 
 ---
@@ -81,10 +81,20 @@ CREATE TABLE presupuestos (
 );
 ```
 
-RLS: un usuario puede INSERT/UPDATE su propia fila de `alineaciones` mientras
-`now() < jornadas.fecha_partido - interval '24 hours'`; pasado ese punto, la
-fila queda de solo lectura para todos salvo admin. `jornadas` es de lectura
+RLS: un usuario puede INSERT/UPDATE su propia fila de `alineaciones` solo
+cuando `jornadas.fecha_partido` es conocida y `now() < fecha_partido -
+interval '24 hours'` (fail-closed: sin fecha conocida, no se puede escribir
+— no hay excepción "vía libre" si falta la fecha). `jornadas` es de lectura
 pública, escritura solo por el scraper (service role) / admin.
+
+**Implementado en Fase A** (`supabase/migrations/20260911000000_fantasy_jornadas_alineaciones.sql`,
+`.../20260911000001_fantasy_presupuestos_resolver.sql`,
+`.../20260911000002_fantasy_dinamico_hardening.sql`), con dos correcciones
+que salieron de la revisión final y ya están en prod: la comprobación de
+"7 jugadores" usa `HAVING count(DISTINCT numero) = 7` (no `array_length`,
+que dejaba pasar dorsales duplicados) y `resolver_jornada()` no hace nada
+si la jornada aún no tiene `historial`. La visibilidad de `alineaciones`
+(SELECT) se endurece en Fase B — ver esa sección.
 
 ### Precio de jugador
 
@@ -123,25 +133,74 @@ escribir el `historial` de esa jornada — mismo punto del flujo donde hoy se
 llama a `recalc_puntos()`. El admin puede volver a lanzarla a mano desde
 `AdminView` si hace falta reprocesar una jornada.
 
-`usuarios.equipo` se deprecia (se puede dejar la columna sin usar o
-eliminarla; a decidir en el plan de implementación).
+**Implementado en Fase A con una diferencia respecto a lo descrito arriba:**
+el paso 2 (`usuarios.puntos` = suma de `alineaciones.puntos_jornada`) está
+**deshabilitado a propósito** (comentado en la función, no borrado) mientras
+nada escriba en `alineaciones` de verdad — Fase A no trae UI de draft, así
+que dejarlo activo solo puede pisar el `usuarios.puntos` real (calculado por
+el `recalc()`/`equipo` de siempre) con datos de prueba. **Fase B reactiva
+este bloque en el mismo commit en que quita la llamada a `recalc()`** del
+scraper — ver esa sección. `usuarios.equipo` se deja como columna sin usar
+(no se borra — irreversible y sin beneficio); Fase B deja de leerla/escribirla.
 
 ---
 
-## Subproyecto B — Draft, presupuesto y capitán (UI)
+## Subproyecto B — Draft, presupuesto, capitán y corte con el modelo antiguo
 
-Nueva pantalla que sustituye a `Pool.tsx` como pestaña "Mi Equipo":
+Decisiones de la sesión de brainstorming del 2026-09-11 (segunda ronda):
 
-- Lista de los 17 jugadores con precio actual, filtrable por posición
-  (reutiliza `.filter-chip` / `.pos-badge` ya existentes).
-- Selección de 7 con contador de presupuesto gastado/restante (1000€ base
-  + ajuste de apuestas de la jornada anterior).
+- **El scraper también escribe el calendario futuro.** Cada sync, además de
+  resolver la jornada recién jugada, mira las jornadas siguientes en el
+  calendario de Leverade (ya consultado hoy) y crea/actualiza su fila en
+  `jornadas` con la fecha del partido de los Sharks, sin resultado todavía
+  (`resultado`/`goles_*` quedan NULL, `finalizado = false`). Sin esto no
+  existe fila donde apuntar una alineación futura (FK) y nadie puede
+  draftear con antelación. **Detalle técnico abierto para el plan:**
+  identificar el partido de los Sharks en una jornada *no jugada* sin pasar
+  por el scraping de FNCV (que solo tiene página de stats una vez jugado el
+  partido) — investigar si la propia API JSON:API de Leverade expone los
+  equipos de cada partido vía `relationships` antes de reusar el scraping
+  de FNCV como fallback.
+- **Corte limpio, no convivencia.** `Pool.tsx` y `usuarios.equipo` como
+  fuente de puntos desaparecen por completo. Desde la primera jornada de la
+  26-27 todo el mundo draftea cada semana. Este subproyecto reactiva el
+  bloque de `usuarios.puntos` en `resolver_jornada()` (comentado en Fase A)
+  y quita la llamada a `recalc()` de `runSync` **en el mismo commit** — dos
+  sistemas escribiendo la misma columna a la vez fue la causa del incidente
+  de la Fase A (ver diario/ledger de esa sesión), no se repite.
+- **Alineaciones visibles solo cuando se resuelven.** `alineaciones_select`
+  se endurece: el dueño y el admin ven siempre su fila; cualquier otro
+  usuario (o una llamada anónima a la API) solo ve una alineación una vez
+  resuelta (`puntos_jornada IS NOT NULL`). Antes de eso, invisible de
+  verdad a nivel de RLS, no solo ocultada en la interfaz — evita que se
+  puedan copiar picks ajenos antes del cierre.
+
+### Pantalla de draft (sustituye a `Pool.tsx` en la pestaña "Mi Equipo")
+
+- **Jornada abierta** = la de menor `numero` en `jornadas` cuyo deadline
+  (`fecha_partido - 24h`) no ha pasado. Si no hay ninguna fila de jornada
+  todavía (el scraper no ha corrido o no hay próximo partido programado),
+  pantalla de espera ("sin jornada abierta todavía").
+- Lista de los 17 jugadores con precio (`calcPrecio`, ya construido en Fase
+  A), filtrable por posición (reutiliza `.filter-chip` / `.pos-badge`
+  existentes).
+- Selección de 7 con contador de presupuesto gastado/restante
+  (`presupuesto_actual`, ya construido en Fase A — en esta fase siempre
+  1000€ base, sin ajuste de apuestas todavía, eso es Fase C).
 - Marcar uno de los 7 como capitán (icono, doble puntos).
-- Cuenta atrás visible hasta el deadline (24h antes del partido de los
-  Sharks); tras el bloqueo, la pantalla pasa a solo lectura y muestra la
-  alineación congelada.
-- Si el usuario nunca completa los 7 antes del deadline, se le muestra tras
-  el bloqueo que esa jornada puntuó 0 por alineación incompleta.
+- Guardar hace un upsert en `alineaciones` — la RLS ya impide guardar
+  pasado el deadline o con más de 7 jugadores mal formados (Fase A).
+- Cuenta atrás visible hasta el deadline. Pasado el deadline: pantalla de
+  solo lectura con la alineación congelada (o el aviso de que quedó
+  incompleta, una vez la jornada se resuelva y se sepa si puntuó 0).
+
+### `Ranking.tsx` — modal "ver equipo"
+
+Pasa a mostrar la alineación **resuelta más reciente** de ese usuario
+(consulta simple: última `alineaciones` de ese `usuario_id` con
+`puntos_jornada IS NOT NULL`, ordenada por `jornada DESC LIMIT 1`) en vez
+del `usuarios.equipo` fijo de hoy. La RLS ya garantiza que una alineación
+sin resolver nunca vuelve en esa consulta para nadie que no sea el dueño.
 
 ---
 
@@ -232,14 +291,15 @@ Cada fase es un PR independiente, como en Federation Sync / Admin Panel:
 | Riesgo | Mitigación |
 |---|---|
 | El multiplicador de precio (`12`) no genera la escasez deseada con datos reales | Calibrar en Fase A contra el histórico real antes de desplegar; es una constante, no un valor grabado en piedra |
-| `jornadas.fecha_partido` depende de que Leverade siempre tenga la fecha del próximo partido disponible con antelación | Si falta, el admin puede rellenarla a mano (columna simple, editable desde `AdminView`) |
+| `jornadas.fecha_partido` depende de que Leverade siempre tenga la fecha del próximo partido disponible con antelación | Resuelto en Fase B: el scraper escribe el calendario futuro cada sync. Si Leverade no publica la fecha a tiempo, la jornada simplemente no se abre para draftear (RLS fail-closed sin fecha) hasta que la tenga — no bloquea nada, solo retrasa esa jornada |
+| Identificar el partido de los Sharks en una jornada aún no jugada (sin página de stats todavía) | A investigar en el plan de Fase B: comprobar si la API de Leverade expone los equipos vía `relationships` antes de necesitar el scraping de FNCV como fallback |
 | Presupuesto a 0€ tras una mala racha deja al usuario sin poder fichar nada | Es la consecuencia buscada (decisión explícita del usuario, sin suelo) — vigilar en la primera temporada si resulta demasiado punitivo y hay que revisar |
 | Alineación incompleta → 0 puntos puede penalizar a alguien que se olvidó una semana de forma desproporcionada | Es la consecuencia buscada (fuerza el hábito semanal); revisar tras la primera temporada si hace falta un aviso/recordatorio (fuera de alcance v1) |
 
 ---
 
-## Próximo paso
+## Estado
 
-Plan de implementación detallado de la **Fase A** (`superpowers:writing-plans`),
-empezando por el esquema y `resolver_jornada()` ya que todo lo demás depende
-de ello.
+- **Fase A**: implementada, revisada y en `main` (PR #4).
+- **Fase B**: diseño aprobado (sección de arriba), siguiente paso es el plan
+  de implementación (`superpowers:writing-plans`).

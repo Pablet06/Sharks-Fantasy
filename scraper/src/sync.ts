@@ -84,11 +84,6 @@ export async function syncJornada(
     }
   })
 
-  const { error } = await supabase
-    .from('historial')
-    .upsert(upserts, { onConflict: 'jugador_id,jornada' })
-  if (error) throw new Error(`historial upsert J${round.jornada}: ${error.message}`)
-
   const { error: jError } = await supabase
     .from('jornadas')
     .upsert({
@@ -99,6 +94,11 @@ export async function syncJornada(
       goles_contra: golesContra,
     }, { onConflict: 'numero' })
   if (jError) throw new Error(`jornadas upsert J${round.jornada}: ${jError.message}`)
+
+  const { error } = await supabase
+    .from('historial')
+    .upsert(upserts, { onConflict: 'jugador_id,jornada' })
+  if (error) throw new Error(`historial upsert J${round.jornada}: ${error.message}`)
 
   return { jornada: round.jornada, rows: upserts.length, unmatched }
 }
@@ -155,7 +155,10 @@ export async function recalc(): Promise<void> {
 export async function resolverJornadas(jornadas: Iterable<number>): Promise<void> {
   for (const jornada of jornadas) {
     const { error } = await supabase.rpc('resolver_jornada', { p_jornada: jornada })
-    if (error) console.error(`resolver_jornada J${jornada} failed: ${error.message}`)
+    if (error) {
+      console.error(`resolver_jornada J${jornada} failed: ${error.message}`)
+      process.exitCode = 1
+    }
   }
 }
 

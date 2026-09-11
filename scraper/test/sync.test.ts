@@ -89,8 +89,13 @@ describe('resolverJornadas', () => {
     rpc.mockClear()
     rpc.mockResolvedValueOnce({ error: { message: 'boom' } } as never)
     rpc.mockResolvedValueOnce({ error: null } as never)
+    const prevExitCode = process.exitCode
+    process.exitCode = undefined
 
     await expect(resolverJornadas([1, 2])).resolves.toBeUndefined()
     expect(rpc).toHaveBeenCalledTimes(2)
+    expect(process.exitCode).toBe(1)
+
+    process.exitCode = prevExitCode
   })
 })

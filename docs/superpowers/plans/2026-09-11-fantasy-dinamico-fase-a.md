@@ -30,7 +30,7 @@ foundation Fase B will build on.
 - Capitán: sus puntos de esa jornada cuentan **doble** (no un +100% aparte — el total de su línea se multiplica por 2).
 - Sin suelo de seguridad en `presupuestos` (Fase C se encarga; Fase A no lo toca).
 - Transparencia: cualquiera puede leer la alineación/presupuesto de cualquier usuario, igual que hoy `usuarios.equipo` es público vía el modal "ver equipo" de Ranking.
-- Supabase project ref: `sihvxbhqcyynuulhqmii`. Usa una rama de desarrollo (`mcp__claude_ai_Supabase__create_branch`), verifica ahí, mergea a prod en la última tarea.
+- Supabase project ref: `sihvxbhqcyynuulhqmii`. **Sin ramas de desarrollo** — el proyecto está en plan Free y `create_branch` devuelve `PaymentRequiredException` (confirmado en Task 1). Toda migración se aplica **directamente a prod**, y solo el controlador (no un subagente) ejecuta `apply_migration`/`execute_sql` contra prod, con el visto bueno explícito del usuario antes de cada aplicación — un implementador de tarea escribe y commitea el `.sql`, pero nunca lo aplica él mismo.
 
 ---
 
@@ -121,17 +121,24 @@ CREATE POLICY alineaciones_admin_all ON alineaciones
   WITH CHECK (is_admin((SELECT auth.uid())));
 ```
 
-- [ ] **Step 2: Crear la rama de desarrollo de Supabase y aplicar**
+- [x] **Step 2: Crear la rama de desarrollo de Supabase y aplicar**
+
+> **Nota post-ejecución:** `create_branch` devolvió `PaymentRequiredException`
+> — este proyecto está en plan Free, sin ramas de desarrollo disponibles. La
+> migración se aplicó **directamente a prod** en su lugar (ver ruling en el
+> ledger de esta tarea, `.superpowers/sdd/2026-09-11-fantasy-dinamico-fase-a/progress.md`).
+> El resto del plan (Task 2 en adelante) asume este mismo camino: sin ramas,
+> aplicación a prod mediada por el controlador con confirmación del usuario.
 
 Run (MCP):
-- `mcp__claude_ai_Supabase__create_branch` project `sihvxbhqcyynuulhqmii`, name `fantasy-dinamico-fase-a`
-- `mcp__claude_ai_Supabase__apply_migration` en la rama, con el contenido del fichero
+- ~~`mcp__claude_ai_Supabase__create_branch` project `sihvxbhqcyynuulhqmii`, name `fantasy-dinamico-fase-a`~~ (falló, ver nota arriba)
+- `mcp__claude_ai_Supabase__apply_migration` directamente contra prod, con el contenido del fichero
 
 Expected: la migración aplica sin error.
 
-- [ ] **Step 3: Verificar el esquema en la rama**
+- [x] **Step 3: Verificar el esquema**
 
-Run `mcp__claude_ai_Supabase__execute_sql` en la rama:
+Run `mcp__claude_ai_Supabase__execute_sql` contra prod:
 
 ```sql
 SELECT tablename, policyname, cmd FROM pg_policies
@@ -146,7 +153,11 @@ Expected: 5 filas de políticas (`jornadas_select`, `jornadas_admin_write`,
 `alineaciones_select`, `alineaciones_owner_write`, `alineaciones_admin_all`);
 el INSERT de prueba se lee de vuelta con `finalizado = false`.
 
-- [ ] **Step 4: Commit**
+> El `numero = 999` de prueba quedó en prod tras esta verificación (era una
+> rama en el plan original, no prod) — limpiado por el controlador con
+> `DELETE FROM jornadas WHERE numero = 999` tras confirmación del usuario.
+
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/migrations/20260911000000_fantasy_jornadas_alineaciones.sql
@@ -161,8 +172,14 @@ git commit -m "feat(db): jornadas + alineaciones tables for per-jornada scoring"
 - Create: `supabase/migrations/20260911000001_fantasy_presupuestos_resolver.sql`
 
 **Interfaces:**
-- Consumes: `jornadas`, `alineaciones`, `usuarios`, `historial`, `jugadores`, `is_admin(uuid)` (Task 1 y migraciones previas).
+- Consumes: `jornadas`, `alineaciones`, `usuarios`, `historial`, `jugadores`, `is_admin(uuid)` (Task 1 y migraciones previas — ya en prod).
 - Produces: función `presupuesto_actual(usuario_id uuid, jornada integer) RETURNS numeric`; función `resolver_jornada(jornada integer) RETURNS void`, invocable por `authenticated` (admin) y `service_role` (scraper). Task 4-5 del scraper y el admin (Task 7) llaman a `resolver_jornada` vía `supabase.rpc('resolver_jornada', { p_jornada })`.
+
+**El implementador de esta tarea escribe y commitea el fichero `.sql` — NO
+llama a `apply_migration` ni a ningún MCP de Supabase.** Sin ramas de
+desarrollo disponibles (ver Global Constraints), aplicar a prod lo hace
+únicamente el controlador tras confirmación explícita del usuario, después
+de que el reviewer apruebe el SQL.
 
 - [ ] **Step 1: Crear el fichero de migración**
 
@@ -259,15 +276,31 @@ REVOKE ALL ON FUNCTION resolver_jornada(integer) FROM public;
 GRANT EXECUTE ON FUNCTION resolver_jornada(integer) TO authenticated, service_role;
 ```
 
-- [ ] **Step 2: Aplicar en la rama de desarrollo**
+- [ ] **Step 2: Commit del fichero (el implementador para aquí)**
 
-Run `mcp__claude_ai_Supabase__apply_migration` en la rama `fantasy-dinamico-fase-a` con el contenido del fichero.
+```bash
+git add supabase/migrations/20260911000001_fantasy_presupuestos_resolver.sql
+git commit -m "feat(db): presupuestos table + resolver_jornada() scoring function"
+```
+
+Reporta DONE con el path del fichero. Los pasos 3-5 (aplicar y verificar
+contra prod) los ejecuta el controlador, no este implementador.
+
+---
+
+**A partir de aquí, pasos del controlador — no de un subagente implementador:**
+
+- [ ] **Step 3 (controlador): Pedir confirmación y aplicar en prod**
+
+Antes de llamar a `mcp__claude_ai_Supabase__apply_migration`, pide
+confirmación explícita al usuario mostrando el SQL a aplicar. Solo tras el
+ok, aplica con `project_id: sihvxbhqcyynuulhqmii`.
 
 Expected: aplica sin error.
 
-- [ ] **Step 3: Verificar `presupuesto_actual` con datos reales**
+- [ ] **Step 4 (controlador): Verificar `presupuesto_actual` con datos reales**
 
-Run `mcp__claude_ai_Supabase__execute_sql` en la rama:
+Run `mcp__claude_ai_Supabase__execute_sql` contra prod:
 
 ```sql
 SELECT numero FROM jornadas ORDER BY numero DESC LIMIT 1; -- anota N
@@ -280,11 +313,14 @@ SELECT presupuesto_actual('<UID>', 999); -- ahora 730
 
 Expected: `1000` antes del INSERT, `730` después.
 
-- [ ] **Step 4: Verificar `resolver_jornada` extremo a extremo con datos de prueba**
+- [ ] **Step 5 (controlador): Verificar `resolver_jornada` extremo a extremo con datos de prueba**
 
-Run `mcp__claude_ai_Supabase__execute_sql` en la rama (usa una jornada real con
-historial ya cargado — sustituye `<J>` por el número que devuelva la primera
-query, y `<UID>` por un id real de `usuarios`):
+Esto escribe filas de prueba en `alineaciones`/`jornadas` de **prod**
+(limpiadas en el siguiente paso) — antes de ejecutar el bloque, confirma con
+el usuario que quieres correrlo. Run `mcp__claude_ai_Supabase__execute_sql`
+contra prod (usa una jornada real con historial ya cargado — sustituye `<J>`
+por el número que devuelva la primera query, y `<UID>` por un id real de
+`usuarios`):
 
 ```sql
 SELECT jornada, count(*) FROM historial GROUP BY jornada ORDER BY jornada DESC LIMIT 1;
@@ -315,7 +351,7 @@ historial WHERE jornada = <J> AND jugador_id IN (...)`); la incompleta tiene
 `puntos_jornada = 0`; `usuarios.puntos` del primer usuario sube exactamente
 esa cantidad; `jornadas.finalizado` es `true`.
 
-- [ ] **Step 5: Limpiar los datos de prueba en la rama**
+- [ ] **Step 6 (controlador): Limpiar los datos de prueba en prod**
 
 ```sql
 DELETE FROM alineaciones WHERE jornada IN (999, <J>);
@@ -326,12 +362,8 @@ DELETE FROM jornadas WHERE numero = 999;
 -- que quede marcada finalizada).
 ```
 
-- [ ] **Step 6: Commit**
-
-```bash
-git add supabase/migrations/20260911000001_fantasy_presupuestos_resolver.sql
-git commit -m "feat(db): presupuestos table + resolver_jornada() scoring function"
-```
+El commit del `.sql` ya se hizo en el Step 2 (lo hizo el implementador) —
+nada que commitear aquí.
 
 ---
 
@@ -729,15 +761,13 @@ git commit -m "feat(web): admin button to manually re-run resolver_jornada"
 
 ---
 
-### Task 8: Verificación manual end-to-end + merge a prod
+### Task 8: Verificación manual end-to-end + push/PR
 
-**Files:** ninguno nuevo — solo verificación y despliegue de las migraciones.
+**Files:** ninguno nuevo — solo verificación.
 
-**Nota de orden:** el frontend local (`npm run dev`) apunta a **prod**
-(`VITE_SUPABASE_URL` en `.env`), no a la rama de desarrollo de Supabase. El
-botón de Admin (Task 7) no puede probarse de verdad hasta que las
-migraciones estén en prod — por eso el merge (Step 4) va antes de probar el
-botón (Step 5), no al final.
+Sin ramas de Supabase (ver Global Constraints), ambas migraciones (Task 1 y
+2) ya quedaron aplicadas directamente a prod, cada una con confirmación del
+usuario en su propia tarea — no hay nada que mergear aquí.
 
 - [ ] **Step 1: Arrancar el dev server**
 
@@ -758,23 +788,15 @@ Run: `cd scraper && npx tsc --noEmit && npm run test`
 
 Expected: todo en verde.
 
-- [ ] **Step 4: Mergear la rama de Supabase a prod**
+- [ ] **Step 4: Probar el botón de Admin contra prod**
 
-Run (MCP): `mcp__claude_ai_Supabase__merge_branch` branch `fantasy-dinamico-fase-a` → prod `sihvxbhqcyynuulhqmii`
+Entra como admin en el dev server, ve a Admin → Sync, escribe el número de
+una jornada con historial real (cualquier jornada ya sincronizada) y pulsa
+"Reprocesar jornada". Confirma el mensaje `✓ Jornada <J> resuelta` — sin
+alineaciones para esa jornada en prod, es un no-op, exactamente el
+comportamiento esperado en Fase A.
 
-Expected: merge sin conflictos — las dos migraciones (Task 1 y 2) quedan
-aplicadas en prod.
-
-- [ ] **Step 5: Probar el botón de Admin contra prod**
-
-Ahora que prod tiene las migraciones: entra como admin en el dev server
-todavía abierto, ve a Admin → Sync, escribe el número de una jornada con
-historial real (cualquier jornada ya sincronizada) y pulsa "Reprocesar
-jornada". Confirma el mensaje `✓ Jornada <J> resuelta` — sin alineaciones
-para esa jornada en prod, es un no-op, exactamente el comportamiento
-esperado en Fase A.
-
-- [ ] **Step 6: Push y PR**
+- [ ] **Step 5: Push y PR**
 
 ```bash
 git push -u origin feature/fantasy-dinamico-fase-a

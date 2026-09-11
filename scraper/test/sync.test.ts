@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 // touches no DB, so a bare stub is enough.
 vi.mock('../src/supabase', () => ({ supabase: {} }))
 
-import { rawToStats, runSync, staleJornadas } from '../src/sync'
+import { rawToStats, resultadoJornada, runSync, staleJornadas } from '../src/sync'
 import type { RawPlayer } from '../src/fncv'
 
 const raw = (o: Partial<RawPlayer>): RawPlayer => ({
@@ -54,5 +54,19 @@ describe('staleJornadas', () => {
 
   it('deletes nothing when the calendar came back empty (failed enumeration)', () => {
     expect(staleJornadas([], [1, 2, 3])).toEqual([])
+  })
+})
+
+describe('resultadoJornada', () => {
+  it('gana cuando marcamos más goles que el rival', () => {
+    expect(resultadoJornada(10, 7)).toBe('gana')
+  })
+
+  it('pierde cuando marcamos menos', () => {
+    expect(resultadoJornada(5, 9)).toBe('pierde')
+  })
+
+  it('empata a los mismos goles', () => {
+    expect(resultadoJornada(8, 8)).toBe('empata')
   })
 })

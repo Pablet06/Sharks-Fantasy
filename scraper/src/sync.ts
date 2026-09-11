@@ -21,6 +21,12 @@ export function rawToStats(raw: RawPlayer, golesContra: number): PlayerStats {
   }
 }
 
+export function resultadoJornada(golesFavor: number, golesContra: number): 'gana' | 'pierde' | 'empata' {
+  if (golesFavor > golesContra) return 'gana'
+  if (golesFavor < golesContra) return 'pierde'
+  return 'empata'
+}
+
 async function getDbPlayers(): Promise<(DbPlayer & { pos: Position })[]> {
   const { data, error } = await supabase
     .from('jugadores')

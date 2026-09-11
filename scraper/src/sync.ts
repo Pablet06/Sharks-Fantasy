@@ -61,6 +61,9 @@ export async function syncJornada(
   const golesContra =
     sharksMatch.sharks === 'local' ? sharksMatch.golesVisitante : sharksMatch.golesLocal
 
+  const golesFavor =
+    sharksMatch.sharks === 'local' ? sharksMatch.golesLocal : sharksMatch.golesVisitante
+
   const unmatched: string[] = []
   const byPlayerId = new Map<number, PlayerStats>()
   for (const rp of sharksMatch.jugadores) {
@@ -85,6 +88,17 @@ export async function syncJornada(
     .from('historial')
     .upsert(upserts, { onConflict: 'jugador_id,jornada' })
   if (error) throw new Error(`historial upsert J${round.jornada}: ${error.message}`)
+
+  const { error: jError } = await supabase
+    .from('jornadas')
+    .upsert({
+      numero: round.jornada,
+      fecha_partido: matchDate,
+      resultado: resultadoJornada(golesFavor, golesContra),
+      goles_favor: golesFavor,
+      goles_contra: golesContra,
+    }, { onConflict: 'numero' })
+  if (jError) throw new Error(`jornadas upsert J${round.jornada}: ${jError.message}`)
 
   return { jornada: round.jornada, rows: upserts.length, unmatched }
 }

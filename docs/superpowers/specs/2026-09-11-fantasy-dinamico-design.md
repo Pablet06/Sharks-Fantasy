@@ -155,12 +155,12 @@ Decisiones de la sesión de brainstorming del 2026-09-11 (segunda ronda):
   `jornadas` con la fecha del partido de los Sharks, sin resultado todavía
   (`resultado`/`goles_*` quedan NULL, `finalizado = false`). Sin esto no
   existe fila donde apuntar una alineación futura (FK) y nadie puede
-  draftear con antelación. **Detalle técnico abierto para el plan:**
-  identificar el partido de los Sharks en una jornada *no jugada* sin pasar
-  por el scraping de FNCV (que solo tiene página de stats una vez jugado el
-  partido) — investigar si la propia API JSON:API de Leverade expone los
-  equipos de cada partido vía `relationships` antes de reusar el scraping
-  de FNCV como fallback.
+  draftear con antelación. **Mecanismo confirmado contra la API real:**
+  `GET /rounds/{id}?include=matches` devuelve cada partido con
+  `meta.home_team`/`meta.away_team` (IDs de equipo), presentes aunque el
+  partido no se haya jugado ni tenga fecha todavía; `GET /teams/{id}` da el
+  nombre para identificar cuál es el partido de los Sharks. No hace falta
+  el scraping de FNCV (que solo tiene página de stats una vez jugado).
 - **Corte limpio, no convivencia.** `Pool.tsx` y `usuarios.equipo` como
   fuente de puntos desaparecen por completo. Desde la primera jornada de la
   26-27 todo el mundo draftea cada semana. Este subproyecto reactiva el
@@ -292,7 +292,7 @@ Cada fase es un PR independiente, como en Federation Sync / Admin Panel:
 |---|---|
 | El multiplicador de precio (`12`) no genera la escasez deseada con datos reales | Calibrar en Fase A contra el histórico real antes de desplegar; es una constante, no un valor grabado en piedra |
 | `jornadas.fecha_partido` depende de que Leverade siempre tenga la fecha del próximo partido disponible con antelación | Resuelto en Fase B: el scraper escribe el calendario futuro cada sync. Si Leverade no publica la fecha a tiempo, la jornada simplemente no se abre para draftear (RLS fail-closed sin fecha) hasta que la tenga — no bloquea nada, solo retrasa esa jornada |
-| Identificar el partido de los Sharks en una jornada aún no jugada (sin página de stats todavía) | A investigar en el plan de Fase B: comprobar si la API de Leverade expone los equipos vía `relationships` antes de necesitar el scraping de FNCV como fallback |
+| Identificar el partido de los Sharks en una jornada aún no jugada (sin página de stats todavía) | Resuelto: comprobado contra la API real de Leverade — `GET /rounds/{id}?include=matches` devuelve cada partido con `meta.home_team`/`meta.away_team` (IDs de equipo) independientemente de si está jugado, y `GET /teams/{id}` da el nombre. No hace falta tocar el scraping de FNCV para esto. |
 | Presupuesto a 0€ tras una mala racha deja al usuario sin poder fichar nada | Es la consecuencia buscada (decisión explícita del usuario, sin suelo) — vigilar en la primera temporada si resulta demasiado punitivo y hay que revisar |
 | Alineación incompleta → 0 puntos puede penalizar a alguien que se olvidó una semana de forma desproporcionada | Es la consecuencia buscada (fuerza el hábito semanal); revisar tras la primera temporada si hace falta un aviso/recordatorio (fuera de alcance v1) |
 

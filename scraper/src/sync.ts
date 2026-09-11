@@ -147,6 +147,18 @@ export async function recalc(): Promise<void> {
   console.log(`recalc: ${jugadores.length} jugadores, ${usuarios.length} usuarios`)
 }
 
+// ponytail: corre en paralelo con el recalc() de equipo de arriba durante la
+// Fase A — nada escribe todavía en `alineaciones`, así que hoy es un no-op
+// sobre usuarios.puntos. La Fase B debe quitar la llamada a recalc() de
+// runSync en cuanto la UI de draft escriba alineaciones reales — ver
+// docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md.
+export async function resolverJornadas(jornadas: Iterable<number>): Promise<void> {
+  for (const jornada of jornadas) {
+    const { error } = await supabase.rpc('resolver_jornada', { p_jornada: jornada })
+    if (error) console.error(`resolver_jornada J${jornada} failed: ${error.message}`)
+  }
+}
+
 /** historial jornadas that are no longer on the current Leverade calendar. */
 export function staleJornadas(calendarJornadas: number[], historialJornadas: number[]): number[] {
   // Empty calendar = failed enumeration, not "every jornada is stale". Never delete.
@@ -233,6 +245,7 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   }
 
   await recalc()
+  await resolverJornadas(syncedJornadas)
   await setConfig('last_sync_at', new Date().toISOString())
   await setConfig('unmatched_players', JSON.stringify(allUnmatched))
   if (allUnmatched.length) {

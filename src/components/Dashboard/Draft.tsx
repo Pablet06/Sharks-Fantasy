@@ -91,6 +91,15 @@ export function Draft({ usuario, jugadores }: Props) {
   }
 
   const guardar = async () => {
+    // Re-check lock at call time (not render time) to catch deadline/resolution changes in idle tabs
+    const pasadoDeadlineNow = jornada.fecha_partido !== null &&
+      new Date(jornada.fecha_partido).getTime() - Date.now() <= 24 * 60 * 60 * 1000
+    const bloqueadaNow = pasadoDeadlineNow || (alineacion !== null && alineacion.puntos_jornada !== null)
+    if (bloqueadaNow) {
+      setMsg('Esta jornada ya está bloqueada.')
+      return
+    }
+
     const validacion = validarDraft(seleccion, capitan, precios, presupuesto)
     if (!validacion.ok) { setMsg(validacion.error); return }
     setGuardando(true)
@@ -118,7 +127,7 @@ export function Draft({ usuario, jugadores }: Props) {
       {bloqueada && (
         <p className="placeholder">
           Alineación bloqueada para esta jornada
-          {alineacion?.puntos_jornada !== null && ` — ${alineacion?.puntos_jornada} pts`}
+          {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
         </p>
       )}
 

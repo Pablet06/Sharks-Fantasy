@@ -4,8 +4,22 @@ import { describe, it, expect, vi } from 'vitest'
 // touches no DB, so a bare stub is enough.
 vi.mock('../src/supabase', () => ({ supabase: { rpc: vi.fn() } }))
 
+vi.mock('../src/leverade', async () => {
+  const actual = await vi.importActual<typeof import('../src/leverade')>('../src/leverade')
+  return { ...actual, getRoundMatches: vi.fn(), getTeamName: vi.fn() }
+})
+
 import { supabase } from '../src/supabase'
-import { rawToStats, resultadoJornada, resolverJornadas, runSync, staleJornadas } from '../src/sync'
+import { getRoundMatches, getTeamName } from '../src/leverade'
+import {
+  rawToStats,
+  resultadoJornada,
+  resolverJornadas,
+  runSync,
+  staleJornadas,
+  syncCalendar,
+  ladoSharks,
+} from '../src/sync'
 import type { RawPlayer } from '../src/fncv'
 
 const raw = (o: Partial<RawPlayer>): RawPlayer => ({
@@ -69,6 +83,51 @@ describe('resultadoJornada', () => {
 
   it('empata a los mismos goles', () => {
     expect(resultadoJornada(8, 8)).toBe('empata')
+  })
+})
+
+describe('ladoSharks', () => {
+  it('detecta a los Sharks como local', () => {
+    expect(ladoSharks('C.W. Sharks A', 'C.W. Elx B')).toBe('home')
+  })
+
+  it('detecta a los Sharks como visitante', () => {
+    expect(ladoSharks('C.W. Elx B', 'C.W. Sharks A')).toBe('away')
+  })
+
+  it('devuelve null si ninguno de los dos es Sharks', () => {
+    expect(ladoSharks('C.W. Elx B', 'C.W. UPV A')).toBe(null)
+  })
+})
+
+describe('syncCalendar', () => {
+  it('escribe fecha_partido para una jornada sin historial, identificando a los Sharks por sus equipos', async () => {
+    vi.mocked(getRoundMatches).mockResolvedValue([
+      { id: 'm1', date: '2026-10-05T18:00:00Z', finished: false, homeTeamId: 't1', awayTeamId: 't2' },
+    ])
+    vi.mocked(getTeamName).mockImplementation((id: string) =>
+      Promise.resolve(id === 't2' ? 'C.W. Sharks A' : 'C.W. Elx B'),
+    )
+    const upsert = vi.fn().mockResolvedValue({ error: null })
+    vi.mocked(supabase).from = vi.fn(() => ({ upsert })) as never
+
+    await syncCalendar([{ id: 'r1', jornada: 5 }], new Set([1, 2, 3, 4]))
+
+    expect(upsert).toHaveBeenCalledWith(
+      { numero: 5, fecha_partido: '2026-10-05T18:00:00Z' },
+      { onConflict: 'numero' },
+    )
+  })
+
+  it('no toca una jornada que ya tiene historial', async () => {
+    vi.mocked(getRoundMatches).mockClear()
+    const upsert = vi.fn()
+    vi.mocked(supabase).from = vi.fn(() => ({ upsert })) as never
+
+    await syncCalendar([{ id: 'r1', jornada: 3 }], new Set([1, 2, 3]))
+
+    expect(getRoundMatches).not.toHaveBeenCalled()
+    expect(upsert).not.toHaveBeenCalled()
   })
 })
 

@@ -33,7 +33,6 @@ export function Ranking({ jugadores, currentUserId }: Props) {
 
   useEffect(() => {
     if (!viewTeam) return
-    setViewAlineacion('none')
     let cancelled = false
     supabase
       .from('alineaciones')
@@ -66,7 +65,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
             <li
               key={u.id}
               className={`ranking-item ${isCurrentUser ? 'current-user' : ''} ${isMedal ? RANK_CLASS[i] : ''}`}
-              onClick={() => setViewTeam(u)}
+              onClick={() => { setViewTeam(u); setViewAlineacion('none') }}
             >
               <span className="rank-pos">{isMedal ? MEDAL[i] : `#${i + 1}`}</span>
               <span className="rank-name">{u.nombre}</span>

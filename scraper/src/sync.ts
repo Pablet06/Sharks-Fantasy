@@ -1,11 +1,9 @@
 import { supabase } from './supabase.js'
-import { getRounds, getRoundMatches, type Round } from './leverade.js'
+import { getRounds, getRoundMatches, getTeamName, type Round } from './leverade.js'
 import { fetchMatchStats, SHARKS_TEAM_NAME, type RawPlayer } from './fncv.js'
 import { resolvePlayer, type DbPlayer } from './match.js'
 import { calcMatchPoints, EMPTY_STATS, type PlayerStats, type Position } from './points.js'
 import { getTournamentId, setConfig } from './config.js'
-
-const STAT_KEYS = Object.keys(EMPTY_STATS) as (keyof PlayerStats)[]
 
 export function rawToStats(raw: RawPlayer, golesContra: number): PlayerStats {
   return {
@@ -25,6 +23,62 @@ export function resultadoJornada(golesFavor: number, golesContra: number): 'gana
   if (golesFavor > golesContra) return 'gana'
   if (golesFavor < golesContra) return 'pierde'
   return 'empata'
+}
+
+export function ladoSharks(homeName: string, awayName: string): 'home' | 'away' | null {
+  if (homeName === SHARKS_TEAM_NAME) return 'home'
+  if (awayName === SHARKS_TEAM_NAME) return 'away'
+  return null
+}
+
+/** Leverade dates are naive local time in the Europe/Madrid zone (no offset
+ * in the API response) — tag them explicitly so Postgres's timestamptz
+ * parser applies the correct DST-aware offset instead of assuming UTC. */
+function conZonaMadrid(fecha: string | null): string | null {
+  return fecha === null ? null : `${fecha} Europe/Madrid`
+}
+
+/**
+ * Escribe fecha_partido en `jornadas` para las rondas que todavía no tienen
+ * historial (jornadas futuras o sin jugar), identificando el partido de los
+ * Sharks por los ids de equipo del partido — no depende de que exista
+ * página de stats (que solo aparece una vez jugado el partido).
+ */
+export async function syncCalendar(rounds: Round[], historialJornadas: Set<number>): Promise<void> {
+  const pendientes = rounds.filter(r => !historialJornadas.has(r.jornada))
+  const nombreEquipo = new Map<string, string>()
+  const resolverNombre = async (teamId: string): Promise<string> => {
+    if (!nombreEquipo.has(teamId)) nombreEquipo.set(teamId, await getTeamName(teamId))
+    return nombreEquipo.get(teamId)!
+  }
+
+  for (const round of pendientes) {
+    const matches = await getRoundMatches(round.id)
+    let fechaSharks: string | null = null
+    for (const m of matches) {
+      if (!m.homeTeamId || !m.awayTeamId) continue
+      const [homeName, awayName] = await Promise.all([
+        resolverNombre(m.homeTeamId),
+        resolverNombre(m.awayTeamId),
+      ])
+      if (ladoSharks(homeName, awayName) !== null) {
+        fechaSharks = m.date
+        break
+      }
+    }
+    if (fechaSharks === null) {
+      console.warn(`syncCalendar: no se identificó el partido de los Sharks en la jornada ${round.jornada}`)
+      continue
+    }
+
+    const { error } = await supabase
+      .from('jornadas')
+      .upsert({ numero: round.jornada, fecha_partido: conZonaMadrid(fechaSharks) }, { onConflict: 'numero' })
+    if (error) {
+      console.error(`syncCalendar J${round.jornada}: ${error.message}`)
+      process.exitCode = 1
+    }
+  }
 }
 
 async function getDbPlayers(): Promise<(DbPlayer & { pos: Position })[]> {
@@ -88,7 +142,7 @@ export async function syncJornada(
     .from('jornadas')
     .upsert({
       numero: round.jornada,
-      fecha_partido: matchDate,
+      fecha_partido: conZonaMadrid(matchDate),
       resultado: resultadoJornada(golesFavor, golesContra),
       goles_favor: golesFavor,
       goles_contra: golesContra,
@@ -103,55 +157,6 @@ export async function syncJornada(
   return { jornada: round.jornada, rows: upserts.length, unmatched }
 }
 
-// ponytail: this duplicates the recalc_puntos() Postgres RPC (Phase B). Kept
-// because the scraper runs headless with the service role and the RPC has an
-// is_admin(auth.uid()) guard. Unify only when the scraper is next touched:
-// either drop the guard for a NULL auth.uid() (service role) or expose an
-// unguarded recalc the scraper alone may call. Parity is verified in the
-// Phase B plan Task 2 Step 3.
-export async function recalc(): Promise<void> {
-  const { data: hist } = await supabase.from('historial').select('jugador_id, stats, puntos')
-  const { data: jugadores } = await supabase.from('jugadores').select('id, numero')
-  const { data: usuarios } = await supabase.from('usuarios').select('id, equipo')
-  if (!hist || !jugadores || !usuarios) throw new Error('recalc: fetch failed')
-
-  // Accumulated stats per player (goles_contra kept at 0 — per-match only).
-  const acc = new Map<number, PlayerStats>()
-  const puntosByPlayer = new Map<number, number>()
-  for (const h of hist) {
-    const cur = acc.get(h.jugador_id) ?? { ...EMPTY_STATS }
-    const s = h.stats as PlayerStats
-    for (const k of STAT_KEYS) cur[k] += s[k] ?? 0
-    cur.goles_contra = 0
-    acc.set(h.jugador_id, cur)
-    puntosByPlayer.set(h.jugador_id, (puntosByPlayer.get(h.jugador_id) ?? 0) + (h.puntos ?? 0))
-  }
-
-  const failed: string[] = []
-  for (const j of jugadores) {
-    const { error } = await supabase.from('jugadores')
-      .update({ stats: acc.get(j.id) ?? { ...EMPTY_STATS } })
-      .eq('id', j.id)
-    if (error) failed.push(`jugadores id=${j.id}: ${error.message}`)
-  }
-
-  const puntosByNumero = new Map<number, number>()
-  for (const j of jugadores) puntosByNumero.set(j.numero, puntosByPlayer.get(j.id) ?? 0)
-
-  for (const u of usuarios) {
-    const puntos = (u.equipo as number[]).reduce((sum, n) => sum + (puntosByNumero.get(n) ?? 0), 0)
-    const { error } = await supabase.from('usuarios').update({ puntos }).eq('id', u.id)
-    if (error) failed.push(`usuarios id=${u.id}: ${error.message}`)
-  }
-  if (failed.length) throw new Error(`recalc: ${failed.length} write(s) failed:\n${failed.join('\n')}`)
-  console.log(`recalc: ${jugadores.length} jugadores, ${usuarios.length} usuarios`)
-}
-
-// ponytail: corre en paralelo con el recalc() de equipo de arriba durante la
-// Fase A — nada escribe todavía en `alineaciones`, así que hoy es un no-op
-// sobre usuarios.puntos. La Fase B debe quitar la llamada a recalc() de
-// runSync en cuanto la UI de draft escriba alineaciones reales — ver
-// docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md.
 export async function resolverJornadas(jornadas: Iterable<number>): Promise<void> {
   for (const jornada of jornadas) {
     const { error } = await supabase.rpc('resolver_jornada', { p_jornada: jornada })
@@ -179,6 +184,16 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   const tournamentId = await getTournamentId()
   const dbPlayers = await getDbPlayers()
   const rounds = await getRounds(tournamentId)
+
+  const { data: histRows } = await supabase.from('historial').select('jornada')
+  const historialJornadas = new Set((histRows ?? []).map(h => h.jornada as number))
+  try {
+    await syncCalendar(rounds, historialJornadas)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error(`syncCalendar failed: ${msg}`)
+    process.exitCode = 1
+  }
 
   const targets = opts.jornada
     ? rounds.filter(r => r.jornada === opts.jornada)
@@ -247,7 +262,6 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
     }
   }
 
-  await recalc()
   await resolverJornadas(syncedJornadas)
   await setConfig('last_sync_at', new Date().toISOString())
   await setConfig('unmatched_players', JSON.stringify(allUnmatched))

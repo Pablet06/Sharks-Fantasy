@@ -10,6 +10,7 @@ interface JsonApiDoc {
     type: string
     id: string
     attributes: Record<string, unknown>
+    meta?: Record<string, unknown>
   }[]
 }
 
@@ -22,6 +23,8 @@ export interface Match {
   id: string
   date: string | null
   finished: boolean
+  homeTeamId: string | null
+  awayTeamId: string | null
 }
 
 export async function getRounds(tournamentId: string): Promise<Round[]> {
@@ -47,5 +50,12 @@ export async function getRoundMatches(roundId: string): Promise<Match[]> {
       id: x.id,
       date: (x.attributes.date as string | null) ?? null,
       finished: x.attributes.finished === true,
+      homeTeamId: (x.meta?.home_team as string | undefined) ?? null,
+      awayTeamId: (x.meta?.away_team as string | undefined) ?? null,
     }))
+}
+
+export async function getTeamName(teamId: string): Promise<string> {
+  const doc = await getJson<{ data: { attributes: { name: string } } }>(`${API}/teams/${teamId}`)
+  return doc.data.attributes.name
 }

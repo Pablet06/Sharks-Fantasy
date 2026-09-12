@@ -1,10 +1,10 @@
 ## Session Start — MANDATORY
 
-At the very start of every conversation, before ANY work, invoke the `task-manager` agent via `/start-session`. It will ask you to choose free mode or a managed Plane session. Do not write code or answer questions before this step.
+At the very start of every conversation, before ANY work, invoke the `task-manager` agent via `/start-session`. It will ask you to choose free mode or a managed session (a task file in `docs/tasks/`). Do not write code or answer questions before this step.
 
 ## Session End — MANDATORY
 
-When the user says "we're done", "wrap up", or "close session", invoke `/close-session`. The task-manager will generate a session summary and update the Plane ticket (if managed mode).
+When the user says "we're done", "wrap up", or "close session", invoke `/close-session`. The task-manager will generate a session summary and update the task file in `docs/tasks/` (if managed mode).
 
 # sharks-fantasy
 

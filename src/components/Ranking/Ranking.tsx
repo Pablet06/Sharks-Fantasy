@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { Usuario, Jugador } from '../../types'
-import { calcTotalPoints } from '../../lib/points'
+import type { Usuario, Jugador, Alineacion } from '../../types'
 import { PlayerCard } from '../Dashboard/PlayerCard'
 
 interface Props {
@@ -16,6 +15,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
   const [ranking, setRanking] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [viewTeam, setViewTeam] = useState<Usuario | null>(null)
+  const [viewAlineacion, setViewAlineacion] = useState<Alineacion | null | 'none'>('none')
   const [viewPlayer, setViewPlayer] = useState<Jugador | null>(null)
 
   useEffect(() => {
@@ -31,6 +31,27 @@ export function Ranking({ jugadores, currentUserId }: Props) {
       })
   }, [])
 
+  useEffect(() => {
+    if (!viewTeam) return
+    let cancelled = false
+    supabase
+      .from('alineaciones')
+      .select('*')
+      .eq('usuario_id', viewTeam.id)
+      .not('puntos_jornada', 'is', null)
+      .order('jornada', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Alineacion fetch error:', error)
+        setViewAlineacion((data as Alineacion) ?? null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [viewTeam])
+
   if (loading) return <div className="loading-msg">Cargando ranking...</div>
 
   return (
@@ -44,7 +65,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
             <li
               key={u.id}
               className={`ranking-item ${isCurrentUser ? 'current-user' : ''} ${isMedal ? RANK_CLASS[i] : ''}`}
-              onClick={() => setViewTeam(u)}
+              onClick={() => { setViewTeam(u); setViewAlineacion('none') }}
             >
               <span className="rank-pos">{isMedal ? MEDAL[i] : `#${i + 1}`}</span>
               <span className="rank-name">{u.nombre}</span>
@@ -59,19 +80,27 @@ export function Ranking({ jugadores, currentUserId }: Props) {
           <div className="team-modal" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setViewTeam(null)}>×</button>
             <h3>{viewTeam.nombre}</h3>
-            <div className="mini-pool">
-              {viewTeam.equipo.map(id => {
-                const p = jugadores.find(j => j.numero === id)
-                if (!p) return null
-                return (
-                  <button key={id} className="mini-player" onClick={() => setViewPlayer(p)}>
-                    <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
-                    <span>{p.nick || p.name}</span>
-                    <span className="mini-pts">{calcTotalPoints(p.historial || [])} pts</span>
-                  </button>
-                )
-              })}
-            </div>
+            {viewAlineacion === 'none' && <p className="placeholder">Cargando...</p>}
+            {viewAlineacion === null && (
+              <p className="placeholder">Todavía no tiene ninguna jornada resuelta.</p>
+            )}
+            {viewAlineacion && viewAlineacion !== 'none' && (
+              <>
+                <p className="placeholder">Jornada {viewAlineacion.jornada} — {viewAlineacion.puntos_jornada} pts</p>
+                <div className="mini-pool">
+                  {(viewAlineacion.jugadores ?? []).map(id => {
+                    const p = jugadores.find(j => j.numero === id)
+                    if (!p) return null
+                    return (
+                      <button key={id} className="mini-player" onClick={() => setViewPlayer(p)}>
+                        <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
+                        <span>{p.nick || p.name}{viewAlineacion.capitan === id ? ' ★' : ''}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

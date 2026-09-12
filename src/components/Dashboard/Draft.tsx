@@ -24,6 +24,7 @@ export function Draft({ usuario, jugadores }: Props) {
   const [selectedCard, setSelectedCard] = useState<Jugador | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState('')
+  const [ahora, setAhora] = useState<number | null>(null)
 
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
@@ -59,6 +60,7 @@ export function Draft({ usuario, jugadores }: Props) {
         setAlineacion(a)
         setSeleccion(a?.jugadores ?? [])
         setCapitan(a?.capitan ?? null)
+        setAhora(Date.now())
       })
 
     supabase
@@ -84,9 +86,10 @@ export function Draft({ usuario, jugadores }: Props) {
   // quedarse abierto en una pestaña desde antes del cierre) — sin esto, un
   // intento de guardar tras el deadline solo fallaría con el error crudo de
   // la RLS en vez de explicarlo antes de intentarlo.
-  const pasadoDeadline = jornada.fecha_partido !== null &&
-    new Date(jornada.fecha_partido).getTime() - Date.now() <= 24 * 60 * 60 * 1000
+  const pasadoDeadline = ahora !== null && jornada.fecha_partido !== null &&
+    new Date(jornada.fecha_partido).getTime() - ahora <= 24 * 60 * 60 * 1000
   const bloqueada = pasadoDeadline || (alineacion !== null && alineacion.puntos_jornada !== null)
+
   const usado = seleccion.reduce((sum, n) => sum + (precios[n] ?? 0), 0)
 
   const toggleJugador = (numero: number) => {

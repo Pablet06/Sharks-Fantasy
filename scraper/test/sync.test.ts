@@ -114,7 +114,7 @@ describe('syncCalendar', () => {
     await syncCalendar([{ id: 'r1', jornada: 5 }], new Set([1, 2, 3, 4]))
 
     expect(upsert).toHaveBeenCalledWith(
-      { numero: 5, fecha_partido: '2026-10-05T18:00:00Z' },
+      { numero: 5, fecha_partido: '2026-10-05T18:00:00Z Europe/Madrid' },
       { onConflict: 'numero' },
     )
   })

@@ -31,6 +31,13 @@ export function ladoSharks(homeName: string, awayName: string): 'home' | 'away' 
   return null
 }
 
+/** Leverade dates are naive local time in the Europe/Madrid zone (no offset
+ * in the API response) — tag them explicitly so Postgres's timestamptz
+ * parser applies the correct DST-aware offset instead of assuming UTC. */
+function conZonaMadrid(fecha: string | null): string | null {
+  return fecha === null ? null : `${fecha} Europe/Madrid`
+}
+
 /**
  * Escribe fecha_partido en `jornadas` para las rondas que todavía no tienen
  * historial (jornadas futuras o sin jugar), identificando el partido de los
@@ -59,12 +66,18 @@ export async function syncCalendar(rounds: Round[], historialJornadas: Set<numbe
         break
       }
     }
-    if (fechaSharks === null) continue
+    if (fechaSharks === null) {
+      console.warn(`syncCalendar: no se identificó el partido de los Sharks en la jornada ${round.jornada}`)
+      continue
+    }
 
     const { error } = await supabase
       .from('jornadas')
-      .upsert({ numero: round.jornada, fecha_partido: fechaSharks }, { onConflict: 'numero' })
-    if (error) console.error(`syncCalendar J${round.jornada}: ${error.message}`)
+      .upsert({ numero: round.jornada, fecha_partido: conZonaMadrid(fechaSharks) }, { onConflict: 'numero' })
+    if (error) {
+      console.error(`syncCalendar J${round.jornada}: ${error.message}`)
+      process.exitCode = 1
+    }
   }
 }
 
@@ -129,7 +142,7 @@ export async function syncJornada(
     .from('jornadas')
     .upsert({
       numero: round.jornada,
-      fecha_partido: matchDate,
+      fecha_partido: conZonaMadrid(matchDate),
       resultado: resultadoJornada(golesFavor, golesContra),
       goles_favor: golesFavor,
       goles_contra: golesContra,
@@ -174,7 +187,13 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
 
   const { data: histRows } = await supabase.from('historial').select('jornada')
   const historialJornadas = new Set((histRows ?? []).map(h => h.jornada as number))
-  await syncCalendar(rounds, historialJornadas)
+  try {
+    await syncCalendar(rounds, historialJornadas)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error(`syncCalendar failed: ${msg}`)
+    process.exitCode = 1
+  }
 
   const targets = opts.jornada
     ? rounds.filter(r => r.jornada === opts.jornada)

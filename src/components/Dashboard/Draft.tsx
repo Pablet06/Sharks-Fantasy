@@ -35,7 +35,8 @@ export function Draft({ usuario, jugadores }: Props) {
     supabase
       .from('jornadas')
       .select('*')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('Jornadas fetch error:', error)
         const abiertas = (data ?? []) as Jornada[]
         const n = jornadaAbierta(abiertas)
         setJornada(n === null ? null : abiertas.find(j => j.numero === n) ?? null)
@@ -44,13 +45,16 @@ export function Draft({ usuario, jugadores }: Props) {
 
   useEffect(() => {
     if (!jornada || jornada === 'loading') return
+    let cancelled = false
     supabase
       .from('alineaciones')
       .select('*')
       .eq('usuario_id', usuario.id)
       .eq('jornada', jornada.numero)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Alineacion fetch error:', error)
         const a = data as Alineacion | null
         setAlineacion(a)
         setSeleccion(a?.jugadores ?? [])
@@ -59,7 +63,14 @@ export function Draft({ usuario, jugadores }: Props) {
 
     supabase
       .rpc('presupuesto_actual', { p_usuario_id: usuario.id, p_jornada: jornada.numero })
-      .then(({ data }) => setPresupuesto(typeof data === 'number' ? data : PRESUPUESTO_BASE))
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Presupuesto fetch error:', error)
+        setPresupuesto(typeof data === 'number' ? data : PRESUPUESTO_BASE)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [jornada, usuario.id])
 
   if (jornada === 'loading') return <div className="loading-msg">Cargando...</div>
@@ -123,6 +134,14 @@ export function Draft({ usuario, jugadores }: Props) {
         <span>Jornada {jornada.numero} — presupuesto</span>
         <strong>{presupuesto - usado}€ <small>de {presupuesto}€</small></strong>
       </div>
+
+      {jornada.fecha_partido && !bloqueada && (
+        <p className="placeholder">
+          Cierra el {new Date(jornada.fecha_partido).toLocaleString('es-ES', {
+            dateStyle: 'medium', timeStyle: 'short',
+          })}
+        </p>
+      )}
 
       {bloqueada && (
         <p className="placeholder">

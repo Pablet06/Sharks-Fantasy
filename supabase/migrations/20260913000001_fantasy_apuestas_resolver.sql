@@ -41,7 +41,10 @@ BEGIN
     (SELECT SUM(a.puntos_jornada) FROM alineaciones a
      WHERE a.usuario_id = u.id AND a.puntos_jornada IS NOT NULL), 0);
 
-  -- Apuestas de resultado.
+  -- Apuestas de resultado. Si jornadas.resultado sigue NULL (p.ej. alguien
+  -- forzó la resolución antes de rellenar el resultado a mano), no se
+  -- resuelven aún estas apuestas -- se quedan para la próxima ejecución en
+  -- vez de contarse como fallo por defecto (Fix, revisión final, hallazgo I4).
   UPDATE apuestas a SET
     resuelto = true,
     acierto = (a.seleccion = j.resultado),
@@ -49,7 +52,8 @@ BEGIN
       THEN a.importe * a.cuota - a.importe
       ELSE -a.importe END
   FROM jornadas j
-  WHERE a.jornada = p_jornada AND a.tipo = 'resultado' AND j.numero = p_jornada AND NOT a.resuelto;
+  WHERE a.jornada = p_jornada AND a.tipo = 'resultado' AND j.numero = p_jornada
+    AND j.resultado IS NOT NULL AND NOT a.resuelto;
 
   -- Apuestas de goleador y expulsado: mismo patrón, cambia solo la métrica.
   -- Empate (más de un líder) -> ganancia 0, ni acierto ni fallo cuentan.

@@ -22,6 +22,16 @@ CREATE TABLE apuestas (
   UNIQUE (usuario_id, jornada, tipo)
 );
 
+-- Fix (revisión final, hallazgo I1): sin esto, una seleccion no numérica en
+-- goleador/expulsado revienta el cast `::int` dentro de resolver_jornada()
+-- y aborta la transacción ENTERA — incluida la puntuación de alineaciones
+-- de esa jornada.
+ALTER TABLE apuestas ADD CONSTRAINT apuestas_seleccion_forma CHECK (
+  (tipo = 'resultado' AND seleccion IN ('gana','pierde','empata'))
+  OR (tipo = 'porteria' AND seleccion = 'si')
+  OR (tipo IN ('goleador','expulsado') AND seleccion ~ '^[0-9]+$')
+);
+
 ALTER TABLE apuestas ENABLE ROW LEVEL SECURITY;
 
 -- Privadas siempre: ni pública ni "visible una vez resuelta" como
@@ -121,6 +131,11 @@ END $$;
 
 GRANT EXECUTE ON FUNCTION cuota_actual(text, text, integer) TO authenticated;
 
+-- Fix (revisión final, hallazgo C1): sin esta comprobación, el tope del
+-- 20% del presupuesto (validarApuestas en el frontend) es puramente
+-- cosmético — una llamada directa a la API con un importe enorme pasaba
+-- sin límite real, fabricando presupuesto para la jornada siguiente sin
+-- techo.
 CREATE OR REPLACE FUNCTION apuestas_fijar_cuota()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -128,6 +143,15 @@ SET search_path = public
 AS $$
 BEGIN
   NEW.cuota := cuota_actual(NEW.tipo, NEW.seleccion, NEW.jornada);
+
+  IF auth.uid() IS NOT NULL AND NOT is_admin(auth.uid()) THEN
+    IF (SELECT COALESCE(SUM(importe), 0) FROM apuestas
+        WHERE usuario_id = NEW.usuario_id AND jornada = NEW.jornada)
+       + NEW.importe > presupuesto_actual(NEW.usuario_id, NEW.jornada) * 0.2 THEN
+      RAISE EXCEPTION 'apuestas: el total apostado supera el 20%% del presupuesto';
+    END IF;
+  END IF;
+
   RETURN NEW;
 END $$;
 
@@ -141,6 +165,14 @@ FOR EACH ROW EXECUTE FUNCTION apuestas_fijar_cuota();
 -- del cierre de 24h. Mismo patrón de guarda que resolver_jornada: deja pasar
 -- sin tocar a admin y al service-role/scraper (auth.uid() IS NULL), revierte
 -- las columnas protegidas a su valor anterior para cualquier otro actor.
+--
+-- Fix (revisión final, hallazgos C1+C2): el upsert de la app (onConflict
+-- usuario_id,jornada,tipo) resuelve como UPDATE cuando ya existe una fila
+-- para ese tipo, y ese UPDATE no incluye `cuota` en su payload — así que
+-- sin recalcularla aquí, cambiar de selección (p.ej. de "empata" a "gana")
+-- conservaba la cuota fijada para la selección ANTERIOR. Ahora se
+-- recalcula si tipo/seleccion/jornada cambian, y se revalida también aquí
+-- el tope del 20% (el importe sí puede cambiar en un UPDATE).
 CREATE OR REPLACE FUNCTION apuestas_proteger_columnas()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -148,10 +180,22 @@ SET search_path = public
 AS $$
 BEGIN
   IF auth.uid() IS NOT NULL AND NOT is_admin(auth.uid()) THEN
-    NEW.cuota := OLD.cuota;
+    IF NEW.tipo IS DISTINCT FROM OLD.tipo
+       OR NEW.seleccion IS DISTINCT FROM OLD.seleccion
+       OR NEW.jornada IS DISTINCT FROM OLD.jornada THEN
+      NEW.cuota := cuota_actual(NEW.tipo, NEW.seleccion, NEW.jornada);
+    ELSE
+      NEW.cuota := OLD.cuota;
+    END IF;
     NEW.resuelto := OLD.resuelto;
     NEW.acierto := OLD.acierto;
     NEW.ganancia := OLD.ganancia;
+
+    IF (SELECT COALESCE(SUM(importe), 0) FROM apuestas
+        WHERE usuario_id = NEW.usuario_id AND jornada = NEW.jornada AND id != NEW.id)
+       + NEW.importe > presupuesto_actual(NEW.usuario_id, NEW.jornada) * 0.2 THEN
+      RAISE EXCEPTION 'apuestas: el total apostado supera el 20%% del presupuesto';
+    END IF;
   END IF;
   RETURN NEW;
 END $$;

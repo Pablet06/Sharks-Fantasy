@@ -1326,8 +1326,10 @@ button:focus-visible {
 .bottom-nav {
   position: fixed;
   bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 12px;
+  right: 12px;
+  transform: none;
+  justify-content: space-around;
   display: flex;
   gap: 4px;
   background: rgba(10, 10, 26, 0.88);
@@ -1345,7 +1347,7 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 6px 16px;
+  padding: 6px 8px;
   border-radius: 20px;
   background: transparent;
   color: var(--text-muted);
@@ -1353,7 +1355,7 @@ button:focus-visible {
   font-weight: 500;
   letter-spacing: 0.3px;
   transition: color 0.18s, background 0.18s;
-  min-width: 60px;
+  min-width: 0;
 }
 
 .bottom-nav-btn .nav-icon {

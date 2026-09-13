@@ -36,6 +36,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
     expulsado: filaVacia(),
     porteria: filaVacia('si'),
   })
+  const [resultados, setResultados] = useState<Apuesta[]>([])
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState('')
   const [ahora, setAhora] = useState<number | null>(null)
@@ -53,6 +54,27 @@ export function Apuestas({ usuario, jugadores }: Props) {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('apuestas')
+      .select('*')
+      .eq('usuario_id', usuario.id)
+      .eq('resuelto', true)
+      .order('jornada', { ascending: false })
+      .limit(4)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Resultados fetch error:', error)
+        const rows = (data ?? []) as Apuesta[]
+        const ultimaJornada = rows.length ? Math.max(...rows.map(r => r.jornada)) : null
+        setResultados(ultimaJornada === null ? [] : rows.filter(r => r.jornada === ultimaJornada))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [usuario.id])
+
+  useEffect(() => {
     if (!jornada || jornada === 'loading') return
     let cancelled = false
     supabase
@@ -63,7 +85,15 @@ export function Apuestas({ usuario, jugadores }: Props) {
       .then(({ data, error }) => {
         if (cancelled) return
         if (error) console.error('Apuestas fetch error:', error)
-        setExistentes((data ?? []) as Apuesta[])
+        const rows = (data ?? []) as Apuesta[]
+        setExistentes(rows)
+        setFilas(prev => {
+          const next = { ...prev }
+          for (const r of rows) {
+            next[r.tipo] = { seleccion: r.seleccion, importe: String(r.importe), cuota: r.cuota }
+          }
+          return next
+        })
         setAhora(Date.now())
       })
     supabase
@@ -123,24 +153,37 @@ export function Apuestas({ usuario, jugadores }: Props) {
       .map(({ tipo }) => ({ tipo, seleccion: filas[tipo].seleccion, importe: Number(filas[tipo].importe) || 0 }))
       .filter(a => a.seleccion && a.importe > 0)
 
-    if (activas.length === 0) { setMsg('Elige al menos una apuesta.'); return }
-
-    const validacion = validarApuestas(activas, presupuesto)
-    if (!validacion.ok) { setMsg(validacion.error); return }
+    if (activas.length > 0) {
+      const validacion = validarApuestas(activas, presupuesto)
+      if (!validacion.ok) { setMsg(validacion.error); return }
+    }
 
     setGuardando(true)
     setMsg('')
-    const { error } = await supabase.from('apuestas').upsert(
-      activas.map(a => ({
-        usuario_id: usuario.id,
-        jornada: jornada.numero,
-        tipo: a.tipo,
-        seleccion: a.seleccion,
-        importe: a.importe,
-      })),
-      { onConflict: 'usuario_id,jornada,tipo' },
-    )
-    setMsg(error ? `Error: ${error.message}` : '✓ Apuestas guardadas')
+
+    const idsABorrar = existentes
+      .filter(e => !activas.some(a => a.tipo === e.tipo))
+      .map(e => e.id)
+    if (idsABorrar.length > 0) {
+      const { error: errorBorrar } = await supabase.from('apuestas').delete().in('id', idsABorrar)
+      if (errorBorrar) { setMsg(`Error: ${errorBorrar.message}`); setGuardando(false); return }
+    }
+
+    if (activas.length > 0) {
+      const { error } = await supabase.from('apuestas').upsert(
+        activas.map(a => ({
+          usuario_id: usuario.id,
+          jornada: jornada.numero,
+          tipo: a.tipo,
+          seleccion: a.seleccion,
+          importe: a.importe,
+        })),
+        { onConflict: 'usuario_id,jornada,tipo' },
+      )
+      if (error) { setMsg(`Error: ${error.message}`); setGuardando(false); return }
+    }
+
+    setMsg('✓ Apuestas guardadas')
     setGuardando(false)
   }
 
@@ -148,8 +191,22 @@ export function Apuestas({ usuario, jugadores }: Props) {
     <div className="apuestas-container">
       <div className="team-total-pts">
         <span>Jornada {jornada.numero} — presupuesto</span>
-        <strong>{presupuesto}€</strong>
+        <strong>{Math.round(presupuesto)}€</strong>
       </div>
+
+      {resultados.length > 0 && (
+        <div className="apuestas-list">
+          <p className="placeholder">Resultado de tus apuestas de la jornada {resultados[0].jornada}:</p>
+          {resultados.map(previa => (
+            <div key={previa.id} className="apuesta-row">
+              <span>{TIPOS.find(t => t.tipo === previa.tipo)?.label ?? previa.tipo}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
+              <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
+                {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {bloqueada ? (
         <div className="apuestas-list">
@@ -175,7 +232,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
             <div key={tipo} className="apuesta-row">
               <span>{label}</span>
               {tipo === 'resultado' && (
-                <select value={filas.resultado.seleccion} onChange={e => setSeleccion('resultado', e.target.value)}>
+                <select value={filas.resultado.seleccion} onChange={e => setSeleccion('resultado', e.target.value)} aria-label={label}>
                   <option value="">—</option>
                   <option value="gana">Gana</option>
                   <option value="pierde">Pierde</option>
@@ -183,7 +240,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
                 </select>
               )}
               {(tipo === 'goleador' || tipo === 'expulsado') && (
-                <select value={filas[tipo].seleccion} onChange={e => setSeleccion(tipo, e.target.value)}>
+                <select value={filas[tipo].seleccion} onChange={e => setSeleccion(tipo, e.target.value)} aria-label={label}>
                   <option value="">—</option>
                   {jugadores.map(j => (
                     <option key={j.numero} value={String(j.numero)}>{j.nick || j.name}</option>
@@ -197,6 +254,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
                 placeholder="Importe €"
                 value={filas[tipo].importe}
                 onChange={e => setImporte(tipo, e.target.value)}
+                aria-label={`Importe para ${label}`}
               />
             </div>
           ))}

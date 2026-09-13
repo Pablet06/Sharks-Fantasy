@@ -1134,6 +1134,54 @@ button:focus-visible {
 }
 
 /* ==========================================================================
+   APUESTAS (Fase C)
+   ========================================================================== */
+
+.apuestas-container {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.apuesta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: var(--border);
+  border-radius: var(--radius);
+}
+
+.apuesta-row select,
+.apuesta-row input[type="number"] {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #fff;
+  padding: 6px 10px;
+}
+
+.apuesta-row input[type="number"] {
+  width: 90px;
+}
+
+.apuesta-cuota {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.2rem;
+  color: var(--accent);
+}
+
+.apuestas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ==========================================================================
    PROFILE
    ========================================================================== */
 
@@ -1278,8 +1326,10 @@ button:focus-visible {
 .bottom-nav {
   position: fixed;
   bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 12px;
+  right: 12px;
+  transform: none;
+  justify-content: space-around;
   display: flex;
   gap: 4px;
   background: rgba(10, 10, 26, 0.88);
@@ -1297,7 +1347,7 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 6px 16px;
+  padding: 6px 8px;
   border-radius: 20px;
   background: transparent;
   color: var(--text-muted);
@@ -1305,7 +1355,7 @@ button:focus-visible {
   font-weight: 500;
   letter-spacing: 0.3px;
   transition: color 0.18s, background 0.18s;
-  min-width: 60px;
+  min-width: 0;
 }
 
 .bottom-nav-btn .nav-icon {

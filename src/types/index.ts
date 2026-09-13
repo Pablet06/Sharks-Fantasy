@@ -63,3 +63,17 @@ export interface Alineacion {
   creado_en: string
   actualizado_en: string
 }
+
+export interface Apuesta {
+  id: number
+  usuario_id: string
+  jornada: number
+  tipo: 'resultado' | 'goleador' | 'expulsado' | 'porteria'
+  seleccion: string
+  importe: number
+  cuota: number | null
+  resuelto: boolean
+  acierto: boolean | null
+  ganancia: number | null
+  creado_en: string
+}

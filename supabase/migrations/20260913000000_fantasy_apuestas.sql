@@ -145,8 +145,14 @@ BEGIN
   NEW.cuota := cuota_actual(NEW.tipo, NEW.seleccion, NEW.jornada);
 
   IF auth.uid() IS NOT NULL AND NOT is_admin(auth.uid()) THEN
+    -- Excluye filas del mismo tipo: en un INSERT genuino no puede existir
+    -- ninguna (UNIQUE usuario_id,jornada,tipo), y en un upsert que resuelve
+    -- como UPDATE (ON CONFLICT) esta es justo la fila que se va a
+    -- sustituir -- sin esto se contaba dos veces al reeditar una apuesta
+    -- ya existente (Postgres dispara BEFORE INSERT sobre la fila
+    -- propuesta ANTES de comprobar el conflicto ON CONFLICT).
     IF (SELECT COALESCE(SUM(importe), 0) FROM apuestas
-        WHERE usuario_id = NEW.usuario_id AND jornada = NEW.jornada)
+        WHERE usuario_id = NEW.usuario_id AND jornada = NEW.jornada AND tipo != NEW.tipo)
        + NEW.importe > presupuesto_actual(NEW.usuario_id, NEW.jornada) * 0.2 THEN
       RAISE EXCEPTION 'apuestas: el total apostado supera el 20%% del presupuesto';
     END IF;

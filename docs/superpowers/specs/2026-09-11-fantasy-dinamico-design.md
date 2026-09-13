@@ -1,7 +1,7 @@
 # Fantasy dinámico — presupuesto, draft semanal, apuestas y power-ups
 
 **Fecha:** 2026-09-11
-**Estado:** Fase A implementada (en `main`). Fase B diseñada y aprobada, pendiente de plan de implementación.
+**Estado:** Fases A y B implementadas (en `develop`, aún no en `main`). Fase C diseñada y aprobada, pendiente de plan de implementación.
 **Para:** temporada 26-27 (no la 25-26 en curso — hay margen para construir con calma)
 
 ---
@@ -206,27 +206,64 @@ sin resolver nunca vuelve en esa consulta para nadie que no sea el dueño.
 
 ## Subproyecto C — Apuestas
 
-Antes del deadline de cada jornada, el usuario puede apostar sobre hasta 4
-tipos de apuesta (una por tipo y jornada). El importe **total** apostado esa
-jornada, sumando todas las apuestas que haga, no puede superar el 20% del
-presupuesto de esa jornada (p. ej. 200€ sobre 1000€):
+Decisiones de la sesión de brainstorming del 2026-09-13:
 
-| Tipo | Sobre qué apuestas | Cuota calculada de |
+Antes del deadline de cada jornada (mismas 24h que el draft), el usuario
+puede apostar sobre hasta 4 tipos (una selección por tipo y jornada). El
+importe **total** apostado esa jornada, sumando todas las apuestas, no
+puede superar el 20% del presupuesto de esa jornada (p. ej. 200€ sobre
+1000€). **Pestaña propia "Apuestas" en la barra de navegación**, separada
+del draft.
+
+| Tipo | Sobre qué apuestas | Empate |
 |---|---|---|
-| Resultado | Gana / pierde / empata el partido de los Sharks | Récord de resultados de los Sharks esta temporada |
-| Máximo goleador | Qué jugador del equipo marca más goles esa jornada | Ratio de goles/jornada histórico de cada jugador |
-| Más expulsado | Qué jugador acumula más tarjetas/expulsiones esa jornada | Ratio de tarjetas+expulsiones/jornada histórico |
-| Portería | El portero encaja menos de 8 goles | Media histórica de `goles_contra` del portero titular |
+| Resultado | Gana / pierde / empata el partido de los Sharks | — |
+| Máximo goleador | Qué jugador marca más goles del equipo esa jornada | Empate = nadie acierta, se devuelve el importe |
+| Más expulsado | Qué jugador acumula más tarjetas+expulsiones esa jornada | Empate = nadie acierta, se devuelve el importe |
+| Portería | Algún portero que jugó encaja menos de 8 goles | — |
 
-Cuotas automáticas, acotadas a 1.2x–2.1x (fórmula concreta a definir en el
-plan: probabilidad implícita del histórico, invertida y con margen).
+### Cuotas automáticas
 
-**Resolución** (parte de `resolver_jornada(n)`):
-- Acierto: `presupuesto(jornada N+1) += importe × cuota − importe`
-- Fallo: `presupuesto(jornada N+1) -= importe`
-- **Sin suelo de seguridad** — el presupuesto solo tiene como límite no bajar
-  de 0€. Una mala racha de apuestas es una consecuencia real, no protegida;
-  las apuestas son la palanca para remontar, no una red sin riesgo.
+Sobre el histórico de **toda la temporada hasta la jornada anterior**
+(no una ventana de N jornadas — más datos, más simple que calcPrecio):
+
+- **Resultado**: `prob = veces que pasó / partidos jugados`.
+- **Máximo goleador / más expulsado**: `prob(jugador) = jornadas donde fue
+  el máximo esa categoría / jornadas jugadas por el equipo`.
+- **Portería**: `prob = jornadas con goles_contra < 8 del portero que jugó
+  / jornadas jugadas por algún portero`. Es una apuesta sobre el equipo
+  (cualquier portero que juegue esa jornada), no sobre un portero elegido.
+- **Sin histórico todavía** (denominador 0, inicio de temporada): `prob = 0.5`
+  por defecto para los 4 tipos por igual.
+- **Cuota** = `clamp(1 / prob, 1.2, 2.1)`.
+
+**La cuota no la envía el cliente — la calcula el servidor.** Un trigger
+`BEFORE INSERT` en `apuestas` la fija llamando a una función
+`cuota_actual(tipo, seleccion, jornada)`; el cliente solo manda
+tipo/selección/importe. Esto congela la cuota que el usuario vio al apostar
+(la resolución no puede recalcularla más tarde con el resultado ya
+incluido en el histórico) y, sobre todo, cierra la vía obvia para
+falsificar una cuota y forzar una ganancia — la cuota nunca es un valor de
+confianza del cliente, igual que ya se hace con el resto de campos
+sensibles de este proyecto.
+
+### Visibilidad
+
+**Privadas siempre**, incluso resueltas — solo el dueño y el admin ven una
+apuesta. A diferencia de `alineaciones` (públicas una vez resueltas),
+apostar es una decisión personal que no hace falta enseñar a nadie.
+
+### Resolución (parte de `resolver_jornada(n)`)
+
+- Acierto: `ganancia = importe × cuota − importe`. Fallo: `ganancia = −importe`.
+  Empate en goleador/expulsado: `ganancia = 0` (se devuelve el importe).
+- `presupuesto(jornada N+1) = max(0, 1000 + suma de ganancias del usuario esa jornada)`.
+  **Sin suelo de seguridad** — el presupuesto solo tiene como límite no
+  bajar de 0€. Una mala racha de apuestas es una consecuencia real, no
+  protegida; las apuestas son la palanca para remontar, no una red sin
+  riesgo.
+- Si la jornada N+1 todavía no existe en `jornadas` (fin de temporada), no
+  se escribe nada — no hay a qué jornada financiar.
 - Apostar es independiente de completar la alineación: un usuario puede
   apostar aunque su alineación quede incompleta esa jornada (y viceversa).
 
@@ -300,6 +337,7 @@ Cada fase es un PR independiente, como en Federation Sync / Admin Panel:
 
 ## Estado
 
-- **Fase A**: implementada, revisada y en `main` (PR #4).
-- **Fase B**: diseño aprobado (sección de arriba), siguiente paso es el plan
+- **Fase A**: implementada, revisada, en `develop` (PR #4). Aún no en `main`.
+- **Fase B**: implementada, revisada, en `develop` (PR #5). Aún no en `main`.
+- **Fase C**: diseño aprobado (sección de arriba), siguiente paso es el plan
   de implementación (`superpowers:writing-plans`).

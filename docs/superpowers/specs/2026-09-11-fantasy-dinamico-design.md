@@ -1,8 +1,8 @@
 # Fantasy dinámico — presupuesto, draft semanal, apuestas y power-ups
 
 **Fecha:** 2026-09-11
-**Estado:** Fases A y B implementadas (en `develop`, aún no en `main`). Fase C diseñada y aprobada, pendiente de plan de implementación.
-**Para:** temporada 26-27 (no la 25-26 en curso — hay margen para construir con calma)
+**Estado:** Fases A, B y C implementadas y en producción (A y B en `develop`, aún no en `main`; C en PR #6 contra `develop`, migraciones ya aplicadas a prod). Fase D diseñada, pendiente de plan de implementación.
+**Para:** la temporada en curso — todas las fases, incluidos los power-ups, están activas ya esta temporada, no se aplaza nada a la siguiente.
 
 ---
 
@@ -271,35 +271,128 @@ apostar es una decisión personal que no hace falta enseñar a nadie.
 
 ## Subproyecto D — Power-ups
 
-Estilo "muchos y pequeños, recargables": se gana 1 token cada 3 jornadas, o
-por racha de 2 aciertos de apuesta seguidos. Efectos v1:
+Estilo "muchos y pequeños, recargables": se gana 1 token cada 3 jornadas
+*jugadas* (no cada 3 números de jornada — cuenta jornadas resueltas en
+orden, robusto ante huecos en la numeración), de tipo aleatorio entre los
+6, para **todos** los usuarios a la vez. Además, cualquier usuario con una
+racha de 2 jornadas seguidas con al menos un acierto de apuesta cada una
+gana 1 token aleatorio extra, individual. Activo ya esta temporada (no se
+aplaza a la siguiente).
 
-| Power-up | Efecto |
-|---|---|
-| +2 puntos | a un jugador de tu 7 esa jornada |
-| Blindaje de tarjeta | anula la penalización por tarjeta/expulsión de un jugador tuyo esa jornada |
-| +50€ | de presupuesto extra, solo esa jornada |
-| Doble ganancia | si aciertas una apuesta esa jornada, la ganancia neta se duplica |
-| Apuesta sin riesgo | si fallas una apuesta esa jornada, no se resta el importe |
-| Capitán tardío | puedes cambiar el capitán hasta 1h antes del cierre aunque el resto del 7 ya esté bloqueado |
+**Límite:** como mucho 1 power-up aplicado por usuario y jornada, sin
+importar cuántos tipos distintos tenga en inventario.
+
+**Ventana de aplicación:** el mismo cierre de 24h que ya bloquea alineación
+y apuestas — se elige el power-up (y su objetivo, si aplica) antes de esa
+hora. Excepción: "Capitán tardío" (ver más abajo).
+
+| Power-up | Efecto | Objetivo al aplicar |
+|---|---|---|
+| +2 puntos | Suma 2 a `alineaciones.puntos_jornada` si el jugador objetivo estaba en el 7 y el 7 puntuó esa jornada (un equipo incompleto sigue sin puntuar, el power-up no lo rescata). | Un dorsal de tu 7 |
+| Blindaje de tarjeta | Anula la penalización de tarjeta/expulsión del jugador objetivo, sumando de vuelta exactamente lo que le restaron: `tarjetas*3 + expulsiones*1 + expulsiones_graves*5` (mismas constantes que `scraper/src/points.ts::calcMatchPoints`; ver nota de sincronización más abajo). | Un dorsal de tu 7 |
+| +50€ | Suma 50€ a tu presupuesto de la jornada abierta. Se aplica al instante al redimirlo (no espera a `resolver_jornada`), escribiendo directamente en `presupuestos`. | Ninguno |
+| Doble ganancia | Todas tus apuestas acertadas de esa jornada duplican su ganancia neta (no solo una). | Ninguno |
+| Apuesta sin riesgo | Ninguna de tus apuestas falladas de esa jornada resta el importe (ganancia queda en 0 en vez de `-importe`). | Ninguno |
+| Capitán tardío | Tu campo `capitan` queda editable hasta 1h antes del partido, aunque el resto del 7 ya esté bloqueado a las 24h. | Ninguno |
+
+### Esquema
 
 ```sql
 CREATE TABLE powerups_usuario (
   usuario_id  uuid REFERENCES usuarios(id),
-  tipo        text,
-  disponibles integer NOT NULL DEFAULT 0,
+  tipo        text CHECK (tipo IN (
+    'puntos_extra','blindaje','presupuesto_extra',
+    'doble_ganancia','apuesta_sin_riesgo','capitan_tardio'
+  )),
+  disponibles integer NOT NULL DEFAULT 0 CHECK (disponibles >= 0),
   PRIMARY KEY (usuario_id, tipo)
 );
 
 CREATE TABLE powerups_aplicados (
   id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  usuario_id  uuid REFERENCES usuarios(id),
-  jornada     integer REFERENCES jornadas(numero),
-  tipo        text,
-  objetivo    integer,   -- dorsal, si el power-up aplica a un jugador concreto
-  aplicado_en timestamptz NOT NULL DEFAULT now()
+  usuario_id  uuid NOT NULL REFERENCES usuarios(id),
+  jornada     integer NOT NULL REFERENCES jornadas(numero),
+  tipo        text NOT NULL CHECK (tipo IN (
+    'puntos_extra','blindaje','presupuesto_extra',
+    'doble_ganancia','apuesta_sin_riesgo','capitan_tardio'
+  )),
+  objetivo    integer,   -- dorsal, solo para puntos_extra/blindaje
+  aplicado_en timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (usuario_id, jornada)   -- como mucho 1 power-up por usuario y jornada
 );
 ```
+
+RLS en ambas tablas: privadas, mismo patrón que `apuestas` (dueño + admin,
+nunca públicas). `powerups_aplicados` sigue el mismo criterio de
+`apuestas_owner_write`/`alineaciones_owner_write` (editable solo con más de
+24h para el partido), salvo la excepción de "Capitán tardío" descrita
+abajo, que vive en la policy de `alineaciones`, no en esta tabla.
+
+### Ganancia de tokens (parte de `resolver_jornada(n)`)
+
+Bloque nuevo al FINAL de la función, después de
+`UPDATE jornadas SET finalizado = true WHERE numero = p_jornada` (no antes
+— si se ejecutara antes, el recuento de jornadas resueltas no incluiría
+todavía la actual y la cadencia de "cada 3" iría sistemáticamente una
+jornada tarde):
+
+```sql
+-- Token de cadencia: cada 3 jornadas RESUELTAS (no cada 3 números de
+-- jornada), para todos los usuarios a la vez. Va DESPUÉS del UPDATE que
+-- marca esta jornada como finalizado=true, para que la propia jornada
+-- actual cuente en el recuento.
+IF (SELECT count(*) FROM jornadas WHERE finalizado = true) % 3 = 0 THEN
+  INSERT INTO powerups_usuario (usuario_id, tipo, disponibles)
+  SELECT id, (ARRAY['puntos_extra','blindaje','presupuesto_extra',
+                     'doble_ganancia','apuesta_sin_riesgo','capitan_tardio'])
+              [1 + floor(random() * 6)::int], 1
+  FROM usuarios
+  ON CONFLICT (usuario_id, tipo) DO UPDATE SET disponibles = powerups_usuario.disponibles + 1;
+END IF;
+
+-- Token de racha: por usuario, 2 jornadas RESUELTAS SEGUIDAS (en el mismo
+-- sentido "en orden" que la cadencia de arriba, no números de jornada
+-- consecutivos) en las que tuvo al menos una apuesta con acierto=true,
+-- siendo la más reciente de esas dos la jornada que se acaba de resolver
+-- (p_jornada). Concretamente: sea J la jornada resuelta inmediatamente
+-- ANTES de p_jornada (la de mayor numero con finalizado=true y
+-- numero < p_jornada); si el usuario tiene >=1 fila de apuestas con
+-- acierto=true en J Y en p_jornada, gana el token de racha. Sin jornada
+-- anterior resuelta (p.ej. la primera de la temporada), no hay racha
+-- posible todavía.
+```
+
+*Nota de sincronización:* las constantes `3`, `1`, `5` de "blindaje de
+tarjeta" están duplicadas a mano desde `scraper/src/points.ts` porque SQL
+no puede importar TypeScript — si esa fórmula cambia alguna vez, esta
+migración queda desincronizada silenciosamente. Se documenta con un
+comentario en el SQL apuntando a ese fichero.
+
+### Aplicación (frontend)
+
+Pestaña nueva "Power-ups", junto a Apuestas: muestra el inventario
+(`powerups_usuario`) y permite aplicar como mucho uno a la jornada abierta,
+con selector de jugador objetivo cuando el tipo lo requiere
+(+2 puntos / blindaje). "Capitán tardío" se aplica igual (antes de las
+24h) pero su efecto se nota después: `Draft.tsx` debe comprobar si hay un
+`powerups_aplicados` de ese tipo para la jornada y, si lo hay, permitir
+editar solo `capitan` (no el resto de `jugadores`) hasta 1h antes del
+partido en vez de las 24h generales.
+
+### Integración con `resolver_jornada()`
+
+- **+2 puntos / blindaje**: se aplican como un `UPDATE alineaciones` extra
+  después del bloque de puntuación normal de Fase A/B, sumando el ajuste
+  correspondiente solo a la fila de la alineación completa (7 distintos)
+  del usuario que tenga el power-up aplicado con ese objetivo.
+- **+50€**: no se toca en `resolver_jornada` — ya se escribió en
+  `presupuestos` al redimir el power-up, antes del cierre.
+- **Doble ganancia / apuesta sin riesgo**: se incorporan a los `CASE` que
+  ya calculan `ganancia` en los bloques de apuestas de Fase C (multiplicar
+  por 2 la ganancia positiva, o forzar 0 en vez de `-importe`, según si el
+  usuario tiene el power-up correspondiente aplicado esa jornada).
+- **Capitán tardío**: no toca `resolver_jornada` — es una excepción de
+  RLS/UI sobre `alineaciones`, no una regla de puntuación.
 
 ---
 
@@ -332,6 +425,7 @@ Cada fase es un PR independiente, como en Federation Sync / Admin Panel:
 | Identificar el partido de los Sharks en una jornada aún no jugada (sin página de stats todavía) | Resuelto: comprobado contra la API real de Leverade — `GET /rounds/{id}?include=matches` devuelve cada partido con `meta.home_team`/`meta.away_team` (IDs de equipo) independientemente de si está jugado, y `GET /teams/{id}` da el nombre. No hace falta tocar el scraping de FNCV para esto. |
 | Presupuesto a 0€ tras una mala racha deja al usuario sin poder fichar nada | Es la consecuencia buscada (decisión explícita del usuario, sin suelo) — vigilar en la primera temporada si resulta demasiado punitivo y hay que revisar |
 | Alineación incompleta → 0 puntos puede penalizar a alguien que se olvidó una semana de forma desproporcionada | Es la consecuencia buscada (fuerza el hábito semanal); revisar tras la primera temporada si hace falta un aviso/recordatorio (fuera de alcance v1) |
+| "Blindaje de tarjeta" (Fase D) duplica a mano en SQL las constantes de penalización de `scraper/src/points.ts::calcMatchPoints` — si esa fórmula cambia, la migración queda desincronizada en silencio | Comentario explícito en el SQL apuntando al fichero fuente; sin mecanismo automático de sincronización (no viable entre TypeScript y una migración ya aplicada) |
 
 ---
 
@@ -339,5 +433,7 @@ Cada fase es un PR independiente, como en Federation Sync / Admin Panel:
 
 - **Fase A**: implementada, revisada, en `develop` (PR #4). Aún no en `main`.
 - **Fase B**: implementada, revisada, en `develop` (PR #5). Aún no en `main`.
-- **Fase C**: diseño aprobado (sección de arriba), siguiente paso es el plan
+- **Fase C**: implementada, revisada (incluida revisión final de rama),
+  migraciones aplicadas a producción, PR #6 abierta contra `develop`.
+- **Fase D**: diseño aprobado (sección de arriba), siguiente paso es el plan
   de implementación (`superpowers:writing-plans`).

@@ -59,6 +59,7 @@ BEGIN
     IF v_fecha IS NOT NULL AND now() >= v_fecha - interval '24 hours' THEN
       NEW.jugadores := OLD.jugadores;
       NEW.presupuesto_usado := OLD.presupuesto_usado;
+      NEW.puntos_jornada := OLD.puntos_jornada;
     END IF;
   END IF;
   RETURN NEW;

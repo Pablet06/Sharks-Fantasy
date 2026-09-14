@@ -154,7 +154,12 @@ export function Draft({ usuario, jugadores }: Props) {
       .update({ capitan: nuevoCapitan })
       .eq('usuario_id', usuario.id)
       .eq('jornada', jornada.numero)
-    setMsg(error ? `Error: ${error.message}` : '✓ Capitán actualizado')
+    if (error) {
+      setMsg(`Error: ${error.message}`)
+    } else {
+      setAlineacion(prev => prev && { ...prev, capitan: nuevoCapitan })
+      setMsg('✓ Capitán actualizado')
+    }
   }
 
   const filtrados = jugadores.filter(j => posFilter === 'Todos' || j.pos === posFilter)
@@ -193,6 +198,7 @@ export function Draft({ usuario, jugadores }: Props) {
                   return <option key={numero} value={numero}>{j?.nick || j?.name || numero}</option>
                 })}
               </select>
+              {msg && <p className="admin-msg">{msg}</p>}
             </div>
           )}
         </>

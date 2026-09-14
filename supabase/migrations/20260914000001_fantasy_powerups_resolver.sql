@@ -53,11 +53,15 @@ BEGIN
   ) sub
   WHERE a.id = sub.id;
 
-  IF NOT v_ya_finalizada THEN
-    -- Power-up "+2 puntos": entra AQUÍ, entre la puntuación normal y el
-    -- fallback a 0 de abajo, para que un equipo todavía incompleto
-    -- (puntos_jornada sigue NULL en este punto) nunca se vea "rescatado".
-    UPDATE alineaciones a SET puntos_jornada = a.puntos_jornada + 2
+  -- Power-up "+2 puntos": entra AQUÍ, entre la puntuación normal y el
+  -- fallback a 0 de abajo, para que un equipo todavía incompleto
+  -- (puntos_jornada sigue NULL en este punto) nunca se vea "rescatado".
+  -- Fix (post-revisión final): NO envolver en `IF NOT v_ya_finalizada` --
+  -- la puntuación BASE de arriba (líneas 41-54) resetea puntos_jornada al
+  -- valor bruto sin condición en cada re-ejecución, así que este bloque
+  -- debe reaplicarse también sin condición para no perder el +2/blindaje
+  -- en una re-ejecución del caso común (equipo completo).
+  UPDATE alineaciones a SET puntos_jornada = a.puntos_jornada + 2
     FROM powerups_aplicados pa
     WHERE pa.usuario_id = a.usuario_id AND pa.jornada = a.jornada
       AND pa.tipo = 'puntos_extra' AND a.jornada = p_jornada
@@ -86,7 +90,6 @@ BEGIN
       AND pa.tipo = 'blindaje' AND a.jornada = p_jornada
       AND a.puntos_jornada IS NOT NULL
       AND pa.objetivo = ANY(a.jugadores);
-  END IF;
 
   UPDATE alineaciones SET puntos_jornada = 0, actualizado_en = now()
   WHERE jornada = p_jornada AND puntos_jornada IS NULL;

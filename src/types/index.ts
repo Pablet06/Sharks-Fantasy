@@ -77,3 +77,26 @@ export interface Apuesta {
   ganancia: number | null
   creado_en: string
 }
+
+export type TipoPowerup =
+  | 'puntos_extra'
+  | 'blindaje'
+  | 'presupuesto_extra'
+  | 'doble_ganancia'
+  | 'apuesta_sin_riesgo'
+  | 'capitan_tardio'
+
+export interface PowerupInventario {
+  usuario_id: string
+  tipo: TipoPowerup
+  disponibles: number
+}
+
+export interface PowerupAplicado {
+  id: number
+  usuario_id: string
+  jornada: number
+  tipo: TipoPowerup
+  objetivo: number | null
+  aplicado_en: string
+}

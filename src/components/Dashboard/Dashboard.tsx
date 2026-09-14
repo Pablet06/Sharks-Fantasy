@@ -5,6 +5,7 @@ import { Shell } from './Shell'
 import type { Tab } from './Shell'
 import { Draft } from './Draft'
 import { Apuestas } from './Apuestas'
+import { Powerups } from './Powerups'
 import { Ranking } from '../Ranking/Ranking'
 import { Players } from '../Players/Players'
 import { Profile } from '../Profile/Profile'
@@ -37,6 +38,7 @@ export function Dashboard({ user, usuario, jugadores, onSignOut, onUpdateNombre 
         <>
           {tab === 'team'    && <Draft usuario={usuario} jugadores={jugadores} />}
           {tab === 'apuestas' && <Apuestas usuario={usuario} jugadores={jugadores} />}
+          {tab === 'powerups' && <Powerups usuario={usuario} jugadores={jugadores} />}
           {tab === 'ranking' && <Ranking jugadores={jugadores} currentUserId={usuario.id} />}
           {tab === 'players' && <Players jugadores={jugadores} />}
           {tab === 'profile' && (

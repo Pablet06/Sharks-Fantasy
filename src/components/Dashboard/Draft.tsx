@@ -25,6 +25,7 @@ export function Draft({ usuario, jugadores }: Props) {
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState('')
   const [ahora, setAhora] = useState<number | null>(null)
+  const [tieneCapitanTardio, setTieneCapitanTardio] = useState(false)
 
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
@@ -70,6 +71,19 @@ export function Draft({ usuario, jugadores }: Props) {
         if (error) console.error('Presupuesto fetch error:', error)
         setPresupuesto(typeof data === 'number' ? data : PRESUPUESTO_BASE)
       })
+
+    supabase
+      .from('powerups_aplicados')
+      .select('tipo')
+      .eq('usuario_id', usuario.id)
+      .eq('jornada', jornada.numero)
+      .eq('tipo', 'capitan_tardio')
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Powerup capitan_tardio fetch error:', error)
+        setTieneCapitanTardio(data !== null)
+      })
     return () => {
       cancelled = true
     }
@@ -89,6 +103,10 @@ export function Draft({ usuario, jugadores }: Props) {
   const pasadoDeadline = ahora !== null && jornada.fecha_partido !== null &&
     new Date(jornada.fecha_partido).getTime() - ahora <= 24 * 60 * 60 * 1000
   const bloqueada = pasadoDeadline || (alineacion !== null && alineacion.puntos_jornada !== null)
+  const pasadoDeadlineCapitan = ahora !== null && jornada.fecha_partido !== null &&
+    new Date(jornada.fecha_partido).getTime() - ahora <= 60 * 60 * 1000
+  const puedeEditarCapitanTarde = bloqueada && tieneCapitanTardio && !pasadoDeadlineCapitan &&
+    alineacion !== null && alineacion.puntos_jornada === null
 
   const usado = seleccion.reduce((sum, n) => sum + (precios[n] ?? 0), 0)
 
@@ -129,6 +147,21 @@ export function Draft({ usuario, jugadores }: Props) {
     setGuardando(false)
   }
 
+  const cambiarCapitanTarde = async (nuevoCapitan: number) => {
+    if (!alineacion) return
+    const { error } = await supabase
+      .from('alineaciones')
+      .update({ capitan: nuevoCapitan })
+      .eq('usuario_id', usuario.id)
+      .eq('jornada', jornada.numero)
+    if (error) {
+      setMsg(`Error: ${error.message}`)
+    } else {
+      setAlineacion(prev => prev && { ...prev, capitan: nuevoCapitan })
+      setMsg('✓ Capitán actualizado')
+    }
+  }
+
   const filtrados = jugadores.filter(j => posFilter === 'Todos' || j.pos === posFilter)
 
   return (
@@ -147,10 +180,28 @@ export function Draft({ usuario, jugadores }: Props) {
       )}
 
       {bloqueada && (
-        <p className="placeholder">
-          Alineación bloqueada para esta jornada
-          {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
-        </p>
+        <>
+          <p className="placeholder">
+            Alineación bloqueada para esta jornada
+            {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
+          </p>
+
+          {puedeEditarCapitanTarde && (
+            <div className="powerup-aplicar">
+              <span>Capitán tardío: puedes cambiar el capitán hasta 1h antes del partido.</span>
+              <select
+                value={alineacion?.capitan ?? ''}
+                onChange={e => cambiarCapitanTarde(Number(e.target.value))}
+              >
+                {(alineacion?.jugadores ?? []).map(numero => {
+                  const j = jugadores.find(x => x.numero === numero)
+                  return <option key={numero} value={numero}>{j?.nick || j?.name || numero}</option>
+                })}
+              </select>
+              {msg && <p className="admin-msg">{msg}</p>}
+            </div>
+          )}
+        </>
       )}
 
       {!bloqueada && (

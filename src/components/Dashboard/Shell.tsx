@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type Tab = 'team' | 'ranking' | 'players' | 'profile' | 'apuestas'
+export type Tab = 'team' | 'ranking' | 'players' | 'profile' | 'apuestas' | 'powerups'
 
 interface ShellProps {
   tab: Tab
@@ -15,6 +15,7 @@ interface ShellProps {
 const NAV_ITEMS: { tab: Tab; icon: string; label: string }[] = [
   { tab: 'team',     icon: '🌊', label: 'Mi Equipo'  },
   { tab: 'apuestas', icon: '🎲', label: 'Apuestas'   },
+  { tab: 'powerups', icon: '⚡', label: 'Power-ups'  },
   { tab: 'ranking',  icon: '🏆', label: 'Ranking'    },
   { tab: 'players',  icon: '👥', label: 'Jugadores'  },
   { tab: 'profile',  icon: '👤', label: 'Perfil'     },

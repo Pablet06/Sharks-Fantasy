@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { Jugador, Usuario, Jornada, Alineacion } from '../../types'
+import type { Jugador, Usuario, Jornada, Alineacion, Position } from '../../types'
 import { calcPrecio } from '../../lib/precio'
 import { jornadaAbierta } from '../../lib/jornada'
-import { validarDraft } from '../../lib/draft'
+import { validarDraft, contarPosiciones, COMPOSICION } from '../../lib/draft'
 import { PlayerCard } from './PlayerCard'
 
 interface Props {
@@ -31,6 +31,12 @@ export function Draft({ usuario, jugadores }: Props) {
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
     for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [])
+    return m
+  }, [jugadores])
+
+  const posiciones = useMemo(() => {
+    const m: Record<number, Position> = {}
+    for (const j of jugadores) m[j.numero] = j.pos
     return m
   }, [jugadores])
 
@@ -133,7 +139,7 @@ export function Draft({ usuario, jugadores }: Props) {
       return
     }
 
-    const validacion = validarDraft(seleccion, capitan, precios, presupuesto)
+    const validacion = validarDraft(seleccion, capitan, precios, presupuesto, posiciones)
     if (!validacion.ok) { setMsg(validacion.error); return }
     setGuardando(true)
     setMsg('')
@@ -177,6 +183,7 @@ export function Draft({ usuario, jugadores }: Props) {
     }
   }
 
+  const cuentaPos = contarPosiciones(seleccion, posiciones)
   const filtrados = jugadores.filter(j => posFilter === 'Todos' || j.pos === posFilter)
   const orden = jornada.orden ?? jornada.numero
 
@@ -193,6 +200,16 @@ export function Draft({ usuario, jugadores }: Props) {
             >
               {pos}
             </button>
+          ))}
+        </div>
+      )}
+
+      {!bloqueada && (
+        <div className="composicion">
+          {(Object.keys(COMPOSICION) as Position[]).map(p => (
+            <span key={p} className={`composicion-item ${cuentaPos[p] === COMPOSICION[p] ? 'ok' : cuentaPos[p] > COMPOSICION[p] ? 'sobra' : ''}`}>
+              {p} {cuentaPos[p]}/{COMPOSICION[p]}
+            </span>
           ))}
         </div>
       )}
@@ -258,6 +275,7 @@ export function Draft({ usuario, jugadores }: Props) {
       <div className="team-total-pts">
         <span>Jornada {orden}</span>
         <strong>{presupuesto - usado}€</strong>
+        <span>{usuario.puntos} pts</span>
       </div>
 
       {jornada.fecha_partido && !bloqueada && (

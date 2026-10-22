@@ -1122,6 +1122,30 @@ button:focus-visible {
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
 }
 
+.composicion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.composicion-item {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+}
+
+.composicion-item.ok {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.composicion-item.sobra {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
 .mini-pos {
   font-size: 0.68rem;
   color: var(--text-muted);

@@ -2,9 +2,24 @@ import { describe, it, expect, vi } from 'vitest'
 
 // sync.ts imports ./supabase, which throws at load without env vars. rawToStats
 // touches no DB, so a bare stub is enough.
-vi.mock('../src/supabase', () => ({ supabase: {} }))
+vi.mock('../src/supabase', () => ({ supabase: { rpc: vi.fn() } }))
 
-import { rawToStats, runSync, staleJornadas } from '../src/sync'
+vi.mock('../src/leverade', async () => {
+  const actual = await vi.importActual<typeof import('../src/leverade')>('../src/leverade')
+  return { ...actual, getRoundMatches: vi.fn(), getTeamName: vi.fn() }
+})
+
+import { supabase } from '../src/supabase'
+import { getRoundMatches, getTeamName } from '../src/leverade'
+import {
+  rawToStats,
+  resultadoJornada,
+  resolverJornadas,
+  runSync,
+  staleJornadas,
+  syncCalendar,
+  ladoSharks,
+} from '../src/sync'
 import type { RawPlayer } from '../src/fncv'
 
 const raw = (o: Partial<RawPlayer>): RawPlayer => ({
@@ -54,5 +69,92 @@ describe('staleJornadas', () => {
 
   it('deletes nothing when the calendar came back empty (failed enumeration)', () => {
     expect(staleJornadas([], [1, 2, 3])).toEqual([])
+  })
+})
+
+describe('resultadoJornada', () => {
+  it('gana cuando marcamos más goles que el rival', () => {
+    expect(resultadoJornada(10, 7)).toBe('gana')
+  })
+
+  it('pierde cuando marcamos menos', () => {
+    expect(resultadoJornada(5, 9)).toBe('pierde')
+  })
+
+  it('empata a los mismos goles', () => {
+    expect(resultadoJornada(8, 8)).toBe('empata')
+  })
+})
+
+describe('ladoSharks', () => {
+  it('detecta a los Sharks como local', () => {
+    expect(ladoSharks('C.W. Sharks A', 'C.W. Elx B')).toBe('home')
+  })
+
+  it('detecta a los Sharks como visitante', () => {
+    expect(ladoSharks('C.W. Elx B', 'C.W. Sharks A')).toBe('away')
+  })
+
+  it('devuelve null si ninguno de los dos es Sharks', () => {
+    expect(ladoSharks('C.W. Elx B', 'C.W. UPV A')).toBe(null)
+  })
+})
+
+describe('syncCalendar', () => {
+  it('escribe fecha_partido para una jornada sin historial, identificando a los Sharks por sus equipos', async () => {
+    vi.mocked(getRoundMatches).mockResolvedValue([
+      { id: 'm1', date: '2026-10-05T18:00:00Z', finished: false, homeTeamId: 't1', awayTeamId: 't2' },
+    ])
+    vi.mocked(getTeamName).mockImplementation((id: string) =>
+      Promise.resolve(id === 't2' ? 'C.W. Sharks A' : 'C.W. Elx B'),
+    )
+    const upsert = vi.fn().mockResolvedValue({ error: null })
+    vi.mocked(supabase).from = vi.fn(() => ({ upsert })) as never
+
+    await syncCalendar([{ id: 'r1', jornada: 5 }], new Set([1, 2, 3, 4]))
+
+    expect(upsert).toHaveBeenCalledWith(
+      { numero: 5, fecha_partido: '2026-10-05T18:00:00Z Europe/Madrid' },
+      { onConflict: 'numero' },
+    )
+  })
+
+  it('no toca una jornada que ya tiene historial', async () => {
+    vi.mocked(getRoundMatches).mockClear()
+    const upsert = vi.fn()
+    vi.mocked(supabase).from = vi.fn(() => ({ upsert })) as never
+
+    await syncCalendar([{ id: 'r1', jornada: 3 }], new Set([1, 2, 3]))
+
+    expect(getRoundMatches).not.toHaveBeenCalled()
+    expect(upsert).not.toHaveBeenCalled()
+  })
+})
+
+describe('resolverJornadas', () => {
+  it('llama a resolver_jornada una vez por cada jornada sincronizada', async () => {
+    const rpc = vi.mocked(supabase.rpc)
+    rpc.mockClear()
+    rpc.mockResolvedValue({ error: null } as never)
+
+    await resolverJornadas([3, 5])
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'resolver_jornada', { p_jornada: 3 })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'resolver_jornada', { p_jornada: 5 })
+  })
+
+  it('sigue con las demás jornadas si una falla, sin lanzar', async () => {
+    const rpc = vi.mocked(supabase.rpc)
+    rpc.mockClear()
+    rpc.mockResolvedValueOnce({ error: { message: 'boom' } } as never)
+    rpc.mockResolvedValueOnce({ error: null } as never)
+    const prevExitCode = process.exitCode
+    process.exitCode = undefined
+
+    await expect(resolverJornadas([1, 2])).resolves.toBeUndefined()
+    expect(rpc).toHaveBeenCalledTimes(2)
+    expect(process.exitCode).toBe(1)
+
+    process.exitCode = prevExitCode
   })
 })

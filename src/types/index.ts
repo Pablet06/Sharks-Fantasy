@@ -42,3 +42,61 @@ export interface Usuario {
   created_at: string
   is_admin: boolean
 }
+
+export interface Jornada {
+  numero: number
+  fecha_partido: string | null
+  resultado: 'gana' | 'pierde' | 'empata' | null
+  goles_favor: number | null
+  goles_contra: number | null
+  finalizado: boolean
+}
+
+export interface Alineacion {
+  id: number
+  usuario_id: string
+  jornada: number
+  jugadores: number[] | null
+  capitan: number | null
+  presupuesto_usado: number | null
+  puntos_jornada: number | null
+  creado_en: string
+  actualizado_en: string
+}
+
+export interface Apuesta {
+  id: number
+  usuario_id: string
+  jornada: number
+  tipo: 'resultado' | 'goleador' | 'expulsado' | 'porteria'
+  seleccion: string
+  importe: number
+  cuota: number | null
+  resuelto: boolean
+  acierto: boolean | null
+  ganancia: number | null
+  creado_en: string
+}
+
+export type TipoPowerup =
+  | 'puntos_extra'
+  | 'blindaje'
+  | 'presupuesto_extra'
+  | 'doble_ganancia'
+  | 'apuesta_sin_riesgo'
+  | 'capitan_tardio'
+
+export interface PowerupInventario {
+  usuario_id: string
+  tipo: TipoPowerup
+  disponibles: number
+}
+
+export interface PowerupAplicado {
+  id: number
+  usuario_id: string
+  jornada: number
+  tipo: TipoPowerup
+  objetivo: number | null
+  aplicado_en: string
+}

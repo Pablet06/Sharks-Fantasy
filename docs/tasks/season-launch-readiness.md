@@ -49,3 +49,32 @@ Marcado como completado por el usuario; no verificado por Claude (requiere sesi�
 
 ## Sessions
 - 2026-10-22: reseteo de la 25-26, roster, fix del scraper (descanso), Fantasy v2 (PR #8 a #17), migraciones aplicadas en producción (`orden` + resolver, composición, `historial_anterior`, `cuotas_previas`), favicon móvil, cron del domingo y `leverade_id` de la 26-27. Registro: el enlace de confirmación llevaba a `pablet06.github.io/` (404, Site URL mal al enviarse); decisión del usuario: «Confirm email» desactivado temporalmente. Rama de cierre: `feature/docs-registro` (mensaje del registro y documentación).
+
+### 2026-10-22 (resumen final de sesión)
+
+**Qué se hizo:**
+- Reseteo de la 25-26 en producción (sin archivo, a petición): historial, jornadas y tablas fantasy vaciados, usuarios a 0 con `equipo = {}`; roster de 19 (bajas Álvaro Mayordomo y César Paredes; altas Antonio, José Almódovar, Luca, Ackermann); `leverade_id` de los 19 actualizado a los ids de la 26-27 (son ids de inscripción por temporada); `tournament_id = 1344408`.
+- Scraper: arreglado el partido de descanso (sin local/visitante, `finished=true`, `/stats` devolvía HTTP 520 y tumbaba la jornada) (PR #9/#10). Arreglado que las fechas de Leverade son UTC y se guardaban como Europe/Madrid (partidos 1-2 h antes) (PR #21/#22); jornada 7 corregida a mano en prod. Segundo cron el domingo 22:00 UTC como reintento (PR #16/#17).
+- Fantasy v2 en `main` (PR #8, #11-#13, #15, #18-#24) con migraciones aplicadas en prod: `20261022000000` (`jornadas.orden`, `resolver_jornada` financia por `orden` y `REVOKE EXECUTE` a `anon`: `anon` podía llamar a `resolver_jornada`), `000001` (trigger `alineaciones_composicion`: 1 Portero, 2 Extremos, 2 Laterales, 1 Boya, 1 Contraboya), `000002` (`historial_anterior`), `000003` (`cuotas_previas` + `cuota_actual` con prior de la 25-26, peso 5 partidos virtuales), `000004` (`ON DELETE CASCADE` en 5 FK a `usuarios`; borrar cuentas con datos fallaba).
+- UI: numeración "Jornada N", bloques informativos y modales de edición en Mi equipo / Apuestas / Power-ups, bloque de puntos (amarillo) y dinero (verde), precio y posición por fichaje, contadores de composición.
+- Registro: el enlace de confirmación daba 404 (Site URL mal); "Confirm email" desactivado temporalmente; `SignupForm` ya no muestra "Revisa tu email" si `signUp` devuelve sesión.
+- Iconos de pantalla de inicio (apple-touch-icon, manifest, maskable, `logo.ico` multi-tamaño) (PR #14/#15).
+- Docs: `docs/MANUAL_DEL_JUEGO.md` actualizado, nuevo `docs/MANUAL_USUARIOS.md` (solo jugadores), ADR-005..007 en `docs/ADRs.md`.
+- Security advisor de Supabase ejecutado: sin hallazgos graves.
+- Marcado como hecho por el usuario (no verificado por Claude): prueba de la UI con sesión, acceso directo reinstalado, decisión sobre "Pablo 2" (borrada con el fix #23/#24), aviso a usuarios para volver a fichar en la jornada 7.
+
+**Decisiones:**
+- Precios: base 50, multiplicador 22 (mejor 7 válido ~1088 frente a presupuesto 1000); precios iniciales desde los totales 25-26 que dio el usuario en captura (Cloudflare 429 bloqueó la recarga por partido incluso desde GitHub Actions), guardados como 5 partidos virtuales por jugador; supuesto de 8 goles encajados por partido para porteros.
+- Cuotas: los Sharks perdieron todos los partidos 25-26 (dato del usuario), prior de resultado pierde=1 / gana=0 / empata=0; goleador y expulsado por simulación; tope ×1,2 a ×2,1 mantenido (casi todo ×2,1).
+- Confirm email desactivado temporalmente en vez de arreglar el Site URL.
+
+**Preguntas abiertas:**
+- ¿Reactivar "Confirm email" (y corregir Site URL)?
+- ¿Qué hacer con el cambio local de `CLAUDE.md`? Además `.claude/launch.json` sin trackear (lo creó la herramienta de preview): ignorar o borrar.
+- Protección contra contraseñas filtradas (leaked-password) desactivada en Supabase Auth (opcional).
+- Advisor: avisos de bajo riesgo (`is_admin`, `recalc_puntos`, `powerups_aplicar` ejecutables por `anon` pero con guarda). Variables de entorno y RLS de producción: solo se pasó el advisor, falta la revisión completa.
+
+**Próximos pasos:**
+- Tras el partido del sábado: comprobar el workflow `Weekly Stats Sync`, `config.unmatched_players` vacío, ranking con puntos; "Reprocesar jornada" si la siguiente no tenía fecha. Reintento del cron el domingo.
+- Decidir lo de `CLAUDE.md` y `.claude/launch.json`.
+- Riesgos: supuesto de 8 goles para porteros; `presupuesto_usado`/precio solo validados en cliente (proponer trigger en servidor como el de composición); tope de cuotas; GitHub Actions estuvo degradado esta tarde (build de Pages en cola mucho rato, el sitio ya estaba activo).

@@ -278,7 +278,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
 
   return (
     <div className="apuestas-container">
-      <div className="team-total-pts">
+      <div className="team-total-pts team-dinero">
         <span>Jornada {orden} — presupuesto</span>
         <strong>{Math.round(presupuesto)}€</strong>
       </div>

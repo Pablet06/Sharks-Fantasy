@@ -32,4 +32,5 @@ By Saturday, production runs the latest `develop` with the 26-27 tournament conf
 
 ## Sessions
 - 2026-10-22: reset de la 25-26 hecho en prod (sin archivo, a petición): historial/jornadas/fantasy vacíos, usuarios a 0 con equipo `{}`, roster 19 (bajas: Alvaro Mayordomo, Cesar Paredes; altas: Antonio, José Almódovar, Luca, Ackermann como Extremo, dorsales 3/7/18/19), stats a cero, `tournament_id=1344408`. PR #8 develop→main abierto. Pendiente: sync manual (bloqueado por el clasificador), merge PR #8, verificar login en prod, decidir CLAUDE.md/index.html.
+- 2026-10-22: fix scraper (descanso, PR #9/#10) en main; sync manual OK. Registro: el enlace de confirmación llevaba a `pablet06.github.io/` (404, Site URL mal al enviarse). Decisión del usuario: «Confirm email» de Supabase Auth DESACTIVADO temporalmente (sin cambio de código). Pendiente: decidir si reactivarlo (Site URL/Redirect URL = `https://pablet06.github.io/Sharks-Fantasy/`, y añadir `emailRedirectTo` en `SignupForm.tsx`); la pantalla «Revisa tu email» sigue saliendo tras registrarse.
 - 2026-10-22: session started on `feature/season-launch-readiness`; task file re-groomed against real repo/prod state.

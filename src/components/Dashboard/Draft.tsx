@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { Jugador, Usuario, Jornada, Alineacion } from '../../types'
+import type { Jugador, Usuario, Jornada, Alineacion, Position } from '../../types'
 import { calcPrecio } from '../../lib/precio'
 import { jornadaAbierta } from '../../lib/jornada'
-import { validarDraft } from '../../lib/draft'
+import { validarDraft, contarPosiciones, COMPOSICION } from '../../lib/draft'
 import { PlayerCard } from './PlayerCard'
 
 interface Props {
@@ -26,10 +26,17 @@ export function Draft({ usuario, jugadores }: Props) {
   const [msg, setMsg] = useState('')
   const [ahora, setAhora] = useState<number | null>(null)
   const [tieneCapitanTardio, setTieneCapitanTardio] = useState(false)
+  const [modalAbierto, setModalAbierto] = useState(false)
 
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
-    for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [])
+    for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [], j.historial_anterior ?? [])
+    return m
+  }, [jugadores])
+
+  const posiciones = useMemo(() => {
+    const m: Record<number, Position> = {}
+    for (const j of jugadores) m[j.numero] = j.pos
     return m
   }, [jugadores])
 
@@ -132,19 +139,33 @@ export function Draft({ usuario, jugadores }: Props) {
       return
     }
 
-    const validacion = validarDraft(seleccion, capitan, precios, presupuesto)
+    const validacion = validarDraft(seleccion, capitan, precios, presupuesto, posiciones)
     if (!validacion.ok) { setMsg(validacion.error); return }
     setGuardando(true)
     setMsg('')
-    const { error } = await supabase.from('alineaciones').upsert({
+    const { data, error } = await supabase.from('alineaciones').upsert({
       usuario_id: usuario.id,
       jornada: jornada.numero,
       jugadores: seleccion,
       capitan,
       presupuesto_usado: usado,
-    }, { onConflict: 'usuario_id,jornada' })
-    setMsg(error ? `Error: ${error.message}` : '✓ Alineación guardada')
+    }, { onConflict: 'usuario_id,jornada' }).select().single()
+    if (error) {
+      setMsg(`Error: ${error.message}`)
+    } else {
+      setAlineacion(data as Alineacion)
+      setMsg('✓ Alineación guardada')
+      setModalAbierto(false)
+    }
     setGuardando(false)
+  }
+
+  // Cancelar el modal descarta los cambios sin guardar
+  const cerrarModal = () => {
+    setSeleccion(alineacion?.jugadores ?? [])
+    setCapitan(alineacion?.capitan ?? null)
+    setMsg('')
+    setModalAbierto(false)
   }
 
   const cambiarCapitanTarde = async (nuevoCapitan: number) => {
@@ -162,48 +183,13 @@ export function Draft({ usuario, jugadores }: Props) {
     }
   }
 
+  const cuentaPos = contarPosiciones(seleccion, posiciones)
   const filtrados = jugadores.filter(j => posFilter === 'Todos' || j.pos === posFilter)
+  const orden = jornada.orden ?? jornada.numero
 
-  return (
-    <div className="draft-container">
-      <div className="team-total-pts">
-        <span>Jornada {jornada.numero} — presupuesto</span>
-        <strong>{presupuesto - usado}€ <small>de {presupuesto}€</small></strong>
-      </div>
-
-      {jornada.fecha_partido && !bloqueada && (
-        <p className="placeholder">
-          Cierra el {new Date(jornada.fecha_partido).toLocaleString('es-ES', {
-            dateStyle: 'medium', timeStyle: 'short',
-          })}
-        </p>
-      )}
-
-      {bloqueada && (
-        <>
-          <p className="placeholder">
-            Alineación bloqueada para esta jornada
-            {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
-          </p>
-
-          {puedeEditarCapitanTarde && (
-            <div className="powerup-aplicar">
-              <span>Capitán tardío: puedes cambiar el capitán hasta 1h antes del partido.</span>
-              <select
-                value={alineacion?.capitan ?? ''}
-                onChange={e => cambiarCapitanTarde(Number(e.target.value))}
-              >
-                {(alineacion?.jugadores ?? []).map(numero => {
-                  const j = jugadores.find(x => x.numero === numero)
-                  return <option key={numero} value={numero}>{j?.nick || j?.name || numero}</option>
-                })}
-              </select>
-              {msg && <p className="admin-msg">{msg}</p>}
-            </div>
-          )}
-        </>
-      )}
-
+  // Editor: chips + lista + guardar. Va inline si no hay alineación, o dentro del modal.
+  const editor = (
+    <>
       {!bloqueada && (
         <div className="filter-chips">
           {POSITIONS.map(pos => (
@@ -214,6 +200,16 @@ export function Draft({ usuario, jugadores }: Props) {
             >
               {pos}
             </button>
+          ))}
+        </div>
+      )}
+
+      {!bloqueada && (
+        <div className="composicion">
+          {(Object.keys(COMPOSICION) as Position[]).map(p => (
+            <span key={p} className={`composicion-item ${cuentaPos[p] === COMPOSICION[p] ? 'ok' : cuentaPos[p] > COMPOSICION[p] ? 'sobra' : ''}`}>
+              {p} {cuentaPos[p]}/{COMPOSICION[p]}
+            </span>
           ))}
         </div>
       )}
@@ -266,6 +262,100 @@ export function Draft({ usuario, jugadores }: Props) {
             {guardando ? 'Guardando...' : `Guardar (${seleccion.length}/7)`}
           </button>
         </>
+      )}
+    </>
+  )
+
+  // Resumen de la alineación guardada (con datos guardados, no con la selección en edición)
+  const guardados = alineacion?.jugadores ?? []
+  const costeGuardado = guardados.reduce((sum, n) => sum + (precios[n] ?? 0), 0)
+
+  return (
+    <div className="draft-container">
+      <div className="team-total-pts team-puntos">
+        <span>Puntos</span>
+        <strong>{usuario.puntos}</strong>
+      </div>
+
+      <div className="team-total-pts team-dinero">
+        <span>Jornada {orden}</span>
+        <strong>{presupuesto - usado}€</strong>
+      </div>
+
+      {jornada.fecha_partido && !bloqueada && (
+        <p className="placeholder">
+          Cierra el {new Date(jornada.fecha_partido).toLocaleString('es-ES', {
+            dateStyle: 'medium', timeStyle: 'short',
+          })}
+        </p>
+      )}
+
+      {bloqueada && (
+        <>
+          <p className="placeholder">
+            Alineación bloqueada para esta jornada
+            {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
+          </p>
+
+          {puedeEditarCapitanTarde && (
+            <div className="powerup-aplicar">
+              <span>Capitán tardío: puedes cambiar el capitán hasta 1h antes del partido.</span>
+              <select
+                value={alineacion?.capitan ?? ''}
+                onChange={e => cambiarCapitanTarde(Number(e.target.value))}
+              >
+                {(alineacion?.jugadores ?? []).map(numero => {
+                  const j = jugadores.find(x => x.numero === numero)
+                  return <option key={numero} value={numero}>{j?.nick || j?.name || numero}</option>
+                })}
+              </select>
+              {msg && <p className="admin-msg">{msg}</p>}
+            </div>
+          )}
+        </>
+      )}
+
+      {alineacion ? (
+        <div className="resumen-card">
+          <div className="mini-pool">
+            {guardados.map(n => {
+              const p = jugadores.find(j => j.numero === n)
+              if (!p) return null
+              return (
+                <button key={n} className="mini-player" onClick={() => setSelectedCard(p)}>
+                  <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
+                  <span>{p.nick || p.name}{alineacion.capitan === n ? ' ★' : ''}</span>
+                  <small className="mini-pos">{p.pos}</small>
+                  <small className="mini-precio">{precios[n]}€</small>
+                </button>
+              )
+            })}
+          </div>
+          <p className="placeholder">
+            Coste: {costeGuardado}€ · <span className="resumen-restante">Te quedan {presupuesto - costeGuardado}€</span>
+          </p>
+          {!bloqueada && msg && <p className="admin-msg">{msg}</p>}
+          {!bloqueada && (
+            <button className="save-btn" onClick={() => setModalAbierto(true)}>
+              Cambiar Fichajes
+            </button>
+          )}
+        </div>
+      ) : (
+        editor
+      )}
+
+      {alineacion && !bloqueada && modalAbierto && (
+        <div className="modal-overlay" onClick={cerrarModal}>
+          <div className="team-modal team-modal-wide" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={cerrarModal}>×</button>
+            <h3>Cambiar Fichajes</h3>
+            <div className="modal-stack">
+              <p className="placeholder">Te quedan {presupuesto - usado}€</p>
+              {editor}
+            </div>
+          </div>
+        </div>
       )}
 
       {selectedCard && <PlayerCard jugador={selectedCard} onClose={() => setSelectedCard(null)} />}

@@ -1,26 +1,34 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // sync.ts imports ./supabase, which throws at load without env vars. rawToStats
 // touches no DB, so a bare stub is enough.
 vi.mock('../src/supabase', () => ({ supabase: { rpc: vi.fn() } }))
 
+vi.mock('../src/fncv', async () => {
+  const actual = await vi.importActual<typeof import('../src/fncv')>('../src/fncv')
+  return { ...actual, fetchMatchStats: vi.fn() }
+})
+
 vi.mock('../src/leverade', async () => {
   const actual = await vi.importActual<typeof import('../src/leverade')>('../src/leverade')
-  return { ...actual, getRoundMatches: vi.fn(), getTeamName: vi.fn() }
+  return { ...actual, getRoundMatches: vi.fn(), getTeamName: vi.fn(), getRounds: vi.fn() }
 })
 
 import { supabase } from '../src/supabase'
-import { getRoundMatches, getTeamName } from '../src/leverade'
+import { getRoundMatches, getTeamName, getRounds } from '../src/leverade'
+import { parseArgs } from '../src/args'
 import {
   rawToStats,
   resultadoJornada,
   resolverJornadas,
   runSync,
+  runBackfillAnterior,
+  syncJornada,
   staleJornadas,
   syncCalendar,
   ladoSharks,
 } from '../src/sync'
-import type { RawPlayer } from '../src/fncv'
+import { fetchMatchStats, SHARKS_TEAM_NAME, type RawPlayer } from '../src/fncv'
 
 const raw = (o: Partial<RawPlayer>): RawPlayer => ({
   leveradeId: '1', nombre: 'X', jugo: true,
@@ -156,5 +164,79 @@ describe('resolverJornadas', () => {
     expect(process.exitCode).toBe(1)
 
     process.exitCode = prevExitCode
+  })
+})
+
+describe('historial_anterior', () => {
+  const players = [{ id: 1, name: 'A', nick: 'a', pos: 'JUG', leverade_id: '10' }] as never
+  const stats = {
+    local: SHARKS_TEAM_NAME, visitante: 'Rival', sharks: 'local', golesLocal: 5, golesVisitante: 3,
+    jugadores: [raw({ leveradeId: '10', G: 1 })],
+  }
+  function mockDb() {
+    const tablas: string[] = []
+    const upsert = vi.fn().mockResolvedValue({ error: null })
+    const rpc = vi.fn()
+    vi.mocked(supabase).from = vi.fn((t: string) => {
+      tablas.push(t)
+      return {
+        upsert,
+        select: vi.fn().mockResolvedValue({ data: players, error: null }),
+      }
+    }) as never
+    vi.mocked(supabase).rpc = rpc as never
+    return { tablas, upsert, rpc }
+  }
+  beforeEach(() => {
+    vi.mocked(getRoundMatches).mockResolvedValue([
+      { id: 'm1', date: '2025-10-05T18:00:00', finished: true, homeTeamId: 't1', awayTeamId: 't2' },
+    ])
+    vi.mocked(fetchMatchStats).mockResolvedValue(stats as never)
+  })
+
+  it('syncJornada(..., historial_anterior) escribe en historial_anterior y no toca jornadas', async () => {
+    const { tablas, upsert } = mockDb()
+    const res = await syncJornada('1324114', { id: 'r1', jornada: 3 }, players, 'historial_anterior')
+    expect(res?.rows).toBe(1)
+    expect(tablas).toEqual(['historial_anterior'])
+    expect(upsert).toHaveBeenCalledWith(expect.any(Array), { onConflict: 'jugador_id,jornada' })
+  })
+
+  it('por defecto sigue escribiendo jornadas e historial', async () => {
+    const { tablas } = mockDb()
+    await syncJornada('1', { id: 'r1', jornada: 3 }, players)
+    expect(tablas).toEqual(['jornadas', 'historial'])
+  })
+
+  it('runBackfillAnterior no llama a resolver_jornada ni escribe jornadas/historial', async () => {
+    const { tablas, rpc } = mockDb()
+    vi.mocked(getRounds).mockResolvedValue([{ id: 'r1', jornada: 1 }, { id: 'r2', jornada: 2 }])
+    await runBackfillAnterior('1324114')
+    expect(rpc).not.toHaveBeenCalled()
+    expect(tablas.filter(t => t !== 'jugadores')).toEqual(['historial_anterior', 'historial_anterior'])
+  })
+
+  it('runBackfillAnterior marca exit code 1 si fallan todas las rondas', async () => {
+    mockDb()
+    vi.mocked(getRounds).mockResolvedValue([{ id: 'r1', jornada: 1 }])
+    vi.mocked(getRoundMatches).mockRejectedValue(new Error('429'))
+    const prev = process.exitCode
+    await runBackfillAnterior('1324114')
+    expect(process.exitCode).toBe(1)
+    process.exitCode = prev
+  })
+})
+
+describe('parseArgs', () => {
+  it('rechaza --anterior junto a --backfill o --jornada', () => {
+    expect(() => parseArgs(['--anterior', '1', '--backfill'])).toThrow(/incompatible/)
+    expect(() => parseArgs(['--anterior', '1', '--jornada', '2'])).toThrow(/incompatible/)
+  })
+  it('exige entero en --anterior', () => {
+    expect(() => parseArgs(['--anterior', 'abc'])).toThrow(/integer/)
+    expect(() => parseArgs(['--anterior'])).toThrow(/integer/)
+  })
+  it('acepta --anterior solo', () => {
+    expect(parseArgs(['--anterior', '1324114']).anterior).toBe('1324114')
   })
 })

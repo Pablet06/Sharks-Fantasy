@@ -46,6 +46,9 @@ export async function getRoundMatches(roundId: string): Promise<Match[]> {
   const doc = await getJson<JsonApiDoc>(`${API}/rounds/${roundId}?include=matches`)
   return (doc.included ?? [])
     .filter(x => x.type === 'match')
+    // Con nº impar de equipos la API incluye un "descanso" (sin local o visitante)
+    // marcado finished=true; su /stats da HTTP 520 y tumbaba la jornada entera.
+    .filter(x => x.meta?.home_team && x.meta?.away_team)
     .map(x => ({
       id: x.id,
       date: (x.attributes.date as string | null) ?? null,

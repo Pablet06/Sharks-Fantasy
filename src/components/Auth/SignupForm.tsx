@@ -16,13 +16,15 @@ export function SignupForm({ onSwitch }: Props) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { error: signupError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signupError } = await supabase.auth.signUp({ email, password })
     if (signupError) {
       setError(signupError.message)
       setLoading(false)
       return
     }
-    setDone(true)
+    // Con «Confirm email» desactivado en Supabase, signUp ya devuelve sesión y
+    // useAuth entra solo: no mostrar «Revisa tu email» para un correo que no se envía.
+    if (!data.session) setDone(true)
     setLoading(false)
   }
 

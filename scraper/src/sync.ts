@@ -31,11 +31,14 @@ export function ladoSharks(homeName: string, awayName: string): 'home' | 'away' 
   return null
 }
 
-/** Leverade dates are naive local time in the Europe/Madrid zone (no offset
- * in the API response) — tag them explicitly so Postgres's timestamptz
- * parser applies the correct DST-aware offset instead of assuming UTC. */
-function conZonaMadrid(fecha: string | null): string | null {
-  return fecha === null ? null : `${fecha} Europe/Madrid`
+/** Las fechas de Leverade ("2026-10-24 15:45:00") vienen SIN zona y son UTC: la
+ * web de la federación enseña esa misma hora +1h en invierno / +2h en verano
+ * (p. ej. API 16:00 -> web 17:00 el 22/02/2026; API 15:45 -> 17:45 el 24/10/2026).
+ * Se etiquetan como UTC para que el timestamptz de Postgres no las tome como
+ * hora local; tratarlas como Europe/Madrid adelantaba el partido 1-2 horas. */
+export function conUTC(fecha: string | null): string | null {
+  if (fecha === null) return null
+  return /(Z|[+-]\d{2}(:?\d{2})?)$/.test(fecha) ? fecha : `${fecha} UTC`
 }
 
 /**
@@ -73,7 +76,7 @@ export async function syncCalendar(rounds: Round[], historialJornadas: Set<numbe
 
     const { error } = await supabase
       .from('jornadas')
-      .upsert({ numero: round.jornada, fecha_partido: conZonaMadrid(fechaSharks) }, { onConflict: 'numero' })
+      .upsert({ numero: round.jornada, fecha_partido: conUTC(fechaSharks) }, { onConflict: 'numero' })
     if (error) {
       console.error(`syncCalendar J${round.jornada}: ${error.message}`)
       process.exitCode = 1
@@ -146,7 +149,7 @@ export async function syncJornada(
       .from('jornadas')
       .upsert({
         numero: round.jornada,
-        fecha_partido: conZonaMadrid(matchDate),
+        fecha_partido: conUTC(matchDate),
         resultado: resultadoJornada(golesFavor, golesContra),
         goles_favor: golesFavor,
         goles_contra: golesContra,

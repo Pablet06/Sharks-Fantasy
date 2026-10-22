@@ -272,10 +272,14 @@ export function Draft({ usuario, jugadores }: Props) {
 
   return (
     <div className="draft-container">
-      <div className="team-total-pts">
+      <div className="team-total-pts team-puntos">
+        <span>Puntos</span>
+        <strong>{usuario.puntos}</strong>
+      </div>
+
+      <div className="team-total-pts team-dinero">
         <span>Jornada {orden}</span>
         <strong>{presupuesto - usado}€</strong>
-        <span>{usuario.puntos} pts</span>
       </div>
 
       {jornada.fecha_partido && !bloqueada && (

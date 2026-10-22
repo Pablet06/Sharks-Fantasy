@@ -403,6 +403,19 @@ button:focus-visible {
   line-height: 1;
 }
 
+.team-puntos {
+  border-color: rgba(255, 215, 0, 0.35);
+}
+
+.team-puntos strong {
+  font-size: 3rem;
+  color: var(--accent);
+}
+
+.team-dinero strong {
+  color: var(--success);
+}
+
 .pool {
   position: relative;
   width: 100%;

@@ -57,6 +57,11 @@ un usuario con 0 puntos y un presupuesto inicial de 1000€ para tu primera
 jornada. La navegación tiene 6 pestañas: 🌊 Mi Equipo, 🎲 Apuestas, ⚡
 Power-ups, 🏆 Ranking, 👥 Jugadores, 👤 Perfil.
 
+**En el móvil**: puedes añadir la web a la pantalla de inicio desde el menú
+del navegador ("Añadir a pantalla de inicio") y se abrirá como una app, con
+el icono de Los Sharks Fantasy. Si ya la tenías añadida antes de octubre de
+2026, bórrala y vuelve a añadirla para que salga el icono.
+
 ## 3. Mi Equipo — el draft semanal
 
 ### Qué jornada está abierta
@@ -85,10 +90,14 @@ cambia nada. Si todavía no has fichado a nadie, la lista aparece directamente.
 ### Presupuesto
 
 - Tu primera jornada de la temporada empieza con **1000€**.
-- A partir de ahí, tu presupuesto de cada jornada depende de cómo te fue en
-  la **apuestas** de la jornada anterior (ver sección 4) y de los power-ups
-  que hayas usado — puede subir o bajar, sin suelo ni techo salvo el 0€ (no
-  se puede quedar en negativo).
+- Cada jornada parte otra vez de **1000€** más (o menos) el **resultado neto
+  de tus apuestas** de la jornada anterior (ver sección 4), más los 50€ del
+  power-up "+50€" si lo usas. Puede subir o bajar sin techo; el único suelo
+  es 0€ (no se puede quedar en negativo).
+- Lo que te **sobra** de la alineación (lo que no gastas en fichajes) **no se
+  acumula**: no pasa a la jornada siguiente.
+- La cabecera de Mi Equipo enseña tus **puntos totales** y el dinero que te
+  queda de esta jornada.
 
 ### Precio de cada jugador
 
@@ -167,10 +176,12 @@ expulsado, de lo que hizo cada jugador esa temporada. Ese dato pesa como 5
 partidos y se va desplazando con los partidos reales de esta temporada. Si
 una opción no tiene dato previo (por ejemplo, un jugador nuevo, o la
 portería) y todavía no hay histórico, la probabilidad de partida es del 50%
-(×2). La cuota se ve en
-pantalla **antes** de apostar, y se recalcula al momento si cambias tu
-elección (por ejemplo, de "gana" a "pierde"). Una vez guardada la apuesta,
-esa cuota queda fija — no cambia aunque el histórico cambie después.
+(×2).
+
+La cuota se ve en pantalla **antes** de apostar, y se recalcula al momento
+si cambias tu elección (por ejemplo, de "gana" a "pierde"). Una vez guardada
+la apuesta, esa cuota queda fija — no cambia aunque el histórico cambie
+después (solo se recalcula si modificas esa apuesta).
 
 ### Tope del 20%
 
@@ -289,7 +300,7 @@ capitán de esa alineación.
 
 ## 8. Jugadores (la plantilla)
 
-Lista de los ~17 jugadores de Los Sharks disponibles para draftear, con su
+Lista de los 19 jugadores de Los Sharks disponibles para draftear, con su
 ficha (nombre, posición, foto, frase). El pool de jugadores es siempre el
 mismo para todos — no hay propiedad exclusiva, cualquiera puede fichar a
 cualquiera en cualquier jornada.
@@ -316,8 +327,9 @@ draftear, solo por apostar mal o gastar en power-ups).
 No, nunca — ni el admin las hace públicas.
 
 **¿Por qué mi cuota bajó/subió respecto a la semana pasada?**
-Las cuotas se recalculan cada jornada con el histórico actualizado — cuanta
-más información real hay acumulada, más se aleja del 50/50 de partida.
+Las cuotas se recalculan cada jornada con el histórico actualizado. Al
+principio de temporada parten de lo que pasó la temporada anterior y, según
+se juegan partidos de esta, los datos reales van pesando cada vez más.
 
 **Empate en "Máximo goleador"/"Más expulsado", ¿pierdo el importe?**
 No. Un empate no cuenta ni como acierto ni como fallo: se te devuelve el
@@ -338,7 +350,11 @@ Accesible desde el botón "Admin" (solo visible si tu usuario tiene
 
 ### Jugadores
 Crear, editar en línea y borrar jugadores de la plantilla (nombre, dorsal,
-posición, apodo, frase, foto, `leverade_id` para el scraper). Borrar un
+posición, apodo, frase, foto, `leverade_id` para el scraper). El
+`leverade_id` es el id del jugador **en la inscripción de esa temporada**
+(sale de la URL `/players/<id>` de su ficha en la web de la federación), así
+que **cambia cada temporada**: hay que actualizarlo al empezar una nueva.
+Borrar un
 jugador que esté en el equipo (legado) de algún usuario avisa antes de
 confirmar, y también borra su historial.
 
@@ -442,6 +458,29 @@ hay que vaciar esas tablas a mano (por ejemplo, vía el SQL Editor de
 Supabase) como parte del mismo proceso de fin de temporada, exportando antes
 lo que se quiera conservar. Esto está documentado como deuda pendiente — no
 hay todavía un botón único que lo haga todo junto.
+
+### Lista de comprobación al cambiar de temporada
+
+Lo que se hizo para pasar de la 25-26 a la 26-27 (2026-10-22), como guía:
+
+1. **Datos de la temporada que acaba**: vaciar `historial`, `jornadas`,
+   `alineaciones`, `presupuestos`, `apuestas` y `powerups_*`; poner a cero
+   `usuarios.puntos` y `jugadores.stats`. Si se quiere conservar algo,
+   exportarlo antes. Al vaciar `jornadas`, la numeración del Fantasy
+   (`jornadas.orden`) vuelve a empezar en 1.
+2. **Plantilla**: dar de baja a quien se va (borrar su historial primero por
+   la clave foránea), dar de alta a los nuevos y **actualizar el
+   `leverade_id` de todos** a los de la nueva temporada.
+3. **Torneo**: cambiar `config.tournament_id` y vaciar `unmatched_players`.
+4. **Precios iniciales**: recargar `historial_anterior` con la temporada que
+   acaba (si la federación bloquea la descarga, 5 filas virtuales por jugador
+   con su media de puntos) y revisar `MULTIPLICADOR_PRECIO` en
+   `src/lib/precio.ts` con la tabla de precios resultante.
+5. **Cuotas iniciales**: reconstruir `cuotas_previas` con lo que pasó la
+   temporada que acaba (resultado de los partidos y, por jugador, goleador y
+   expulsado).
+6. **Comprobar** que el workflow "Weekly Stats Sync" funciona (lanzarlo a
+   mano una vez) y que `unmatched_players` queda vacío tras el primer partido.
 
 ## 14. Cosas que solo se pueden hacer a mano en la base de datos
 

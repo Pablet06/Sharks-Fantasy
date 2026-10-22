@@ -91,6 +91,10 @@ export function Powerups({ usuario, jugadores }: Props) {
     new Date(jornada.fecha_partido).getTime() - ahora <= 24 * 60 * 60 * 1000
 
   const tipoInfo = TIPOS.find(t => t.tipo === tipoElegido)
+  const orden = jornada.orden ?? jornada.numero
+  const objetivoJugador = aplicado?.objetivo != null
+    ? jugadores.find(j => j.numero === aplicado.objetivo)
+    : undefined
 
   const aplicar = async () => {
     if (!tipoElegido) { setMsg('Elige un power-up.'); return }
@@ -118,7 +122,7 @@ export function Powerups({ usuario, jugadores }: Props) {
   return (
     <div className="powerups-container">
       <div className="team-total-pts">
-        <span>Jornada {jornada.numero} — power-ups</span>
+        <span>Jornada {orden} — power-ups</span>
       </div>
 
       <ul className="powerups-inventario">
@@ -134,10 +138,15 @@ export function Powerups({ usuario, jugadores }: Props) {
       </ul>
 
       {aplicado ? (
-        <p className="placeholder">
-          Ya aplicaste "{TIPOS.find(t => t.tipo === aplicado.tipo)?.label ?? aplicado.tipo}" esta jornada
-          {aplicado.objetivo !== null && ` (objetivo: dorsal ${aplicado.objetivo})`}.
-        </p>
+        <div className="powerup-aplicado">
+          <strong>Power-up activado para la Jornada {orden}</strong>
+          <span>{TIPOS.find(t => t.tipo === aplicado.tipo)?.label ?? aplicado.tipo}</span>
+          {aplicado.objetivo !== null && (
+            <span className="placeholder">
+              Jugador objetivo: {objetivoJugador ? (objetivoJugador.nick || objetivoJugador.name) : `dorsal ${aplicado.objetivo}`}
+            </span>
+          )}
+        </div>
       ) : bloqueada ? (
         <p className="placeholder">Jornada bloqueada — ya no se pueden aplicar power-ups.</p>
       ) : (

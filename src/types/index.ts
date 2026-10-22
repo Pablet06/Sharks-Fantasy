@@ -45,6 +45,8 @@ export interface Usuario {
 
 export interface Jornada {
   numero: number
+  /** Numeración propia del Fantasy ("Jornada 1"). Solo display; `numero` sigue siendo la clave. */
+  orden: number
   fecha_partido: string | null
   resultado: 'gana' | 'pierde' | 'empata' | null
   goles_favor: number | null

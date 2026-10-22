@@ -1,5 +1,7 @@
 import type { Jugador, Position, PlayerStats } from '../../types'
 import { calcTotalPoints } from '../../lib/points'
+import { useJornadas } from '../../hooks/useJornadas'
+import { etiquetaJornada } from '../../lib/jornada'
 
 interface Props {
   jugador: Jugador
@@ -26,6 +28,7 @@ function getKeyStats(pos: Position, stats: PlayerStats) {
 }
 
 export function PlayerCard({ jugador, onClose, inline = false }: Props) {
+  const jornadas = useJornadas()
   const totalPoints = calcTotalPoints(jugador.historial || [])
   const s = jugador.stats
 
@@ -90,7 +93,7 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
                 const keyStats = getKeyStats(jugador.pos, h.stats).filter(st => st.value > 0)
                 return (
                   <li key={h.jornada} className="historial-item">
-                    <span className="historial-jornada">J{h.jornada}</span>
+                    <span className="historial-jornada">J{etiquetaJornada(jornadas, h.jornada)}</span>
                     <div className="historial-stats-row">
                       {keyStats.length > 0
                         ? keyStats.map(st => (

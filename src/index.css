@@ -1090,6 +1090,58 @@ button:focus-visible {
 .draft-container {
   max-width: 720px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Contenido apilado dentro de un modal (editor de Mi equipo / Apuestas) */
+.modal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.team-modal.team-modal-wide {
+  max-width: 560px;
+}
+
+/* Bloque resumen (alineación / apuestas / power-up ya hechos) */
+.resumen-card,
+.powerup-aplicado {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: var(--border);
+  border-radius: var(--radius);
+}
+
+.resumen-card .mini-pool {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}
+
+.resumen-restante {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.powerup-aplicado strong {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.apuesta-nota {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  border-left: 3px solid var(--primary);
+  background: rgba(0, 210, 255, 0.05);
+  border-radius: 6px;
 }
 
 .draft-pick-btn {

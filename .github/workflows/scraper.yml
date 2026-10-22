@@ -2,7 +2,11 @@ name: Weekly Stats Sync
 
 on:
   schedule:
-    - cron: '0 22 * * 6'  # Every Saturday at 22:00 UTC (23:00 CET)
+    - cron: '0 22 * * 6'  # Every Saturday at 22:00 UTC (00:00 CEST)
+    # Reintento: si el sábado el acta aún no estaba publicada o Cloudflare
+    # bloqueó (429), el incremental solo procesa jornadas sin historial, así
+    # que repetirlo es seguro.
+    - cron: '0 22 * * 0'  # Every Sunday at 22:00 UTC
   workflow_dispatch:        # Manual trigger from GitHub UI
     inputs:
       args:

@@ -7,30 +7,45 @@ updated: 2026-10-22
 # Season launch readiness
 
 ## Context
-The 26-27 season starts this Saturday. Users must be able to sign in and play. Competition: https://waterpolo.fncv.es/es/tournament/1344408/summary (Primera División Masculina 26-27, in_progress, 9 teams, includes "C.W. Sharks A").
+La temporada 26-27 empieza el sábado 2026-10-24 (jornada 7 de la federación = "Jornada 1" del Fantasy, 13:45 UTC). Los usuarios deben poder entrar y jugar. Competición: https://waterpolo.fncv.es/es/tournament/1344408/summary (Primera División Masculina 26-27, 9 equipos, incluye "C.W. Sharks A").
 
-State found on 2026-10-22:
-- PRs #2–#7 are merged into `develop` (federation sync, admin panel Phase B, fantasy dinámico phases A–D).
-- `origin/main` is 60 commits behind `develop` (last deploy 2026-09-10). Production deploys from `main` pushes (`deploy.yml` -> gh-pages), so fantasy dinámico is NOT live.
-- Supabase `config.tournament_id` is still `1324114` (Liga Autonómica Primera Masculina 25-26). `last_sync_at` 2026-09-04. DB still holds last season's data: 17 jugadores, 272 historial rows, 2 usuarios.
-- GitHub secrets all present; `SUPABASE_SERVICE_ROLE_KEY` updated 2026-09-09 (probably the earlier risk is fixed, unverified).
-- Last scheduled "Weekly Stats Sync" runs (Jun-Jul 2026) all failed (old scraper); no runs since. Cron has never run successfully with the new scraper.
-- Uncommitted local edits (from OneDrive): `CLAUDE.md` (lines removed) and `index.html` (favicon link).
+Estado inicial (2026-10-22): `main` iba 60 commits por detrás de `develop`, `config.tournament_id` seguía en la 25-26 y la base tenía datos de la temporada pasada.
 
 ## Goal
-By Saturday, production runs the latest `develop` with the 26-27 tournament configured, sign-in works, and the scraper ingests results from tournament 1344408.
+Producción en la última versión de `develop` con la 26-27 configurada: registro y login funcionando, usuarios fichando y apostando, y el scraper ingiriendo resultados del torneo 1344408.
 
 ## Acceptance criteria
-- [ ] Decide season-reset strategy for DB (keep/archive 25-26 historial and puntos, roster for 26-27)
-- [ ] `config.tournament_id` switched to `1344408`; `discover` run to map leverade_ids for the 26-27 roster
-- [ ] Scraper verified against tournament 1344408 (SHARKS_TEAM_NAME "C.W. Sharks A" matches)
-- [ ] Manual `workflow_dispatch` of Weekly Stats Sync succeeds (service-role key works); cron schedule still active
-- [ ] PR `develop` -> `main` merged; deploy workflow green; production shows fantasy dinámico
-- [ ] Sign-in flow verified end to end in production (register, login, build team)
-- [ ] Production env vars / RLS checked after deploy
-- [ ] Decide on the uncommitted `CLAUDE.md` / `index.html` edits (commit or discard)
+- [x] Estrategia de reseteo decidida y aplicada: sin archivo (a petición); historial, jornadas y tablas fantasy vaciados, usuarios a 0 con `equipo = {}`, stats a cero
+- [x] Roster 26-27 cargado (19 jugadores: bajas Álvaro Mayordomo y César Paredes; altas Antonio, José Almódovar, Luca y Ackermann) y `leverade_id` de los 19 actualizado a los ids de la 26-27
+- [x] `config.tournament_id = 1344408`
+- [x] Scraper verificado contra el torneo 1344408; arreglado el partido de descanso que tumbaba cada jornada con HTTP 520 (PR #9/#10); `workflow_dispatch` en verde
+- [x] Segundo cron de reintento (domingo 22:00 UTC) además del del sábado (PR #16/#17)
+- [x] `develop` -> `main` mergeado y deploy en verde; producción con el Fantasy v2 (PR #8, #13, #15, #17)
+- [x] Registro, login y fichajes probados en producción (cuenta de pruebas "Pablo 2")
+- [x] Fantasy v2 desplegado: numeración `orden`, bloques informativos, composición obligatoria (trigger), precios desde la 25-26 (base 50, multiplicador 22) y cuotas con prior de la 25-26
+- [x] Favicon / icono de pantalla de inicio (iOS y Android) desplegado (PR #14/#15)
+- [ ] Variables de entorno y RLS de producción revisadas tras el deploy
+- [ ] Decidir qué hacer con los cambios locales sin commitear de `CLAUDE.md`
+
+### Antes del cierre del draft (vie 2026-10-23, 13:45 UTC)
+- [x] Probar la interfaz con sesión iniciada (Mi equipo, Apuestas, Power-ups, en todos sus estados)
+- [x] Reinstalar el acceso directo en el móvil para ver el icono nuevo
+- [x] Decidir qué hacer con la cuenta de pruebas "Pablo 2"
+- [x] Avisar a los usuarios de que tienen que volver a fichar para la jornada 7
+
+Marcado como completado por el usuario; no verificado por Claude (requiere sesión iniciada y un móvil).
+
+### Tras el partido (sáb 24 y dom 25)
+- [ ] El workflow `Weekly Stats Sync` sale en verde (sábado 22:00 UTC; reintento domingo 22:00 UTC)
+- [ ] `config.unmatched_players` vacío
+- [ ] El ranking tiene puntos y las apuestas de la jornada están resueltas
+- [ ] Si la jornada siguiente aún no tenía fecha al resolver: "Reprocesar jornada" en el panel de admin
+
+## Riesgos conocidos
+- Precios de porteros calculados suponiendo 8 goles encajados por partido en la 25-26 (la captura no traía ese dato).
+- `presupuesto_usado` y el coste de la alineación solo se validan en el navegador; no hay comprobación en el servidor (la composición sí tiene trigger).
+- Cuotas acotadas a ×1,2 a ×2,1: casi todo queda en ×2,1; subir el tope cambia una regla publicada.
+- «Confirm email» de Supabase Auth desactivado temporalmente.
 
 ## Sessions
-- 2026-10-22: reset de la 25-26 hecho en prod (sin archivo, a petición): historial/jornadas/fantasy vacíos, usuarios a 0 con equipo `{}`, roster 19 (bajas: Alvaro Mayordomo, Cesar Paredes; altas: Antonio, José Almódovar, Luca, Ackermann como Extremo, dorsales 3/7/18/19), stats a cero, `tournament_id=1344408`. PR #8 develop→main abierto. Pendiente: sync manual (bloqueado por el clasificador), merge PR #8, verificar login en prod, decidir CLAUDE.md/index.html.
-- 2026-10-22: fix scraper (descanso, PR #9/#10) en main; sync manual OK. Registro: el enlace de confirmación llevaba a `pablet06.github.io/` (404, Site URL mal al enviarse). Decisión del usuario: «Confirm email» de Supabase Auth DESACTIVADO temporalmente (sin cambio de código). Pendiente: decidir si reactivarlo (Site URL/Redirect URL = `https://pablet06.github.io/Sharks-Fantasy/`, y añadir `emailRedirectTo` en `SignupForm.tsx`); la pantalla «Revisa tu email» sigue saliendo tras registrarse.
-- 2026-10-22: session started on `feature/season-launch-readiness`; task file re-groomed against real repo/prod state.
+- 2026-10-22: reseteo de la 25-26, roster, fix del scraper (descanso), Fantasy v2 (PR #8 a #17), migraciones aplicadas en producción (`orden` + resolver, composición, `historial_anterior`, `cuotas_previas`), favicon móvil, cron del domingo y `leverade_id` de la 26-27. Registro: el enlace de confirmación llevaba a `pablet06.github.io/` (404, Site URL mal al enviarse); decisión del usuario: «Confirm email» desactivado temporalmente. Rama de cierre: `feature/docs-registro` (mensaje del registro y documentación).

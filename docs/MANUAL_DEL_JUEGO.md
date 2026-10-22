@@ -67,6 +67,21 @@ ninguna jornada así (por ejemplo, la fecha del próximo partido todavía no se
 sabe), la pestaña dice que no hay jornada abierta — no es un fallo, es que
 hay que esperar a que se sepa el calendario.
 
+**Numeración**: el Fantasy cuenta sus propias jornadas. Cada vez que se
+detecta una jornada nueva (por su fecha), recibe el siguiente número de la
+secuencia del Fantasy, aunque la federación la llame de otra forma (la ronda 7
+de la federación fue la **Jornada 1**; si vamos por la Jornada 3 y aparece la
+ronda 8, será la Jornada 4). Todas las pantallas muestran esa numeración; solo
+el panel de administración enseña también el número de la federación.
+
+### Tu alineación guardada
+
+Cuando ya tienes alineación para la jornada abierta, Mi Equipo enseña un
+**resumen**: tus 7 jugadores (con posición y precio, ★ en el capitán), el
+coste total y lo que te queda. Para cambiarla pulsa **"Cambiar Fichajes"**, que
+abre una ventana con la lista editable; si cierras la ventana sin guardar, no
+cambia nada. Si todavía no has fichado a nadie, la lista aparece directamente.
+
 ### Presupuesto
 
 - Tu primera jornada de la temporada empieza con **1000€**.
@@ -190,11 +205,21 @@ Mientras la jornada siga abierta (antes del cierre de 24h), puedes:
   **recalcula** para la nueva selección.
 - Borrar una apuesta (deja el campo vacío y guarda) sin penalización.
 
+Si ya has apostado, la pestaña enseña un **resumen** de tus apuestas (qué,
+importe, cuota, ganancia potencial y lo apostado frente al tope del 20%) y un
+botón **"Modificar apuestas"** que abre una ventana con el formulario. Si
+todavía no has apostado, el formulario aparece directamente. Un aviso fijo
+recuerda que el importe apostado **no se descuenta** de esta jornada: lo que
+ganes o pierdas se suma o resta al presupuesto de la **jornada siguiente**.
+
 ## 5. Power-ups
 
 Los power-ups son efectos reutilizables que ganas jugando, no algo que se
 compre. Se aplican como mucho **uno por jornada**, en la pestaña ⚡
 Power-ups, dentro del mismo cierre de 24h que la alineación y las apuestas.
+
+Cuando ya has aplicado uno, la pestaña enseña un bloque con el **power-up
+activado** para esa jornada (cuál es y, si lo tiene, el jugador objetivo).
 
 ### Cómo se ganan
 
@@ -336,11 +361,17 @@ Desde aquí también:
   `resolver_jornada(n)` manualmente. Es la misma función que llama el
   scraper cada semana; es **segura de re-ejecutar** (ver más abajo), por si
   hay que corregir algo después de la resolución automática.
+  **Cuándo hace falta**: el resultado de las apuestas financia el presupuesto
+  de la jornada siguiente, pero solo si esa jornada ya existe cuando se
+  resuelve la anterior (es decir, si la federación ya le había puesto fecha).
+  Si no existía, el presupuesto cae a 1000€ sin ese resultado: cuando aparezca
+  la jornada siguiente, "Reprocesar jornada" sobre la anterior lo corrige.
 
 La sincronización real con la federación (traer resultados, calendario y
 estadísticas nuevas) **no tiene botón** — se hace con `npm run sync` en
 local, o lanzando el workflow "Weekly Stats Sync" en GitHub Actions (ya
-programado semanalmente).
+programado: sábados a las 22:00 UTC y, como reintento, domingos a las 22:00
+UTC; el reintento es seguro porque solo procesa las jornadas sin historial).
 
 ### Usuarios
 Renombrar, dar/quitar admin, y borrar la cuenta de cualquier usuario (vía la

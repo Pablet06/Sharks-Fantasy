@@ -80,7 +80,7 @@ hay que esperar a que se sepa el calendario.
 El precio de un jugador **no es fijo**: se recalcula solo a partir de su
 rendimiento reciente.
 
-> `precio = máx(50€, redondeo(50 + 12 × media de puntos de fantasy en sus
+> `precio = máx(50€, redondeo(50 + 22 × media de puntos de fantasy en sus
 > últimos 5 partidos jugados))`
 
 - **Ventana mixta**: se cuentan primero los partidos jugados de la temporada

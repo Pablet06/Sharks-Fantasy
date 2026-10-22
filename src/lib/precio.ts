@@ -1,7 +1,7 @@
 import type { HistorialEntry } from '../types'
 
 /** € por cada punto de fantasy de media. Constante a recalibrar con datos reales. */
-export const MULTIPLICADOR_PRECIO = 12
+export const MULTIPLICADOR_PRECIO = 22
 const PRECIO_MINIMO = 50
 const VENTANA = 5
 

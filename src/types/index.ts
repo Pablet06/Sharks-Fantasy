@@ -32,6 +32,7 @@ export interface Jugador {
   leverade_id: number | null
   stats: PlayerStats
   historial?: HistorialEntry[]
+  historial_anterior?: HistorialEntry[]
 }
 
 export interface Usuario {

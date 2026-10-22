@@ -1,4 +1,5 @@
-import { runSync } from './sync.js'
+import { runSync, runBackfillAnterior } from './sync.js'
+import { parseArgs } from './args.js'
 import { runDiscover } from './discover.js'
 
 async function main(): Promise<void> {
@@ -7,13 +8,18 @@ async function main(): Promise<void> {
     await runDiscover()
     return
   }
-  const jIdx = args.indexOf('--jornada')
-  const jornada = jIdx > -1 ? Number(args[jIdx + 1]) : undefined
-  if (jornada !== undefined && !Number.isInteger(jornada)) {
-    console.error(`--jornada needs an integer, got: ${args[jIdx + 1] ?? '(nothing)'}`)
+  let parsed
+  try { parsed = parseArgs(args) } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e))
     process.exit(1)
   }
-  const backfill = args.includes('--backfill')
+  const { backfill, jornada, anterior } = parsed
+  if (anterior !== undefined) {
+    console.log(`[${new Date().toISOString()}] backfill anterior start`, { anterior })
+    await runBackfillAnterior(anterior)
+    console.log('backfill anterior done')
+    return
+  }
   console.log(`[${new Date().toISOString()}] sync start`, { backfill, jornada })
   await runSync({ backfill, jornada })
   console.log('sync done')

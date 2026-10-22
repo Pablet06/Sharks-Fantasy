@@ -80,10 +80,18 @@ hay que esperar a que se sepa el calendario.
 El precio de un jugador **no es fijo**: se recalcula solo a partir de su
 rendimiento reciente.
 
-> `precio = máx(50€, redondeo(100 + 12 × media de puntos de fantasy en sus
-> últimas 5 jornadas jugadas))`
+> `precio = máx(50€, redondeo(50 + 22 × media de puntos de fantasy en sus
+> últimos 5 partidos jugados))`
 
-- Sin partidos jugados todavía, un jugador cuesta 50€ (el mínimo).
+- **Ventana mixta**: se cuentan primero los partidos jugados de la temporada
+  actual (los más recientes primero); si hay menos de 5, se completa con los
+  más recientes de la temporada anterior hasta llegar a 5. Así, a principio
+  de temporada el precio se apoya en el rendimiento del año pasado y va
+  pasando poco a poco al actual.
+- Solo cuentan los partidos en los que el jugador ha jugado.
+- El precio mínimo es **50€**.
+- Un jugador sin ningún partido jugado (jugador nuevo, sin historial) cuesta
+  50€.
 - Cuanto mejor rinda un jugador últimamente, más caro se pone — el mercado
   se ajusta solo, jornada a jornada.
 
@@ -137,8 +145,14 @@ más fiable es):
 
 > `cuota = acotado_entre(1.2x y 2.1x, 1 / probabilidad histórica de acertar)`
 
-Sin histórico todavía (por ejemplo, al principio de temporada), la
-probabilidad de partida es del 50% para cada opción. La cuota se ve en
+Al empezar la temporada la probabilidad de partida sale de la **temporada
+anterior** (25-26): en resultado, los Sharks perdieron todos los partidos
+(así "pierde" paga poco y "gana" o "empata" pagan el máximo); en goleador y
+expulsado, de lo que hizo cada jugador esa temporada. Ese dato pesa como 5
+partidos y se va desplazando con los partidos reales de esta temporada. Si
+una opción no tiene dato previo (por ejemplo, un jugador nuevo, o la
+portería) y todavía no hay histórico, la probabilidad de partida es del 50%
+(×2). La cuota se ve en
 pantalla **antes** de apostar, y se recalcula al momento si cambias tu
 elección (por ejemplo, de "gana" a "pierde"). Una vez guardada la apuesta,
 esa cuota queda fija — no cambia aunque el histórico cambie después.

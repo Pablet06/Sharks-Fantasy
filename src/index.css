@@ -1166,6 +1166,12 @@ button:focus-visible {
   letter-spacing: 0.04em;
 }
 
+.mini-precio {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
 .resumen-restante {
   font-family: 'Teko', sans-serif;
   font-size: 1.3rem;

@@ -326,6 +326,7 @@ export function Draft({ usuario, jugadores }: Props) {
                   <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
                   <span>{p.nick || p.name}{alineacion.capitan === n ? ' ★' : ''}</span>
                   <small className="mini-pos">{p.pos}</small>
+                  <small className="mini-precio">{precios[n]}€</small>
                 </button>
               )
             })}

@@ -308,7 +308,7 @@ export function Draft({ usuario, jugadores }: Props) {
             })}
           </div>
           <p className="placeholder">
-            <span className="resumen-restante">{presupuesto - costeGuardado}€</span>
+            Coste: {costeGuardado}€ · <span className="resumen-restante">Te quedan {presupuesto - costeGuardado}€</span>
           </p>
           {!bloqueada && msg && <p className="admin-msg">{msg}</p>}
           {!bloqueada && (
@@ -327,7 +327,7 @@ export function Draft({ usuario, jugadores }: Props) {
             <button className="modal-close" onClick={cerrarModal}>×</button>
             <h3>Cambiar Fichajes</h3>
             <div className="modal-stack">
-              <p className="placeholder">{presupuesto - usado}€</p>
+              <p className="placeholder">Te quedan {presupuesto - usado}€</p>
               {editor}
             </div>
           </div>

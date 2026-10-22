@@ -80,10 +80,18 @@ hay que esperar a que se sepa el calendario.
 El precio de un jugador **no es fijo**: se recalcula solo a partir de su
 rendimiento reciente.
 
-> `precio = máx(50€, redondeo(100 + 12 × media de puntos de fantasy en sus
-> últimas 5 jornadas jugadas))`
+> `precio = máx(50€, redondeo(50 + 12 × media de puntos de fantasy en sus
+> últimos 5 partidos jugados))`
 
-- Sin partidos jugados todavía, un jugador cuesta 50€ (el mínimo).
+- **Ventana mixta**: se cuentan primero los partidos jugados de la temporada
+  actual (los más recientes primero); si hay menos de 5, se completa con los
+  más recientes de la temporada anterior hasta llegar a 5. Así, a principio
+  de temporada el precio se apoya en el rendimiento del año pasado y va
+  pasando poco a poco al actual.
+- Solo cuentan los partidos en los que el jugador ha jugado.
+- El precio mínimo es **50€**.
+- Un jugador sin ningún partido jugado (jugador nuevo, sin historial) cuesta
+  50€.
 - Cuanto mejor rinda un jugador últimamente, más caro se pone — el mercado
   se ajusta solo, jornada a jornada.
 

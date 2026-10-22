@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 22 * * 6'  # Every Saturday at 22:00 UTC (23:00 CET)
   workflow_dispatch:        # Manual trigger from GitHub UI
+    inputs:
+      args:
+        description: 'Extra scraper flags (empty = incremental), e.g. --anterior 1324114'
+        required: false
+        default: ''
 
 jobs:
   sync:
@@ -23,9 +28,13 @@ jobs:
 
       - name: Run stats sync (incremental)
         # No .env file here — env vars injected below. dotenv no-ops on missing file.
-        run: npm run sync:prod
+        # SCRAPER_ARGS goes through env (never interpolated into the script) and is
+        # expanded unquoted on purpose so it splits into flags; no eval, so shell
+        # metacharacters in it are inert text.
+        run: npm run sync:prod -- $SCRAPER_ARGS
         working-directory: scraper
         env:
+          SCRAPER_ARGS: ${{ inputs.args }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 

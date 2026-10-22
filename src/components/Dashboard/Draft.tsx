@@ -30,7 +30,7 @@ export function Draft({ usuario, jugadores }: Props) {
 
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
-    for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [])
+    for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [], j.historial_anterior ?? [])
     return m
   }, [jugadores])
 

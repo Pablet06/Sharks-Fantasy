@@ -1,18 +1,22 @@
 import type { HistorialEntry } from '../types'
 
+/** € por cada punto de fantasy de media. Constante a recalibrar con datos reales. */
+export const MULTIPLICADOR_PRECIO = 12
+const PRECIO_MINIMO = 50
+const VENTANA = 5
+
+const jugadas = (h: HistorialEntry[]) =>
+  h.filter(e => e.stats.partidos > 0).sort((a, b) => b.jornada - a.jornada)
+
 /**
- * Precio de fantasy de un jugador: base 100€ + 12€ por cada punto de fantasy
- * de media en sus últimas 5 jornadas jugadas (partidos > 0), con un suelo de
- * 50€. El multiplicador (12) es una constante a recalibrar si el "mejor 7"
- * no queda claramente por encima del presupuesto base de 1000€ — ver
- * docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md.
+ * Precio de fantasy: máx(50, redondeo(50 + MULTIPLICADOR_PRECIO × media)) sobre
+ * las últimas 5 jornadas jugadas (partidos > 0). Ventana mixta: primero las de
+ * la temporada actual (más recientes primero), completada con las de la
+ * temporada anterior hasta 5. Sin historial = 50€.
  */
-export function calcPrecio(historial: HistorialEntry[]): number {
-  const jugadas = historial
-    .filter(h => h.stats.partidos > 0)
-    .sort((a, b) => b.jornada - a.jornada)
-    .slice(0, 5)
-  if (jugadas.length === 0) return 50
-  const media = jugadas.reduce((sum, h) => sum + h.puntos, 0) / jugadas.length
-  return Math.max(50, Math.round(100 + 12 * media))
+export function calcPrecio(historial: HistorialEntry[], anterior: HistorialEntry[] = []): number {
+  const ventana = [...jugadas(historial), ...jugadas(anterior)].slice(0, VENTANA)
+  if (ventana.length === 0) return PRECIO_MINIMO
+  const media = ventana.reduce((sum, h) => sum + h.puntos, 0) / ventana.length
+  return Math.max(PRECIO_MINIMO, Math.round(50 + MULTIPLICADOR_PRECIO * media))
 }

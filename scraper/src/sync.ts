@@ -93,6 +93,7 @@ export async function syncJornada(
   tournamentId: string,
   round: Round,
   dbPlayers: (DbPlayer & { pos: Position })[],
+  destino: 'historial' | 'historial_anterior' = 'historial',
 ): Promise<{ jornada: number; rows: number; unmatched: string[] } | null> {
   const matches = await getRoundMatches(round.id)
   const finished = matches.filter(m => m.finished)
@@ -138,21 +139,25 @@ export async function syncJornada(
     }
   })
 
-  const { error: jError } = await supabase
-    .from('jornadas')
-    .upsert({
-      numero: round.jornada,
-      fecha_partido: conZonaMadrid(matchDate),
-      resultado: resultadoJornada(golesFavor, golesContra),
-      goles_favor: golesFavor,
-      goles_contra: golesContra,
-    }, { onConflict: 'numero' })
-  if (jError) throw new Error(`jornadas upsert J${round.jornada}: ${jError.message}`)
+  // historial_anterior (temporada pasada) nunca toca `jornadas`: sus números
+  // de jornada son de otra temporada y pisarían el calendario actual.
+  if (destino === 'historial') {
+    const { error: jError } = await supabase
+      .from('jornadas')
+      .upsert({
+        numero: round.jornada,
+        fecha_partido: conZonaMadrid(matchDate),
+        resultado: resultadoJornada(golesFavor, golesContra),
+        goles_favor: golesFavor,
+        goles_contra: golesContra,
+      }, { onConflict: 'numero' })
+    if (jError) throw new Error(`jornadas upsert J${round.jornada}: ${jError.message}`)
+  }
 
   const { error } = await supabase
-    .from('historial')
+    .from(destino)
     .upsert(upserts, { onConflict: 'jugador_id,jornada' })
-  if (error) throw new Error(`historial upsert J${round.jornada}: ${error.message}`)
+  if (error) throw new Error(`${destino} upsert J${round.jornada}: ${error.message}`)
 
   return { jornada: round.jornada, rows: upserts.length, unmatched }
 }
@@ -270,6 +275,34 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
   }
   if (failedJornadas.length) {
     console.error('FAILED JORNADAS:\n' + failedJornadas.join('\n'))
+    process.exitCode = 1
+  }
+}
+
+/** Carga una temporada anterior en `historial_anterior`: solo syncJornada, sin
+ * calendario, resolver_jornada, limpieza ni setConfig. */
+export async function runBackfillAnterior(tournamentId: string): Promise<void> {
+  const dbPlayers = await getDbPlayers()
+  const rounds = await getRounds(tournamentId)
+  const unmatched: string[] = []
+  const failed: string[] = []
+  let ok = 0
+  for (const round of rounds) {
+    try {
+      const res = await syncJornada(tournamentId, round, dbPlayers, 'historial_anterior')
+      if (!res) { console.log(`J${round.jornada}: no finished Sharks match or empty stats`); continue }
+      ok++
+      console.log(`J${res.jornada}: ${res.rows} rows, ${res.unmatched.length} unmatched`)
+      unmatched.push(...res.unmatched)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`J${round.jornada}: sync failed: ${msg}`)
+      failed.push(`J${round.jornada}: ${msg}`)
+    }
+  }
+  if (unmatched.length) console.warn('UNMATCHED FEDERATION PLAYERS (esperado: jugadores que ya no estan):\n' + unmatched.join('\n'))
+  if (ok === 0 && failed.length > 0) {
+    console.error(`FAILED JORNADAS (all of them):\n${failed.join('\n')}`)
     process.exitCode = 1
   }
 }

@@ -8,15 +8,21 @@ export function useJugadores() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase
-      .from('jugadores')
-      .select('*, historial(*)')
-      .order('name')
-      .then(({ data, error }) => {
-        if (error) setError(error.message)
-        else if (data) setJugadores(data as Jugador[])
-        setLoading(false)
-      })
+    const cargar = async () => {
+      let res = await supabase
+        .from('jugadores')
+        .select('*, historial(*), historial_anterior(*)')
+        .order('name')
+      // Si la tabla historial_anterior aún no existe (migración pendiente), el
+      // embed falla: reintentamos sin ella para no dejar la lista vacía.
+      if (res.error) {
+        res = await supabase.from('jugadores').select('*, historial(*)').order('name')
+      }
+      if (res.error) setError(res.error.message)
+      else if (res.data) setJugadores(res.data as Jugador[])
+      setLoading(false)
+    }
+    cargar()
   }, [])
 
   return { jugadores, loading, error }

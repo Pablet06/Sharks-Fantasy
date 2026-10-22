@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Apuesta } from '../../types'
 import { jornadaAbierta } from '../../lib/jornada'
 import { validarApuestas } from '../../lib/apuestas'
+import { useJornadas } from '../../hooks/useJornadas'
+import { etiquetaJornada } from '../../lib/jornada'
 
 interface Props {
   usuario: Usuario
@@ -40,6 +42,8 @@ export function Apuestas({ usuario, jugadores }: Props) {
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState('')
   const [ahora, setAhora] = useState<number | null>(null)
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const jornadas = useJornadas()
 
   useEffect(() => {
     supabase
@@ -74,28 +78,46 @@ export function Apuestas({ usuario, jugadores }: Props) {
     }
   }, [usuario.id])
 
-  useEffect(() => {
-    if (!jornada || jornada === 'loading') return
-    let cancelled = false
-    supabase
+  // Trae las apuestas de la jornada (null si falla).
+  const traerApuestas = useCallback(async (jornadaNumero: number) => {
+    const { data, error } = await supabase
       .from('apuestas')
       .select('*')
       .eq('usuario_id', usuario.id)
-      .eq('jornada', jornada.numero)
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) console.error('Apuestas fetch error:', error)
-        const rows = (data ?? []) as Apuesta[]
-        setExistentes(rows)
-        setFilas(prev => {
-          const next = { ...prev }
-          for (const r of rows) {
-            next[r.tipo] = { seleccion: r.seleccion, importe: String(r.importe), cuota: r.cuota }
-          }
-          return next
-        })
-        setAhora(Date.now())
-      })
+      .eq('jornada', jornadaNumero)
+    if (error) { console.error('Apuestas fetch error:', error); return null }
+    return (data ?? []) as Apuesta[]
+  }, [usuario.id])
+
+  // Vuelca lo guardado en `existentes` y reinicia el formulario a ello.
+  const aplicarApuestas = useCallback((rows: Apuesta[]) => {
+    setExistentes(rows)
+    setFilas(prev => {
+      const next = { ...prev }
+      for (const { tipo } of TIPOS) {
+        const r = rows.find(x => x.tipo === tipo)
+        next[tipo] = r
+          ? { seleccion: r.seleccion, importe: String(r.importe), cuota: r.cuota }
+          : { ...filaVacia(tipo === 'porteria' ? 'si' : ''), cuota: tipo === 'porteria' ? prev.porteria.cuota : null }
+      }
+      return next
+    })
+  }, [])
+
+  // Se reutiliza tras guardar (para no dejar `existentes` obsoleto) y al cancelar el modal.
+  const cargar = useCallback(async (jornadaNumero: number) => {
+    const rows = await traerApuestas(jornadaNumero)
+    if (rows) aplicarApuestas(rows)
+  }, [traerApuestas, aplicarApuestas])
+
+  useEffect(() => {
+    if (!jornada || jornada === 'loading') return
+    let cancelled = false
+    traerApuestas(jornada.numero).then(rows => {
+      if (cancelled) return
+      if (rows) aplicarApuestas(rows)
+      setAhora(Date.now())
+    })
     supabase
       .rpc('presupuesto_actual', { p_usuario_id: usuario.id, p_jornada: jornada.numero })
       .then(({ data, error }) => {
@@ -106,7 +128,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
     return () => {
       cancelled = true
     }
-  }, [jornada, usuario.id])
+  }, [jornada, usuario.id, traerApuestas, aplicarApuestas])
 
   const actualizarCuota = async (tipo: Tipo, seleccion: string, jornadaNumero: number) => {
     if (!seleccion) return
@@ -183,51 +205,40 @@ export function Apuestas({ usuario, jugadores }: Props) {
       if (error) { setMsg(`Error: ${error.message}`); setGuardando(false); return }
     }
 
+    await cargar(jornada.numero)
     setMsg('✓ Apuestas guardadas')
     setGuardando(false)
+    setModalAbierto(false)
   }
 
-  return (
-    <div className="apuestas-container">
-      <div className="team-total-pts">
-        <span>Jornada {jornada.numero} — presupuesto</span>
-        <strong>{Math.round(presupuesto)}€</strong>
-      </div>
+  const cerrarModal = () => {
+    cargar(jornada.numero)
+    setMsg('')
+    setModalAbierto(false)
+  }
 
-      {resultados.length > 0 && (
-        <div className="apuestas-list">
-          <p className="placeholder">Resultado de tus apuestas de la jornada {resultados[0].jornada}:</p>
-          {resultados.map(previa => (
-            <div key={previa.id} className="apuesta-row">
-              <span>{TIPOS.find(t => t.tipo === previa.tipo)?.label ?? previa.tipo}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
-              <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
-                {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+  const orden = jornada.orden ?? jornada.numero
+  const nombreJugador = (dorsal: string) => {
+    const j = jugadores.find(x => String(x.numero) === dorsal)
+    return j ? (j.nick || j.name) : `dorsal ${dorsal}`
+  }
+  const textoSeleccion = (tipo: Tipo, seleccion: string) => {
+    if (tipo === 'goleador' || tipo === 'expulsado') return nombreJugador(seleccion)
+    if (tipo === 'resultado') return { gana: 'Gana', pierde: 'Pierde', empata: 'Empata' }[seleccion] ?? seleccion
+    return seleccion === 'si' ? 'Sí' : 'No'
+  }
+  const totalApostado = existentes.reduce((sum, e) => sum + e.importe, 0)
+  const tope = Math.round(presupuesto * 0.2)
 
-      {bloqueada ? (
-        <div className="apuestas-list">
-          {TIPOS.map(({ tipo, label }) => {
-            const previa = existentes.find(a => a.tipo === tipo)
-            if (!previa) return null
-            return (
-              <div key={tipo} className="apuesta-row">
-                <span>{label}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
-                {previa.resuelto && (
-                  <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
-                    {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
-                  </span>
-                )}
-              </div>
-            )
-          })}
-          {existentes.length === 0 && <p className="placeholder">No apostaste nada esta jornada.</p>}
-        </div>
-      ) : (
-        <>
+  const nota = (
+    <p className="apuesta-nota">
+      Lo que ganes o pierdas con tus apuestas (el importe apostado NO se descuenta de esta jornada)
+      se suma o resta a tu presupuesto de la <strong>Jornada {orden + 1}</strong> (1000€ ± resultado neto).
+    </p>
+  )
+
+  const form = (
+    <>
           {TIPOS.map(({ tipo, label }) => (
             <div key={tipo} className="apuesta-row">
               <span>{label}</span>
@@ -262,6 +273,79 @@ export function Apuestas({ usuario, jugadores }: Props) {
           <button className="save-btn" onClick={guardar} disabled={guardando}>
             {guardando ? 'Guardando...' : 'Guardar apuestas'}
           </button>
+    </>
+  )
+
+  return (
+    <div className="apuestas-container">
+      <div className="team-total-pts team-dinero">
+        <span>Jornada {orden} — presupuesto</span>
+        <strong>{Math.round(presupuesto)}€</strong>
+      </div>
+
+      {resultados.length > 0 && (
+        <div className="apuestas-list">
+          <p className="placeholder">Resultado de tus apuestas de la jornada {etiquetaJornada(jornadas, resultados[0].jornada)}:</p>
+          {resultados.map(previa => (
+            <div key={previa.id} className="apuesta-row">
+              <span>{TIPOS.find(t => t.tipo === previa.tipo)?.label ?? previa.tipo}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
+              <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
+                {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {bloqueada ? (
+        <div className="apuestas-list">
+          {TIPOS.map(({ tipo, label }) => {
+            const previa = existentes.find(a => a.tipo === tipo)
+            if (!previa) return null
+            return (
+              <div key={tipo} className="apuesta-row">
+                <span>{label}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
+                {previa.resuelto && (
+                  <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
+                    {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
+                  </span>
+                )}
+              </div>
+            )
+          })}
+          {existentes.length === 0 && <p className="placeholder">No apostaste nada esta jornada.</p>}
+        </div>
+      ) : (
+        <>
+          {nota}
+          {existentes.length > 0 ? (
+            <div className="resumen-card">
+              {TIPOS.map(({ tipo, label }) => {
+                const a = existentes.find(e => e.tipo === tipo)
+                if (!a) return null
+                const ganancia = a.cuota !== null ? Math.round(a.importe * (a.cuota - 1) * 100) / 100 : null
+                return (
+                  <div key={tipo} className="apuesta-row">
+                    <span>{label}: <strong>{textoSeleccion(tipo, a.seleccion)}</strong></span>
+                    <span>{a.importe}€ a {a.cuota}x</span>
+                    {ganancia !== null && <span className="pts-positive">Ganancia potencial: +{ganancia}€</span>}
+                  </div>
+                )
+              })}
+              <p className="placeholder">Total apostado: {totalApostado}€ de {tope}€ (tope del 20%)</p>
+              {msg && <p className="admin-msg">{msg}</p>}
+              <button className="save-btn" onClick={() => setModalAbierto(true)}>Modificar apuestas</button>
+            </div>
+          ) : form}
+          {existentes.length > 0 && modalAbierto && (
+            <div className="modal-overlay" onClick={cerrarModal}>
+              <div className="team-modal team-modal-wide" onClick={e => e.stopPropagation()}>
+                <button className="modal-close" onClick={cerrarModal}>×</button>
+                <h3>Modificar apuestas</h3>
+                <div className="modal-stack">{nota}{form}</div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

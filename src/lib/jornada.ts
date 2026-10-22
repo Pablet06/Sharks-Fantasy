@@ -3,6 +3,17 @@ import type { Jornada } from '../types'
 const VEINTICUATRO_HORAS_MS = 24 * 60 * 60 * 1000
 
 /**
+ * Número de jornada del Fantasy ("Jornada 1") para un número de federación.
+ * Cae a `numero` si la fila no existe o aún no tiene `orden` (migración sin aplicar).
+ */
+export function etiquetaJornada(
+  jornadas: Pick<Jornada, 'numero' | 'orden'>[],
+  numero: number,
+): number {
+  return jornadas.find(j => j.numero === numero)?.orden ?? numero
+}
+
+/**
  * La jornada abierta para draftear: la de número más bajo con fecha de
  * partido conocida, no finalizada, y a más de 24h vista. Sin fecha
  * conocida no cuenta como abierta (coincide con el fail-closed de la RLS

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Usuario, Jugador, Alineacion } from '../../types'
 import { PlayerCard } from '../Dashboard/PlayerCard'
+import { useJornadas } from '../../hooks/useJornadas'
+import { etiquetaJornada } from '../../lib/jornada'
 
 interface Props {
   jugadores: Jugador[]
@@ -17,6 +19,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
   const [viewTeam, setViewTeam] = useState<Usuario | null>(null)
   const [viewAlineacion, setViewAlineacion] = useState<Alineacion | null | 'none'>('none')
   const [viewPlayer, setViewPlayer] = useState<Jugador | null>(null)
+  const jornadas = useJornadas()
 
   useEffect(() => {
     supabase
@@ -86,7 +89,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
             )}
             {viewAlineacion && viewAlineacion !== 'none' && (
               <>
-                <p className="placeholder">Jornada {viewAlineacion.jornada} — {viewAlineacion.puntos_jornada} pts</p>
+                <p className="placeholder">Jornada {etiquetaJornada(jornadas, viewAlineacion.jornada)} — {viewAlineacion.puntos_jornada} pts</p>
                 <div className="mini-pool">
                   {(viewAlineacion.jugadores ?? []).map(id => {
                     const p = jugadores.find(j => j.numero === id)

@@ -403,6 +403,19 @@ button:focus-visible {
   line-height: 1;
 }
 
+.team-puntos {
+  border-color: rgba(255, 215, 0, 0.35);
+}
+
+.team-puntos strong {
+  font-size: 3rem;
+  color: var(--accent);
+}
+
+.team-dinero strong {
+  color: var(--success);
+}
+
 .pool {
   position: relative;
   width: 100%;
@@ -1090,6 +1103,89 @@ button:focus-visible {
 .draft-container {
   max-width: 720px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Contenido apilado dentro de un modal (editor de Mi equipo / Apuestas) */
+.modal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.team-modal.team-modal-wide {
+  max-width: 560px;
+}
+
+/* Bloque resumen (alineación / apuestas / power-up ya hechos) */
+.resumen-card,
+.powerup-aplicado {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: var(--border);
+  border-radius: var(--radius);
+}
+
+.resumen-card .mini-pool {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}
+
+.composicion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.composicion-item {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+}
+
+.composicion-item.ok {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.composicion-item.sobra {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+.mini-pos {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resumen-restante {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.powerup-aplicado strong {
+  font-family: 'Teko', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.apuesta-nota {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  border-left: 3px solid var(--primary);
+  background: rgba(0, 210, 255, 0.05);
+  border-radius: 6px;
 }
 
 .draft-pick-btn {

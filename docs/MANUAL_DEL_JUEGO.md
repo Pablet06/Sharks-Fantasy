@@ -90,6 +90,10 @@ rendimiento reciente.
 ### Elegir tu 7
 
 - Exactamente **7 dorsales distintos**, sin repetir.
+- **Composición obligatoria**: 1 Portero, 2 Extremos, 2 Laterales, 1 Boya y
+  1 Contraboya. En pantalla ves un contador por posición (p. ej. «Extremo
+  1/2») y no puedes guardar hasta que todas estén completas. La base de datos
+  también lo comprueba, así que no hay forma de saltárselo.
 - El coste total no puede superar tu presupuesto de esa jornada.
 - Eliges un **capitán** entre tus 7 — sus puntos de esa jornada **cuentan
   doble** (para bien y para mal: si tiene una mala jornada con tarjetas o

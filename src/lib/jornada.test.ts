@@ -1,10 +1,25 @@
 import { describe, it, expect } from 'vitest'
-import { jornadaAbierta } from './jornada'
+import { jornadaAbierta, etiquetaJornada } from './jornada'
 import type { Jornada } from '../types'
 
 const j = (numero: number, o: Partial<Jornada> = {}): Jornada => ({
-  numero, fecha_partido: null, resultado: null, goles_favor: null,
+  numero, orden: numero, fecha_partido: null, resultado: null, goles_favor: null,
   goles_contra: null, finalizado: false, ...o,
+})
+
+describe('etiquetaJornada', () => {
+  it('devuelve el orden de la jornada', () => {
+    expect(etiquetaJornada([j(7, { orden: 1 }), j(9, { orden: 2 })], 9)).toBe(2)
+  })
+
+  it('cae al número de federación si la fila no existe', () => {
+    expect(etiquetaJornada([j(7, { orden: 1 })], 12)).toBe(12)
+  })
+
+  it('cae al número si orden aún no existe (migración sin aplicar)', () => {
+    const sinOrden = { numero: 7 } as Jornada
+    expect(etiquetaJornada([sinOrden], 7)).toBe(7)
+  })
 })
 
 describe('jornadaAbierta', () => {

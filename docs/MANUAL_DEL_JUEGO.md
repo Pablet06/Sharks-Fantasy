@@ -391,7 +391,8 @@ UTC; el reintento es seguro porque solo procesa las jornadas sin historial).
 
 ### Usuarios
 Renombrar, dar/quitar admin, y borrar la cuenta de cualquier usuario (vía la
-función `delete-account`). También tiene un editor del campo legado
+función `delete-account`; borra también todos sus datos de juego —
+alineaciones, apuestas, presupuestos y power-ups— por `ON DELETE CASCADE`). También tiene un editor del campo legado
 `usuarios.equipo` (7 dorsales) — **es reliquia del modelo antiguo, previo a
 las alineaciones por jornada**, y ya no afecta a la puntuación de nadie;
 está ahí sin usarse, no hace falta tocarlo.

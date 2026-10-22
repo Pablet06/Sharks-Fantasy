@@ -145,8 +145,14 @@ más fiable es):
 
 > `cuota = acotado_entre(1.2x y 2.1x, 1 / probabilidad histórica de acertar)`
 
-Sin histórico todavía (por ejemplo, al principio de temporada), la
-probabilidad de partida es del 50% para cada opción. La cuota se ve en
+Al empezar la temporada la probabilidad de partida sale de la **temporada
+anterior** (25-26): en resultado, los Sharks perdieron todos los partidos
+(así "pierde" paga poco y "gana" o "empata" pagan el máximo); en goleador y
+expulsado, de lo que hizo cada jugador esa temporada. Ese dato pesa como 5
+partidos y se va desplazando con los partidos reales de esta temporada. Si
+una opción no tiene dato previo (por ejemplo, un jugador nuevo, o la
+portería) y todavía no hay histórico, la probabilidad de partida es del 50%
+(×2). La cuota se ve en
 pantalla **antes** de apostar, y se recalcula al momento si cambias tu
 elección (por ejemplo, de "gana" a "pierde"). Una vez guardada la apuesta,
 esa cuota queda fija — no cambia aunque el histórico cambie después.

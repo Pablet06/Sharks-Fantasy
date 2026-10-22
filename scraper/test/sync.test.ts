@@ -27,6 +27,7 @@ import {
   staleJornadas,
   syncCalendar,
   ladoSharks,
+  conUTC,
 } from '../src/sync'
 import { fetchMatchStats, SHARKS_TEAM_NAME, type RawPlayer } from '../src/fncv'
 
@@ -108,10 +109,25 @@ describe('ladoSharks', () => {
   })
 })
 
+describe('conUTC', () => {
+  it('etiqueta como UTC la fecha sin zona de Leverade', () => {
+    expect(conUTC('2026-10-24 15:45:00')).toBe('2026-10-24 15:45:00 UTC')
+  })
+
+  it('no toca una fecha que ya trae zona', () => {
+    expect(conUTC('2026-10-24T15:45:00Z')).toBe('2026-10-24T15:45:00Z')
+    expect(conUTC('2026-10-24 15:45:00+02:00')).toBe('2026-10-24 15:45:00+02:00')
+  })
+
+  it('null se queda en null', () => {
+    expect(conUTC(null)).toBe(null)
+  })
+})
+
 describe('syncCalendar', () => {
   it('escribe fecha_partido para una jornada sin historial, identificando a los Sharks por sus equipos', async () => {
     vi.mocked(getRoundMatches).mockResolvedValue([
-      { id: 'm1', date: '2026-10-05T18:00:00Z', finished: false, homeTeamId: 't1', awayTeamId: 't2' },
+      { id: 'm1', date: '2026-10-24 15:45:00', finished: false, homeTeamId: 't1', awayTeamId: 't2' },
     ])
     vi.mocked(getTeamName).mockImplementation((id: string) =>
       Promise.resolve(id === 't2' ? 'C.W. Sharks A' : 'C.W. Elx B'),
@@ -122,7 +138,7 @@ describe('syncCalendar', () => {
     await syncCalendar([{ id: 'r1', jornada: 5 }], new Set([1, 2, 3, 4]))
 
     expect(upsert).toHaveBeenCalledWith(
-      { numero: 5, fecha_partido: '2026-10-05T18:00:00Z Europe/Madrid' },
+      { numero: 5, fecha_partido: '2026-10-24 15:45:00 UTC' },
       { onConflict: 'numero' },
     )
   })

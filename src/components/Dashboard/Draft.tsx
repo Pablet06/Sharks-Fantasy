@@ -284,9 +284,9 @@ export function Draft({ usuario, jugadores }: Props) {
 
       {jornada.fecha_partido && !bloqueada && (
         <p className="placeholder">
-          Cierra el {new Date(jornada.fecha_partido).toLocaleString('es-ES', {
-            dateStyle: 'medium', timeStyle: 'short',
-          })}
+          Cierra el {new Date(new Date(jornada.fecha_partido).getTime() - 24 * 60 * 60 * 1000).toLocaleString('es-ES', {
+            dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid',
+          })} (24 h antes del partido)
         </p>
       )}
 

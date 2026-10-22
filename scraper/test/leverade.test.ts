@@ -53,6 +53,22 @@ describe('getRoundMatches', () => {
   })
 })
 
+describe('getRoundMatches — descanso', () => {
+  it('descarta el partido sin local o visitante (equipo que descansa)', async () => {
+    stubFetch({
+      '/rounds/': JSON.stringify({
+        data: {},
+        included: [
+          { type: 'match', id: 'bye', attributes: { finished: true, date: null }, meta: { home_team: null, away_team: 'a' } },
+          { type: 'match', id: 'real', attributes: { finished: true, date: null }, meta: { home_team: 'h', away_team: 'a' } },
+        ],
+      }),
+    })
+    const matches = await getRoundMatches('1')
+    expect(matches.map(m => m.id)).toEqual(['real'])
+  })
+})
+
 describe('getTeamName', () => {
   it('devuelve el nombre del equipo', async () => {
     stubFetch({

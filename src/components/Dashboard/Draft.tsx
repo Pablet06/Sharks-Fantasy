@@ -303,6 +303,7 @@ export function Draft({ usuario, jugadores }: Props) {
                 <button key={n} className="mini-player" onClick={() => setSelectedCard(p)}>
                   <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
                   <span>{p.nick || p.name}{alineacion.capitan === n ? ' ★' : ''}</span>
+                  <small className="mini-pos">{p.pos}</small>
                 </button>
               )
             })}

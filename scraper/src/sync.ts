@@ -175,6 +175,77 @@ export async function resolverJornadas(jornadas: Iterable<number>): Promise<void
   }
 }
 
+export interface JornadaFila {
+  numero: number
+  orden: number
+  finalizado: boolean
+  fecha_partido: string | null
+}
+
+const CUATRO_HORAS_MS = 4 * 60 * 60 * 1000
+const SIETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * Jornadas que el modo incremental debe volver a pasar por resolver_jornada
+ * (idempotente) porque un run anterior se quedó a medias:
+ *  A) tienen historial pero siguen sin finalizar (el upsert de historial salió
+ *     bien y resolver_jornada falló);
+ *  B) la última finalizada con sucesora (por orden) a la que aún no se le
+ *     financió el presupuesto: la sucesora no existía al resolverla (descansos,
+ *     calendario sin fechas) y el paso de financiación se saltó.
+ */
+export function jornadasPorReconciliar(
+  jornadas: JornadaFila[],
+  conHistorial: Set<number>,
+  conPresupuesto: Set<number>,
+): number[] {
+  const pendientes = new Set<number>()
+  for (const j of jornadas) {
+    if (conHistorial.has(j.numero) && !j.finalizado) pendientes.add(j.numero)
+  }
+  const porOrden = new Map(jornadas.map(j => [j.orden, j]))
+  const conSucesora = jornadas
+    .filter(j => j.finalizado && porOrden.has(j.orden + 1))
+    .sort((a, b) => b.orden - a.orden)[0]
+  if (conSucesora && !conPresupuesto.has(porOrden.get(conSucesora.orden + 1)!.numero)) {
+    pendientes.add(conSucesora.numero)
+  }
+  return [...pendientes]
+}
+
+/** Partidos de los últimos 7 días, ya terminados por reloj (>4h), sin historial: el run no puede darlos por buenos. */
+export function partidosSinResultado(
+  jornadas: JornadaFila[],
+  conHistorial: Set<number>,
+  ahora: Date = new Date(),
+): number[] {
+  return jornadas
+    .filter(j => {
+      if (conHistorial.has(j.numero) || j.fecha_partido === null) return false
+      const edad = ahora.getTime() - new Date(j.fecha_partido).getTime()
+      return edad > CUATRO_HORAS_MS && edad < SIETE_DIAS_MS
+    })
+    .map(j => j.numero)
+}
+
+/** Lee jornadas y presupuestos y reintenta lo que un run anterior dejó a medias. Devuelve las filas leídas. */
+export async function reconciliarJornadas(historialJornadas: Set<number>): Promise<JornadaFila[]> {
+  const { data: jRows, error: jErr } = await supabase
+    .from('jornadas').select('numero, orden, finalizado, fecha_partido')
+  const { data: pRows, error: pErr } = await supabase.from('presupuestos').select('jornada')
+  if (jErr || pErr || !jRows) {
+    console.error(`reconciliarJornadas: lectura fallida: ${(jErr ?? pErr)?.message}`)
+    process.exitCode = 1
+    return []
+  }
+  const filas = jRows as JornadaFila[]
+  const conPresupuesto = new Set((pRows ?? []).map(p => p.jornada as number))
+  const reintentar = jornadasPorReconciliar(filas, historialJornadas, conPresupuesto)
+  if (reintentar.length) console.log(`reconciliar: re-resolviendo J${reintentar.join(', J')}`)
+  await resolverJornadas(reintentar)
+  return filas
+}
+
 /** historial jornadas that are no longer on the current Leverade calendar. */
 export function staleJornadas(calendarJornadas: number[], historialJornadas: number[]): number[] {
   // Empty calendar = failed enumeration, not "every jornada is stale". Never delete.
@@ -202,6 +273,11 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
     console.error(`syncCalendar failed: ${msg}`)
     process.exitCode = 1
   }
+
+  // Incremental: reintenta lo que un run anterior dejó a medias (resolver_jornada
+  // fallido, financiación de una jornada sucesora que aún no existía).
+  const incremental = !opts.backfill && !opts.jornada
+  const filasJornadas = incremental ? await reconciliarJornadas(historialJornadas) : []
 
   const targets = opts.jornada
     ? rounds.filter(r => r.jornada === opts.jornada)
@@ -232,6 +308,16 @@ export async function runSync(opts: { backfill?: boolean; jornada?: number }): P
       const msg = e instanceof Error ? e.message : String(e)
       console.error(`J${round.jornada}: sync failed: ${msg}`)
       failedJornadas.push(`J${round.jornada}: ${msg}`)
+    }
+  }
+
+  // Un partido de los Sharks que ya debería haber terminado y sigue sin historial
+  // (no marcado finished, acta vacía) no puede acabar en un run verde.
+  if (incremental) {
+    const sinResultado = partidosSinResultado(filasJornadas, new Set([...historialJornadas, ...syncedJornadas]))
+    if (sinResultado.length) {
+      console.error(`PARTIDO SIN RESULTADO TRAS >4h: J${sinResultado.join(', J')} (¿no marcado finished o acta vacía?)`)
+      process.exitCode = 1
     }
   }
 

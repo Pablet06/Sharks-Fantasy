@@ -27,3 +27,17 @@ Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): h
 - Sin corregir (medio/bajo): recalcular apuestas resueltas tras corregir datos; `capitan_tardio` solo con jornada abierta; stats de temporada con "Recalcular puntos" manual; tope de presupuesto solo en cliente; `orden` de jornadas por inserción y no por fecha; empates en goleador/expulsado dan 0 a todos; `expulsiones_graves` no cuenta en la apuesta de expulsado; `historial.date` sin zona horaria.
 - Añadir un workflow de CI en PR.
 - Hectorg_wp y Jusi prime no tienen alineación en J7 y puntuarán 0.
+
+## 2026-10-24
+
+### What was done
+- Sin cambios de código. Partido ya jugado; se espera al scraper automático (sáb 22:00 UTC, reintento dom 22:00 UTC) y se verifica con `docs/runbook-partido-j7.md`.
+- Análisis: en PR #27 `jornadaAbierta` exige fecha + no finalizada + >24h. Riesgo real: `resolver_jornada` solo escribe presupuestos de jornada+1 si esa fila existe al resolver (migración `20260913000001`); si J8 aparece después, los usuarios empiezan con 1000€ salvo "Reprocesar jornada 7" previo. PR #27 lo automatiza.
+
+### Decisions made
+- Esperar al scraper. Aplazada la idea de condicionar la apertura de jornada a que existan filas en `presupuestos`.
+
+### What's left
+- Verificar scraper tras 22:00 UTC; confirmar que el secret `service_role` es la clave real.
+- Sin PR #27: Reprocesar jornada 7 antes de que aparezca J8. Luego decidir merge de PR #27 y revisar PR #26 (no mergear hasta confirmar J7).
+- Recalcular puntos; historial por jornada; admin leyendo `alineaciones`.

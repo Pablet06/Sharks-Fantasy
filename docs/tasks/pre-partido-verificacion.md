@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-25
 ---
 
 # Verificación pre-partido
@@ -17,8 +17,31 @@ Tener confianza de que el juego está listo para el partido y de que el proceso 
 - [x] Investigar por qué no aparecen en admin los fichajes de Charly y Pablo; confirmar si es un error de datos, RLS o UI, y dejar la causa raíz identificada. (Causa raíz: UI. `UsuariosAdmin` lee `usuarios.equipo`, campo retirado; los fichajes reales están en `alineaciones` de J7. Sin corregir.)
 - [x] Revisión del código del flujo post-partido (scraper/sync, cálculo de puntos, liquidación de apuestas, dinero) con lista de riesgos y huecos.
 - [ ] Hallazgos y correcciones priorizadas; ninguna se mergea/despliega antes del partido sin confirmación (PR #26 sigue retenido hasta después del 2026-10-24). (Pendiente: decidir el merge de PR #27 tras el partido. La migración crítica de seguridad sí está aplicada en prod.)
+- [ ] Verificar J7 tras el partido: comprobar la ejecución del scraper y los datos de J7 con `docs/runbook-partido-j7.md` (`gh run list`, comprobaciones SQL) y confirmar que el secret `service_role` de GitHub es la clave real.
 
 ## Sessions
+
+### 2026-10-24
+
+## Session Summary — 2026-10-24
+
+**What was done:**
+- Sin cambios de código. El usuario confirmó que el partido ya se jugó; se decide esperar al scraper automático (sáb 22:00 UTC, reintento dom 22:00 UTC) y verificar con `docs/runbook-partido-j7.md` (`gh run list`, comprobaciones SQL).
+- Análisis: en la rama/PR #27 `jornadaAbierta` exige fecha + no finalizada + >24h, así que sin fecha ya no se puede apostar. El riesgo real: `resolver_jornada` solo escribe presupuestos de la siguiente jornada si la fila jornada+1 existe al resolver (migración `20260913000001`, ~línea 139); si J8 aparece después, los usuarios empiezan con 1000€ salvo que se ejecute antes "Reprocesar jornada 7". PR #27 lo automatiza en el scraper.
+
+**Decisions made:**
+- Esperar (`esperamos`) a la ejecución del scraper. Aplazada la opción de condicionar la apertura de una jornada a que existan filas en `presupuestos`.
+- Tarea sigue `in-progress`: decisión de merge de PR #27 pendiente.
+
+**Open questions:**
+- ¿Es el secret `service_role` de GitHub la clave real? (primera ejecución real del cron)
+- Mergear PR #27 y cuándo; PR #26 no se mergea/despliega hasta confirmar J7.
+
+**Next steps:**
+- Verificar la ejecución del scraper tras las 22:00 UTC.
+- Si aparece la fecha de J8 sin PR #27 mergeado: admin > Sync > Reprocesar jornada 7 primero.
+- Decidir/mergear PR #27; revisar PR #26; Recalcular puntos.
+- Pantalla de historial por jornada; admin debe leer `alineaciones` en vez de `usuarios.equipo`.
 
 ### 2026-10-23
 

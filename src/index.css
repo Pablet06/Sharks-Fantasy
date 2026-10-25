@@ -32,6 +32,12 @@ body,
   min-height: 100vh;
 }
 
+/* iOS (acceso directo a pantalla de inicio): sin esto las franjas de safe-area
+   arriba y abajo quedan en blanco. */
+html {
+  background-color: var(--bg-dark);
+}
+
 body {
   font-family: 'Outfit', system-ui, sans-serif;
   font-weight: 400;
@@ -337,6 +343,32 @@ button:focus-visible {
   color: var(--bg-dark);
 }
 
+
+.fase-banner {
+  --fase-color: var(--primary);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 8px 22px;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: var(--border);
+}
+.fase-banner strong { color: var(--fase-color); letter-spacing: 0.5px; }
+.fase-detalle { color: var(--text-muted); }
+.fase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fase-color);
+  box-shadow: 0 0 8px var(--fase-color);
+}
+.fase-abiertos { --fase-color: var(--success); }
+.fase-cerrados { --fase-color: var(--accent); }
+.fase-en_juego { --fase-color: var(--error); }
+.fase-resolviendo { --fase-color: var(--secondary); }
+.fase-esperando { --fase-color: var(--text-muted); }
 
 .dashboard-main {
   flex: 1;
@@ -1473,7 +1505,7 @@ button:focus-visible {
 
 .bottom-nav {
   position: fixed;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
   left: 12px;
   right: 12px;
   transform: none;
@@ -1579,7 +1611,7 @@ button:focus-visible {
   .auth-title { font-size: 2.1rem; }
   .header-title { font-size: 1.3rem; letter-spacing: 1px; }
 
-  .dashboard-main { padding: 18px 14px 100px; }
+  .dashboard-main { padding: 18px 14px calc(100px + env(safe-area-inset-bottom)); }
 
   .player-node { width: 64px; height: 64px; }
   .player-node-name { font-size: 0.6rem; }

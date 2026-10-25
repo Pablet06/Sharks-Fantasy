@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { FaseBanner } from './FaseBanner'
 
 export type Tab = 'team' | 'ranking' | 'players' | 'profile' | 'apuestas' | 'powerups'
 
@@ -47,6 +48,8 @@ export function Shell({ tab, onTabChange, onSignOut, isAdmin, onAdminClick, hide
         {isAdmin && <button onClick={onAdminClick} className="admin-btn">Admin</button>}
         <button onClick={onSignOut} className="signout-btn">Salir</button>
       </header>
+
+      <FaseBanner />
 
       <main className="dashboard-main">
         {children}

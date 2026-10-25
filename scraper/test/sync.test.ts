@@ -28,6 +28,9 @@ import {
   syncCalendar,
   ladoSharks,
   conUTC,
+  jornadasPorReconciliar,
+  partidosSinResultado,
+  type JornadaFila,
 } from '../src/sync'
 import { fetchMatchStats, SHARKS_TEAM_NAME, type RawPlayer } from '../src/fncv'
 
@@ -254,5 +257,53 @@ describe('parseArgs', () => {
   })
   it('acepta --anterior solo', () => {
     expect(parseArgs(['--anterior', '1324114']).anterior).toBe('1324114')
+  })
+})
+
+const fila = (numero: number, orden: number, o: Partial<JornadaFila> = {}): JornadaFila => ({
+  numero, orden, finalizado: false, fecha_partido: null, ...o,
+})
+
+describe('jornadasPorReconciliar', () => {
+  it('A: reintenta una jornada con historial que quedó sin finalizar', () => {
+    expect(jornadasPorReconciliar([fila(7, 1)], new Set([7]), new Set())).toEqual([7])
+  })
+
+  it('no toca una jornada sin historial ni una ya finalizada sin sucesora', () => {
+    expect(jornadasPorReconciliar([fila(7, 1), fila(9, 2, { finalizado: true })], new Set([9]), new Set())).toEqual([])
+  })
+
+  it('B: financia la sucesora que apareció después de resolver (J7 -> J9, descanso en 8)', () => {
+    const js = [fila(7, 1, { finalizado: true }), fila(9, 2)]
+    expect(jornadasPorReconciliar(js, new Set([7]), new Set())).toEqual([7])
+  })
+
+  it('B: no repite si la sucesora ya tiene presupuestos', () => {
+    const js = [fila(7, 1, { finalizado: true }), fila(9, 2)]
+    expect(jornadasPorReconciliar(js, new Set([7]), new Set([9]))).toEqual([])
+  })
+
+  it('B: solo mira la última finalizada con sucesora', () => {
+    const js = [fila(7, 1, { finalizado: true }), fila(9, 2, { finalizado: true }), fila(10, 3)]
+    expect(jornadasPorReconciliar(js, new Set([7, 9]), new Set([9]))).toEqual([9])
+  })
+})
+
+describe('partidosSinResultado', () => {
+  const ahora = new Date('2026-10-24T22:00:00Z')
+  const fecha = (iso: string) => ({ fecha_partido: iso })
+
+  it('señala un partido de hace >4h sin historial', () => {
+    expect(partidosSinResultado([fila(7, 1, fecha('2026-10-24T15:45:00Z'))], new Set(), ahora)).toEqual([7])
+  })
+
+  it('ignora si ya hay historial, si es futuro o si hace <4h', () => {
+    expect(partidosSinResultado([fila(7, 1, fecha('2026-10-24T15:45:00Z'))], new Set([7]), ahora)).toEqual([])
+    expect(partidosSinResultado([fila(9, 2, fecha('2026-10-31T15:45:00Z'))], new Set(), ahora)).toEqual([])
+    expect(partidosSinResultado([fila(7, 1, fecha('2026-10-24T19:00:00Z'))], new Set(), ahora)).toEqual([])
+  })
+
+  it('ignora partidos de hace más de 7 días o sin fecha', () => {
+    expect(partidosSinResultado([fila(5, 1, fecha('2026-10-01T15:45:00Z')), fila(6, 2)], new Set(), ahora)).toEqual([])
   })
 })

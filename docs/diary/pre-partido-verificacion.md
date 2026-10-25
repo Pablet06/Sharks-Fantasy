@@ -41,3 +41,23 @@ Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): h
 - Verificar scraper tras 22:00 UTC; confirmar que el secret `service_role` es la clave real.
 - Sin PR #27: Reprocesar jornada 7 antes de que aparezca J8. Luego decidir merge de PR #27 y revisar PR #26 (no mergear hasta confirmar J7).
 - Recalcular puntos; historial por jornada; admin leyendo `alineaciones`.
+
+## 2026-10-25
+
+### What was done
+- J7 verificada tras el partido. Scraper de GitHub bloqueado (520, luego 429 de la federación); ejecutado en local con la `service_role` del `.env`: 19 filas de historial, 0 sin emparejar, J7 perdida 9-22.
+- Bug: `resolver_jornada` abortaba por `UPDATE usuarios` sin WHERE. Migración `20261025000000_resolver_jornada_where_usuarios.sql` (`WHERE true`) aplicada en prod y commiteada (46def40). J7 reprocesada: apuestas 34/34, alineaciones 19/19, `finalizado=true`, puntos top 5 = 46-49.
+- `recalc_puntos` ejecutado por SQL: stats recalculadas en 19/19 jugadores.
+- Mergeados PR #27 -> develop, #28 develop -> main, #26 -> develop (tras renombrar la migración de fotos a `20261026000000_fotos_privadas.sql` por colisión de timestamp y usar `is_admin()`), #29 develop -> main. Deploys OK. Tests 59, lint y build OK.
+- `CLAUDE.md` restaurado a la versión del repo.
+
+### Decisions made
+- Sin push directo a main; cadena feature -> develop -> main.
+- La migración de fotos ya aplicada en prod mantiene las políticas EXISTS antiguas; solo cambió el fichero del repo. Una migración de seguimiento las alinearía con `is_admin()`.
+
+### What's left
+- Confirmar que el secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub es la real (reintento dom 22:00 UTC o ejecución manual); el cron del sábado nunca apareció en las ejecuciones (la última programada: 2026-07-25).
+- Probar con datos reales la financiación de presupuesto de J8 (reconciliación de PR #27) cuando aparezca su fecha.
+- Pantalla de historial por usuario en `feature/historial-usuario` (desde develop); admin leyendo `alineaciones`.
+- Opcional: migración de políticas de storage de fotos con `is_admin()`; PNG antiguos en el historial público de git; 4 jugadores con foto caen a la por defecto hasta nueva subida.
+- Sin commitear: `.claude/launch.json` y estas actualizaciones de docs.

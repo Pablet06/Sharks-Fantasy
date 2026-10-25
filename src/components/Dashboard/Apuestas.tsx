@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Apuesta } from '../../types'
-import { jornadaEnCurso } from '../../lib/jornada'
+import { jornadaEnCurso, ultimaJornadaResuelta } from '../../lib/jornada'
 import { validarApuestas } from '../../lib/apuestas'
 import { useJornadas } from '../../hooks/useJornadas'
 import { etiquetaJornada } from '../../lib/jornada'
@@ -59,19 +59,25 @@ export function Apuestas({ usuario, jugadores }: Props) {
 
   useEffect(() => {
     let cancelled = false
+    // "Última" = finalizada con mayor `orden` (el número de federación no sigue el calendario).
     supabase
-      .from('apuestas')
+      .from('jornadas')
       .select('*')
-      .eq('usuario_id', usuario.id)
-      .eq('resuelto', true)
-      .order('jornada', { ascending: false })
-      .limit(4)
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) console.error('Resultados fetch error:', error)
-        const rows = (data ?? []) as Apuesta[]
-        const ultimaJornada = rows.length ? Math.max(...rows.map(r => r.jornada)) : null
-        setResultados(ultimaJornada === null ? [] : rows.filter(r => r.jornada === ultimaJornada))
+      .then(({ data: js, error: errJ }) => {
+        if (errJ) console.error('Jornadas fetch error:', errJ)
+        const ultima = ultimaJornadaResuelta((js ?? []) as Jornada[])
+        if (cancelled || !ultima) return
+        supabase
+          .from('apuestas')
+          .select('*')
+          .eq('usuario_id', usuario.id)
+          .eq('resuelto', true)
+          .eq('jornada', ultima.numero)
+          .then(({ data, error }) => {
+            if (cancelled) return
+            if (error) console.error('Resultados fetch error:', error)
+            setResultados((data ?? []) as Apuesta[])
+          })
       })
     return () => {
       cancelled = true

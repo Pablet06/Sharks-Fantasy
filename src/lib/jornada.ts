@@ -49,6 +49,11 @@ export function jornadaEnCurso(jornadas: Jornada[], ahora: Date = new Date()): n
   return cerradas[0]?.numero ?? null
 }
 
+/** La última jornada resuelta: finalizada y con el `orden` más alto (no el `numero` de federación). */
+export function ultimaJornadaResuelta(jornadas: Jornada[]): Jornada | null {
+  return jornadas.filter(j => j.finalizado).sort((a, b) => b.orden - a.orden)[0] ?? null
+}
+
 export type Fase = 'abiertos' | 'cerrados' | 'en_juego' | 'resolviendo' | 'esperando'
 
 export interface FaseJuego {
@@ -79,7 +84,7 @@ export function faseJuego(jornadas: Jornada[], ahora: Date = new Date()): FaseJu
   const n = jornadaEnCurso(jornadas, ahora)
   const actual = n === null ? undefined : jornadas.find(j => j.numero === n)
   if (!actual || actual.fecha_partido === null) {
-    const ultima = jornadas.filter(j => j.finalizado).sort((a, b) => b.orden - a.orden)[0]
+    const ultima = ultimaJornadaResuelta(jornadas)
     return {
       fase: 'esperando',
       etiqueta: 'Esperando fecha',

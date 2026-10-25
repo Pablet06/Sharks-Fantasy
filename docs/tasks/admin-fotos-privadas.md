@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-25
 ---
 
 # Fotos privadas + admin móvil
@@ -19,8 +19,8 @@ Fotos en bucket privado de Supabase Storage (solo usuarios con sesión), subida 
 - [x] Admin: tablas como tarjetas en móvil (Jugadores, Historial, Usuarios)
 - [x] Revisión independiente del diff / RLS (detectó una regresión en historial_anterior, corregida)
 - [ ] Probado en navegador (móvil y escritorio)
-- [ ] Desplegar rama, aplicar migración en prod y subir las 4 fotos desde el admin
-- [ ] Borrar `public/jugadores/*.png` (menos `predeterminado.png`)
+- [ ] Subir las 4 fotos desde el admin (PR #26 mergeado y desplegado a main el 2026-10-25; migración de bucket ya en prod)
+- [x] Borrar `public/jugadores/*.png` (menos `predeterminado.png`)
 
 ## Notes
 - Decisión: solo quitar las fotos del repo; siguen en el historial de git (sin reescribir).

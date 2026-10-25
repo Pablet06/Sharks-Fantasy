@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { jornadaAbierta, jornadaEnCurso, faseJuego, etiquetaJornada } from './jornada'
+import { jornadaAbierta, jornadaEnCurso, faseJuego, etiquetaJornada, ultimaJornadaResuelta } from './jornada'
 import type { Jornada } from '../types'
 
 const j = (numero: number, o: Partial<Jornada> = {}): Jornada => ({
@@ -116,5 +116,23 @@ describe('faseJuego', () => {
 
   it('esperando fecha sin ninguna jornada', () => {
     expect(faseJuego([], ahora).fase).toBe('esperando')
+  })
+})
+
+describe('ultimaJornadaResuelta', () => {
+  it('elige por orden, no por número de federación', () => {
+    const r = ultimaJornadaResuelta([
+      j(9, { orden: 2, finalizado: true }),
+      j(3, { orden: 3, finalizado: true }),
+    ])
+    expect(r?.numero).toBe(3)
+  })
+
+  it('ignora las no finalizadas', () => {
+    expect(ultimaJornadaResuelta([j(1, { finalizado: true }), j(2, { orden: 2 })])?.numero).toBe(1)
+  })
+
+  it('null si no hay ninguna resuelta', () => {
+    expect(ultimaJornadaResuelta([j(1)])).toBeNull()
   })
 })

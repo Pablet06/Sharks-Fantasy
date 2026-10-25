@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Usuario } from '../../types'
+import { Historial } from './Historial'
 
 interface Props {
   usuario: Usuario
@@ -73,6 +74,8 @@ export function Profile({ usuario, userEmail, onUpdate, onSignOut }: Props) {
           </button>
         </div>
       </div>
+
+      <Historial usuarioId={usuario.id} />
 
       <div className="danger-zone">
         <h3>Zona de peligro</h3>

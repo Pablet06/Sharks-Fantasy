@@ -61,3 +61,16 @@ Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): h
 - Pantalla de historial por usuario en `feature/historial-usuario` (desde develop); admin leyendo `alineaciones`.
 - Opcional: migración de políticas de storage de fotos con `is_admin()`; PNG antiguos en el historial público de git; 4 jugadores con foto caen a la por defecto hasta nueva subida.
 - Sin commitear: `.claude/launch.json` y estas actualizaciones de docs.
+
+## 2026-10-25 (tarde)
+
+### What was done
+- Historial por usuario (PR #30-#33), vistas de solo lectura de la última jornada, puntos por jugador. 65 tests OK.
+- Verificada RLS de `alineaciones` en prod (sin agujero). Scraper: sin prueba de escritura; 520 desde GH.
+- Tarea `scraper-servidor-casa` creada (runner autoalojado).
+
+### Decisions made
+- Runner autoalojado en servidor de casa; crons de fin de semana a las 21:00 hora española.
+
+### What's left
+- Runner, secret de service role, J8 con datos reales, admin leyendo `alineaciones`, fotos.

@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 created: 2026-10-23
 updated: 2026-10-25
 ---
@@ -18,8 +18,8 @@ Fotos en bucket privado de Supabase Storage (solo usuarios con sesión), subida 
 - [x] Admin: botón Subir/Cambiar foto
 - [x] Admin: tablas como tarjetas en móvil (Jugadores, Historial, Usuarios)
 - [x] Revisión independiente del diff / RLS (detectó una regresión en historial_anterior, corregida)
-- [ ] Probado en navegador (móvil y escritorio)
-- [ ] Subir las 4 fotos desde el admin (PR #26 mergeado y desplegado a main el 2026-10-25; migración de bucket ya en prod)
+- [x] Probado en navegador (móvil y escritorio) — OK, probado por el usuario el 2026-10-25
+- [x] (descartado por el usuario el 2026-10-25, no se suben por ahora) Subir las 4 fotos desde el admin (PR #26 mergeado y desplegado a main el 2026-10-25; migración de bucket ya en prod)
 - [x] Borrar `public/jugadores/*.png` (menos `predeterminado.png`)
 
 ## Notes
@@ -27,6 +27,11 @@ Fotos en bucket privado de Supabase Storage (solo usuarios con sesión), subida 
 - Desplegar después de la jornada 1 (sáb 2026-10-24) salvo que se indique lo contrario.
 
 ## Sessions
+
+### 2026-10-25 (tarde)
+
+- Actualización posterior: el usuario probó el admin en navegador (móvil y escritorio) y va bien; criterio marcado.
+- Sin cambios en esta tarea. Pendiente: probar el admin en móvil y escritorio y subir las 4 fotos; opcional migración de políticas de storage con `is_admin()`. Criterios no marcados porque siguen sin cumplirse.
 
 ### 2026-10-23
 ## Session Summary — 2026-10-23

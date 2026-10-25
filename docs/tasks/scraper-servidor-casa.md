@@ -62,3 +62,10 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
   semanal hace pocas, pero el `--backfill` conviene seguir lanzándolo desde un navegador.
 - Pendiente de la jornada J8: la reconciliación de presupuesto (PR #27, `sync.ts`) solo
   tiene tests unitarios; revisarla con datos reales cuando aparezca la fecha.
+
+## Sessions
+
+### 2026-10-25
+
+- Tarea creada y decisión tomada: opción A (runner autoalojado). Ningún criterio cumplido aún. Mergeada a develop y main como doc.
+

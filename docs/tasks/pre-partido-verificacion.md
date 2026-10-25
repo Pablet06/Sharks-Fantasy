@@ -21,6 +21,13 @@ Tener confianza de que el juego está listo para el partido y de que el proceso 
 
 ## Sessions
 
+### 2026-10-25 (tarde)
+
+- Feature historial por usuario mergeada (PR #30-#33); admin sigue leyendo `usuarios.equipo` (pendiente: leer `alineaciones`).
+- Scraper: cron de GH sin prueba de escritura; run manual `--jornada 7` falló con 520. Decisión: runner autoalojado en servidor de casa, ver `docs/tasks/scraper-servidor-casa.md`. El secret `SUPABASE_SERVICE_ROLE_KEY` sigue sin confirmar.
+- J8: `presupuestos` vacía en prod; financiación solo probada con tests unitarios.
+- RLS `alineaciones_owner_write` verificada en prod: ya exige `fecha_partido IS NOT NULL`; sin migración.
+
 ### 2026-10-25
 
 ## Session Summary — 2026-10-25

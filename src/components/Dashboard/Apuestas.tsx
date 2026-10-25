@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Apuesta } from '../../types'
-import { jornadaAbierta } from '../../lib/jornada'
+import { jornadaEnCurso } from '../../lib/jornada'
 import { validarApuestas } from '../../lib/apuestas'
 import { useJornadas } from '../../hooks/useJornadas'
 import { etiquetaJornada } from '../../lib/jornada'
@@ -52,7 +52,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
       .then(({ data, error }) => {
         if (error) console.error('Jornadas fetch error:', error)
         const abiertas = (data ?? []) as Jornada[]
-        const n = jornadaAbierta(abiertas)
+        const n = jornadaEnCurso(abiertas)
         setJornada(n === null ? null : abiertas.find(j => j.numero === n) ?? null)
       })
   }, [])
@@ -150,8 +150,36 @@ export function Apuestas({ usuario, jugadores }: Props) {
 
   if (jornada === 'loading') return <div className="loading-msg">Cargando...</div>
 
+  // Se muestra también sin jornada abierta: el resultado de la última jornada
+  // no debe esperar a que la federación publique la fecha de la siguiente.
+  const neto = resultados.reduce((s, r) => s + (r.ganancia ?? 0), 0)
+  const bloqueResultados = resultados.length > 0 && (
+    <div className="apuestas-list">
+      <p className="placeholder">Resultado de tus apuestas de la jornada {etiquetaJornada(jornadas, resultados[0].jornada)}:</p>
+      {resultados.map(previa => (
+        <div key={previa.id} className="apuesta-row">
+          <span>{TIPOS.find(t => t.tipo === previa.tipo)?.label ?? previa.tipo}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
+          <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
+            {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
+          </span>
+        </div>
+      ))}
+      <div className="apuesta-row">
+        <span>Balance de la jornada</span>
+        <span className={neto > 0 ? 'pts-positive' : neto < 0 ? 'pts-negative' : ''}>
+          {neto > 0 ? '+' : ''}{neto}€ → presupuesto previsto para la próxima: {Math.max(0, 1000 + neto)}€
+        </span>
+      </div>
+    </div>
+  )
+
   if (jornada === null) {
-    return <p className="placeholder">No hay ninguna jornada abierta para apostar todavía.</p>
+    return (
+      <div className="apuestas-container">
+        <p className="placeholder">No hay ninguna jornada abierta para apostar todavía.</p>
+        {bloqueResultados}
+      </div>
+    )
   }
 
   const bloqueada = ahora !== null && jornada.fecha_partido !== null &&
@@ -283,19 +311,7 @@ export function Apuestas({ usuario, jugadores }: Props) {
         <strong>{Math.round(presupuesto)}€</strong>
       </div>
 
-      {resultados.length > 0 && (
-        <div className="apuestas-list">
-          <p className="placeholder">Resultado de tus apuestas de la jornada {etiquetaJornada(jornadas, resultados[0].jornada)}:</p>
-          {resultados.map(previa => (
-            <div key={previa.id} className="apuesta-row">
-              <span>{TIPOS.find(t => t.tipo === previa.tipo)?.label ?? previa.tipo}: {previa.seleccion} — {previa.importe}€ a {previa.cuota}x</span>
-              <span className={(previa.ganancia ?? 0) > 0 ? 'pts-positive' : (previa.ganancia ?? 0) < 0 ? 'pts-negative' : ''}>
-                {previa.acierto === null ? 'empate' : previa.acierto ? 'acierto' : 'fallo'} ({previa.ganancia}€)
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      {bloqueResultados}
 
       {bloqueada ? (
         <div className="apuestas-list">

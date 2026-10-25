@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Alineacion, Position } from '../../types'
 import { calcPrecio } from '../../lib/precio'
-import { jornadaAbierta } from '../../lib/jornada'
+import { jornadaEnCurso } from '../../lib/jornada'
 import { validarDraft, contarPosiciones, COMPOSICION } from '../../lib/draft'
 import { PlayerCard } from './PlayerCard'
 
@@ -47,7 +47,7 @@ export function Draft({ usuario, jugadores }: Props) {
       .then(({ data, error }) => {
         if (error) console.error('Jornadas fetch error:', error)
         const abiertas = (data ?? []) as Jornada[]
-        const n = jornadaAbierta(abiertas)
+        const n = jornadaEnCurso(abiertas)
         setJornada(n === null ? null : abiertas.find(j => j.numero === n) ?? null)
       })
   }, [])
@@ -296,6 +296,9 @@ export function Draft({ usuario, jugadores }: Props) {
             Alineación bloqueada para esta jornada
             {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
           </p>
+          {ahora !== null && alineacion === null && (
+            <p className="placeholder">No enviaste alineación: harás 0 puntos en esta jornada.</p>
+          )}
 
           {puedeEditarCapitanTarde && (
             <div className="powerup-aplicar">

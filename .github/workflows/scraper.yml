@@ -7,6 +7,10 @@ on:
     # bloqueó (429), el incremental solo procesa jornadas sin historial, así
     # que repetirlo es seguro.
     - cron: '0 22 * * 0'  # Every Sunday at 22:00 UTC
+    # Diario: la federación publica la fecha de un partido cuando quiere, y la
+    # jornada (draft, apuestas, presupuesto) no existe hasta que el scraper la ve.
+    # El incremental es idempotente (solo escribe lo nuevo), así que repetirlo es seguro.
+    - cron: '0 8 * * *'   # Every day at 08:00 UTC
   workflow_dispatch:        # Manual trigger from GitHub UI
     inputs:
       args:

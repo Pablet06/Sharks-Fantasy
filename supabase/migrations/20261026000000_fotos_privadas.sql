@@ -15,17 +15,17 @@ CREATE POLICY "jugadores_fotos_select" ON storage.objects
 CREATE POLICY "jugadores_fotos_insert_admin" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'jugadores'
-    AND EXISTS (SELECT 1 FROM public.usuarios u WHERE u.id = auth.uid() AND u.is_admin));
+    AND public.is_admin((SELECT auth.uid())));
 
 CREATE POLICY "jugadores_fotos_update_admin" ON storage.objects
   FOR UPDATE TO authenticated
   USING (bucket_id = 'jugadores'
-    AND EXISTS (SELECT 1 FROM public.usuarios u WHERE u.id = auth.uid() AND u.is_admin));
+    AND public.is_admin((SELECT auth.uid())));
 
 CREATE POLICY "jugadores_fotos_delete_admin" ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'jugadores'
-    AND EXISTS (SELECT 1 FROM public.usuarios u WHERE u.id = auth.uid() AND u.is_admin));
+    AND public.is_admin((SELECT auth.uid())));
 
 -- Las fotos antiguas (rutas './jugadores/X.png' de public/) se descartan: las nuevas
 -- se suben desde el admin. null = foto por defecto.

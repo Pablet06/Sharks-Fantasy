@@ -343,7 +343,11 @@ export function Draft({ usuario, jugadores }: Props) {
                   <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
                   <span>{p.nick || p.name}{alineacion.capitan === n ? ' ★' : ''}</span>
                   <small className="mini-pos">{p.pos}</small>
-                  {!soloLectura && <small className="mini-precio">{precios[n]}€</small>}
+                  <small className="mini-precio">
+                    {soloLectura
+                      ? `${(p.historial?.find(h => h.jornada === jornada.numero)?.puntos ?? 0) * (alineacion.capitan === n ? 2 : 1)} pts`
+                      : `${precios[n]}€`}
+                  </small>
                 </button>
               )
             })}

@@ -104,13 +104,13 @@ export function HistorialAdmin({ data }: Props) {
             const dirty = !!edits[r.jugador.id]
             return (
               <tr key={r.jugador.id}>
-                <td>{r.jugador.name}</td>
+                <td data-label="Jugador">{r.jugador.name}</td>
                 {STAT_KEYS.map(k => (
-                  <td key={k}>
+                  <td key={k} data-label={k}>
                     <input type="number" value={s[k]} onChange={e => setStat(r.jugador.id, r.stats, k, Number(e.target.value))} />
                   </td>
                 ))}
-                <td>{calcMatchPoints(r.jugador.pos, s)}</td>
+                <td data-label="pts">{calcMatchPoints(r.jugador.pos, s)}</td>
                 <td className="admin-row-actions">
                   <button className="admin-subnav-btn" disabled={busy || !dirty} onClick={() => saveRow(r)}>Guardar</button>
                   <button className="admin-subnav-btn admin-danger" disabled={busy} onClick={() => deleteRow(r)}>Borrar</button>

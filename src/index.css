@@ -1839,3 +1839,28 @@ button:focus-visible {
 .admin-msg { margin: 0; padding: 0; background: none; border: 0; color: inherit; opacity: .8; }
 .admin-msg.admin-error { color: var(--error); opacity: 1; }
 .admin-scroll { overflow-x: auto; }
+
+/* Admin: foto y subida */
+.admin-foto-cell { white-space: nowrap; }
+.admin-foto-cell > span { margin-right: .5rem; opacity: .8; }
+.admin-upload { display: inline-block; cursor: pointer; }
+
+/* Admin: móvil — filas de tabla como tarjetas, controles táctiles grandes */
+@media (max-width: 700px) {
+  .admin-view { padding: .75rem; }
+  .admin-view-topbar { position: sticky; top: 0; z-index: 5; background: var(--bg-dark); padding: .5rem 0; margin-bottom: .5rem; }
+  .admin-subnav { flex-wrap: nowrap; overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+  .admin-subnav-btn, .admin-back-btn { min-height: 44px; padding: .5rem 1rem; font-size: 1rem; white-space: nowrap; }
+  .admin-table input, .admin-table select,
+  .admin-view-topbar input, .admin-view-topbar select { min-height: 44px; font-size: 16px; padding: .4rem .6rem; }
+  .admin-table input[type="checkbox"] { width: 28px; min-height: 28px; }
+  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
+  .admin-table thead { display: none; }
+  .admin-table tr { background: var(--bg-card); border-radius: 12px; padding: .5rem .75rem; margin-bottom: .75rem; }
+  .admin-table td { display: flex; align-items: center; gap: .75rem; border-bottom: 0; padding: .35rem 0; }
+  .admin-table td[data-label]::before { content: attr(data-label); flex: 0 0 6.5rem; font-size: .8rem; opacity: .7; }
+  .admin-table td input, .admin-table td select { flex: 1; min-width: 0; }
+  .admin-row-actions { flex-wrap: wrap; }
+  .admin-row-actions .admin-subnav-btn { flex: 1; }
+  .admin-section-body button.admin-subnav-btn { min-height: 44px; }
+}

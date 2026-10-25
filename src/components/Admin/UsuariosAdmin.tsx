@@ -83,10 +83,10 @@ export function UsuariosAdmin({ data }: Props) {
             const equipo = draft[u.id]?.equipo ?? u.equipo
             return (
               <tr key={u.id}>
-                <td><input value={draft[u.id]?.nombre ?? u.nombre} onChange={e => patch(u.id, 'nombre', e.target.value)} onBlur={() => saveNombre(u)} /></td>
-                <td>{u.puntos}</td>
-                <td><input type="checkbox" checked={u.is_admin} disabled={u.id === myId} onChange={() => toggleAdmin(u)} /></td>
-                <td>
+                <td data-label="Nombre"><input value={draft[u.id]?.nombre ?? u.nombre} onChange={e => patch(u.id, 'nombre', e.target.value)} onBlur={() => saveNombre(u)} /></td>
+                <td data-label="Puntos">{u.puntos}</td>
+                <td data-label="Admin"><input type="checkbox" checked={u.is_admin} disabled={u.id === myId} onChange={() => toggleAdmin(u)} /></td>
+                <td data-label="Equipo">
                   <div className="admin-row-actions">
                     {equipo.map((n, i) => (
                       <select key={i} value={n} onChange={e => setEquipoSlot(u, i, Number(e.target.value))}>

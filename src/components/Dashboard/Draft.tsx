@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Alineacion, Position } from '../../types'
 import { calcPrecio } from '../../lib/precio'
-import { jornadaEnCurso } from '../../lib/jornada'
+import { jornadaEnCurso, ultimaJornadaResuelta } from '../../lib/jornada'
 import { validarDraft, contarPosiciones, COMPOSICION } from '../../lib/draft'
 import { PlayerCard } from './PlayerCard'
 
@@ -27,6 +27,8 @@ export function Draft({ usuario, jugadores }: Props) {
   const [ahora, setAhora] = useState<number | null>(null)
   const [tieneCapitanTardio, setTieneCapitanTardio] = useState(false)
   const [modalAbierto, setModalAbierto] = useState(false)
+  // Sin jornada en curso se enseña la última resuelta, sin poder tocar nada.
+  const [soloLectura, setSoloLectura] = useState(false)
 
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
@@ -48,7 +50,13 @@ export function Draft({ usuario, jugadores }: Props) {
         if (error) console.error('Jornadas fetch error:', error)
         const abiertas = (data ?? []) as Jornada[]
         const n = jornadaEnCurso(abiertas)
-        setJornada(n === null ? null : abiertas.find(j => j.numero === n) ?? null)
+        if (n === null) {
+          const ultima = ultimaJornadaResuelta(abiertas)
+          setSoloLectura(ultima !== null)
+          setJornada(ultima)
+        } else {
+          setJornada(abiertas.find(j => j.numero === n) ?? null)
+        }
       })
   }, [])
 
@@ -109,10 +117,10 @@ export function Draft({ usuario, jugadores }: Props) {
   // la RLS en vez de explicarlo antes de intentarlo.
   const pasadoDeadline = ahora !== null && jornada.fecha_partido !== null &&
     new Date(jornada.fecha_partido).getTime() - ahora <= 24 * 60 * 60 * 1000
-  const bloqueada = pasadoDeadline || (alineacion !== null && alineacion.puntos_jornada !== null)
+  const bloqueada = soloLectura || pasadoDeadline || (alineacion !== null && alineacion.puntos_jornada !== null)
   const pasadoDeadlineCapitan = ahora !== null && jornada.fecha_partido !== null &&
     new Date(jornada.fecha_partido).getTime() - ahora <= 60 * 60 * 1000
-  const puedeEditarCapitanTarde = bloqueada && tieneCapitanTardio && !pasadoDeadlineCapitan &&
+  const puedeEditarCapitanTarde = !soloLectura && bloqueada && tieneCapitanTardio && !pasadoDeadlineCapitan &&
     alineacion !== null && alineacion.puntos_jornada === null
 
   const usado = seleccion.reduce((sum, n) => sum + (precios[n] ?? 0), 0)
@@ -130,6 +138,7 @@ export function Draft({ usuario, jugadores }: Props) {
   }
 
   const guardar = async () => {
+    if (soloLectura) return
     // Re-check lock at call time (not render time) to catch deadline/resolution changes in idle tabs
     const pasadoDeadlineNow = jornada.fecha_partido !== null &&
       new Date(jornada.fecha_partido).getTime() - Date.now() <= 24 * 60 * 60 * 1000
@@ -277,10 +286,12 @@ export function Draft({ usuario, jugadores }: Props) {
         <strong>{usuario.puntos}</strong>
       </div>
 
-      <div className="team-total-pts team-dinero">
-        <span>Jornada {orden}</span>
-        <strong>{presupuesto - usado}€</strong>
-      </div>
+      {!soloLectura && (
+        <div className="team-total-pts team-dinero">
+          <span>Jornada {orden}</span>
+          <strong>{presupuesto - usado}€</strong>
+        </div>
+      )}
 
       {jornada.fecha_partido && !bloqueada && (
         <p className="placeholder">
@@ -293,10 +304,13 @@ export function Draft({ usuario, jugadores }: Props) {
       {bloqueada && (
         <>
           <p className="placeholder">
-            Alineación bloqueada para esta jornada
+            {soloLectura ? `Última jornada (Jornada ${orden})` : 'Alineación bloqueada para esta jornada'}
             {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
           </p>
-          {ahora !== null && alineacion === null && (
+          {ahora !== null && alineacion === null && soloLectura && (
+            <p className="placeholder">No enviaste alineación en la Jornada {orden}.</p>
+          )}
+          {ahora !== null && alineacion === null && !soloLectura && (
             <p className="placeholder">No enviaste alineación: harás 0 puntos en esta jornada.</p>
           )}
 
@@ -329,14 +343,16 @@ export function Draft({ usuario, jugadores }: Props) {
                   <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
                   <span>{p.nick || p.name}{alineacion.capitan === n ? ' ★' : ''}</span>
                   <small className="mini-pos">{p.pos}</small>
-                  <small className="mini-precio">{precios[n]}€</small>
+                  {!soloLectura && <small className="mini-precio">{precios[n]}€</small>}
                 </button>
               )
             })}
           </div>
-          <p className="placeholder">
-            Coste: {costeGuardado}€ · <span className="resumen-restante">Te quedan {presupuesto - costeGuardado}€</span>
-          </p>
+          {!soloLectura && (
+            <p className="placeholder">
+              Coste: {costeGuardado}€ · <span className="resumen-restante">Te quedan {presupuesto - costeGuardado}€</span>
+            </p>
+          )}
           {!bloqueada && msg && <p className="admin-msg">{msg}</p>}
           {!bloqueada && (
             <button className="save-btn" onClick={() => setModalAbierto(true)}>
@@ -345,7 +361,7 @@ export function Draft({ usuario, jugadores }: Props) {
           )}
         </div>
       ) : (
-        editor
+        !soloLectura && editor
       )}
 
       {alineacion && !bloqueada && modalAbierto && (

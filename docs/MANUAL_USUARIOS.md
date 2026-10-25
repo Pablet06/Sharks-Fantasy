@@ -297,6 +297,7 @@ cualquiera en cualquier jornada.
 Desde tu perfil puedes:
 - Ver tu email.
 - Cambiar tu nombre visible.
+- Consultar **Mi historial**: una fila por jornada ya resuelta con el resultado del partido, tus puntos, tu total acumulado, el presupuesto que tenías y el resultado neto de tus apuestas (`-` si no apostaste). Solo ves tu propio historial.
 - Cerrar sesión.
 - Borrar tu cuenta permanentemente (pide confirmación, es irreversible).
 

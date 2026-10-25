@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, PowerupInventario, PowerupAplicado, TipoPowerup } from '../../types'
-import { jornadaAbierta } from '../../lib/jornada'
+import { jornadaEnCurso, ultimaJornadaResuelta } from '../../lib/jornada'
 import { validarPowerup } from '../../lib/powerups'
 
 interface Props {
@@ -28,6 +28,8 @@ export function Powerups({ usuario, jugadores }: Props) {
   const [aplicando, setAplicando] = useState(false)
   const [msg, setMsg] = useState('')
   const [ahora, setAhora] = useState<number | null>(null)
+  // Sin jornada en curso se enseña la última resuelta, sin poder aplicar nada.
+  const [soloLectura, setSoloLectura] = useState(false)
 
   useEffect(() => {
     supabase
@@ -36,13 +38,18 @@ export function Powerups({ usuario, jugadores }: Props) {
       .then(({ data, error }) => {
         if (error) console.error('Jornadas fetch error:', error)
         const abiertas = (data ?? []) as Jornada[]
-        const n = jornadaAbierta(abiertas)
-        setJornada(n === null ? null : abiertas.find(j => j.numero === n) ?? null)
+        const n = jornadaEnCurso(abiertas)
+        if (n === null) {
+          const ultima = ultimaJornadaResuelta(abiertas)
+          setSoloLectura(ultima !== null)
+          setJornada(ultima)
+        } else {
+          setJornada(abiertas.find(j => j.numero === n) ?? null)
+        }
       })
   }, [])
 
   useEffect(() => {
-    if (!jornada || jornada === 'loading') return
     let cancelled = false
     supabase
       .from('powerups_usuario')
@@ -53,6 +60,14 @@ export function Powerups({ usuario, jugadores }: Props) {
         if (error) console.error('Inventario fetch error:', error)
         setInventario((data ?? []) as PowerupInventario[])
       })
+    return () => {
+      cancelled = true
+    }
+  }, [usuario.id])
+
+  useEffect(() => {
+    if (!jornada || jornada === 'loading') return
+    let cancelled = false
     supabase
       .from('powerups_aplicados')
       .select('*')
@@ -83,8 +98,29 @@ export function Powerups({ usuario, jugadores }: Props) {
 
   if (jornada === 'loading') return <div className="loading-msg">Cargando...</div>
 
+  const tipoLabel = (tipo: TipoPowerup) => TIPOS.find(t => t.tipo === tipo)?.label ?? tipo
+
+  const inventarioLista = (
+    <ul className="powerups-inventario">
+      {TIPOS.map(({ tipo, label }) => {
+        const item = inventario.find(p => p.tipo === tipo)
+        return (
+          <li key={tipo} className="powerup-row">
+            <span>{label}</span>
+            <strong>{item?.disponibles ?? 0}</strong>
+          </li>
+        )
+      })}
+    </ul>
+  )
+
   if (jornada === null) {
-    return <p className="placeholder">No hay ninguna jornada abierta para aplicar power-ups todavía.</p>
+    return (
+      <div className="powerups-container">
+        <p className="placeholder">No hay ninguna jornada abierta para aplicar power-ups todavía.</p>
+        {inventarioLista}
+      </div>
+    )
   }
 
   const bloqueada = ahora !== null && jornada.fecha_partido !== null &&
@@ -97,6 +133,7 @@ export function Powerups({ usuario, jugadores }: Props) {
     : undefined
 
   const aplicar = async () => {
+    if (soloLectura) return
     if (!tipoElegido) { setMsg('Elige un power-up.'); return }
     const objetivoNum = tipoInfo?.requiereObjetivo ? Number(objetivo) || null : null
     const validacion = validarPowerup(tipoElegido, objetivoNum, misJugadores)
@@ -125,28 +162,20 @@ export function Powerups({ usuario, jugadores }: Props) {
         <span>Jornada {orden} — power-ups</span>
       </div>
 
-      <ul className="powerups-inventario">
-        {TIPOS.map(({ tipo, label }) => {
-          const item = inventario.find(p => p.tipo === tipo)
-          return (
-            <li key={tipo} className="powerup-row">
-              <span>{label}</span>
-              <strong>{item?.disponibles ?? 0}</strong>
-            </li>
-          )
-        })}
-      </ul>
+      {inventarioLista}
 
       {aplicado ? (
         <div className="powerup-aplicado">
-          <strong>Power-up activado para la Jornada {orden}</strong>
-          <span>{TIPOS.find(t => t.tipo === aplicado.tipo)?.label ?? aplicado.tipo}</span>
+          <strong>{soloLectura ? `Usaste en la Jornada ${orden}` : `Power-up activado para la Jornada ${orden}`}</strong>
+          <span>{tipoLabel(aplicado.tipo)}</span>
           {aplicado.objetivo !== null && (
             <span className="placeholder">
               Jugador objetivo: {objetivoJugador ? (objetivoJugador.nick || objetivoJugador.name) : `dorsal ${aplicado.objetivo}`}
             </span>
           )}
         </div>
+      ) : soloLectura ? (
+        <p className="placeholder">No usaste power-up en la Jornada {orden}.</p>
       ) : bloqueada ? (
         <p className="placeholder">Jornada bloqueada — ya no se pueden aplicar power-ups.</p>
       ) : (

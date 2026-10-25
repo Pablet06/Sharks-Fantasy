@@ -16,10 +16,36 @@ Tener confianza de que el juego está listo para el partido y de que el proceso 
 - [x] Verificar si existe historial por jornada de cada usuario con puntos y dinero ganado (apuestas), visible para el propio usuario; si falta, documentar qué falta. (Verificado: no hay pantalla dedicada de historial con puntos y dinero por jornada; hueco documentado en Sessions y en el diario. Apuestas ya muestra resultados + balance aunque no haya jornada abierta.)
 - [x] Investigar por qué no aparecen en admin los fichajes de Charly y Pablo; confirmar si es un error de datos, RLS o UI, y dejar la causa raíz identificada. (Causa raíz: UI. `UsuariosAdmin` lee `usuarios.equipo`, campo retirado; los fichajes reales están en `alineaciones` de J7. Sin corregir.)
 - [x] Revisión del código del flujo post-partido (scraper/sync, cálculo de puntos, liquidación de apuestas, dinero) con lista de riesgos y huecos.
-- [ ] Hallazgos y correcciones priorizadas; ninguna se mergea/despliega antes del partido sin confirmación (PR #26 sigue retenido hasta después del 2026-10-24). (Pendiente: decidir el merge de PR #27 tras el partido. La migración crítica de seguridad sí está aplicada en prod.)
-- [ ] Verificar J7 tras el partido: comprobar la ejecución del scraper y los datos de J7 con `docs/runbook-partido-j7.md` (`gh run list`, comprobaciones SQL) y confirmar que el secret `service_role` de GitHub es la clave real.
+- [x] Hallazgos y correcciones priorizadas; ninguna se mergea/despliega antes del partido sin confirmación. (Hecho 2026-10-25: tras el partido se mergearon PR #27 y PR #26 a develop y main, con deploy OK.)
+- [x] Verificar J7 tras el partido: comprobar la ejecución del scraper y los datos de J7 con `docs/runbook-partido-j7.md` (`gh run list`, comprobaciones SQL) y confirmar que el secret `service_role` de GitHub es la clave real. (J7 verificado y resuelto, scraper ejecutado en local. SIGUE PENDIENTE confirmar el secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub: las ejecuciones de GH fallaron por 520/429 de la federación, no se pudo comprobar.)
 
 ## Sessions
+
+### 2026-10-25
+
+## Session Summary — 2026-10-25
+
+**What was done:**
+- J7 verificado tras el partido. Las ejecuciones del scraper en GitHub fallaron (HTTP 520, luego 429: la federación/Cloudflare bloquea las IPs de GH). Scraper ejecutado en local (`cd scraper && npm run sync -- --jornada 7`) con la `service_role` del `.env`: 19 filas de historial, 0 sin emparejar, J7 perdida 9-22.
+- Bug encontrado: `resolver_jornada` abortaba con "UPDATE requires a WHERE clause" (`UPDATE usuarios u SET puntos` sin condición). Arreglado con `WHERE true`; migración `20261025000000_resolver_jornada_where_usuarios.sql` aplicada en prod (versión Supabase 20261024234637) y commiteada (46def40). J7 reprocesada: apuestas 34/34, alineaciones 19/19, jornada `finalizado=true`, `usuarios.puntos` 46-49 en el top 5, `unmatched_players` vacío.
+- Cuerpo de `recalc_puntos` ejecutado por SQL (RPC solo admin): `jugadores.stats` recalculado en 19/19 jugadores.
+- Tests 59 OK, lint y build OK. Mergeados PR #27 -> develop y PR #28 develop -> main (deploy OK). PR #26 (fotos) revisado con un subagente de solo lectura: colisión de timestamp de migración con `lock_usuarios_self_insert` (20261023000000); renombrada a `20261026000000_fotos_privadas.sql`, políticas cambiadas a `is_admin((SELECT auth.uid()))`, develop mergeado dentro; luego PR #26 -> develop y PR #29 develop -> main (deploy OK).
+- `CLAUDE.md` restaurado a la versión del repo (la copia local había perdido comandos/stack/remote).
+
+**Decisions made:**
+- Nada de push directo a main; cadena de PRs feature -> develop -> main.
+- La migración de fotos ya aplicada en prod conserva las políticas antiguas basadas en EXISTS; solo cambió el fichero del repo. Haría falta una migración de seguimiento para recrearlas con `is_admin()`.
+
+**Open questions:**
+- ¿Es el secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub la clave real? El cron del sábado 22:00 UTC nunca apareció en la lista de ejecuciones (la última programada fue 2026-07-25).
+
+**Next steps:**
+- Comprobar el secret de GitHub con el reintento del domingo 22:00 UTC o una ejecución manual.
+- Financiación del presupuesto de J8 (reconciliación de PR #27 en `scraper/src/sync.ts`): probada con tests unitarios, no con datos reales; revisar cuando aparezca la fecha de J8.
+- Pantalla de historial por usuario (puntos y dinero por jornada) en rama nueva `feature/historial-usuario` desde develop.
+- Admin debe leer `alineaciones` en vez de `usuarios.equipo`.
+- Opcional: migración para alinear las políticas de storage de fotos en prod con `is_admin()`; los PNG antiguos de jugadores siguen en el historial público de git; 4 jugadores con foto caen a la imagen por defecto hasta que el admin suba nuevas.
+- Sin commitear: `.claude/launch.json` (config local del dev server) y estas actualizaciones de docs.
 
 ### 2026-10-24
 

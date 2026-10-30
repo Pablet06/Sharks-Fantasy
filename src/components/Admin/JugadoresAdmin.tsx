@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase'
 import type { Jugador, Position } from '../../types'
 import type { useAdminData } from '../../hooks/useAdminData'
 import { uploadPhoto } from '../../lib/photos'
+import { jornadaEnCurso, etiquetaJornada } from '../../lib/jornada'
+import { coincide } from '../../lib/busqueda'
 
 interface Props { data: ReturnType<typeof useAdminData> }
 const POSITIONS: Position[] = ['Portero', 'Boya', 'Extremo', 'Lateral', 'Contraboya']
@@ -17,6 +19,8 @@ export function JugadoresAdmin({ data }: Props) {
   const [nuevo, setNuevo] = useState(BLANK)
   const [nuevaFoto, setNuevaFoto] = useState<File | null>(null)
   const [msg, setMsg] = useState('')
+  const [q, setQ] = useState('')
+  const visibles = data.jugadores.filter(j => coincide(q, j.name, j.nick, j.numero, j.pos))
 
   const patch = (id: number, field: string, value: unknown) =>
     setDraft(d => ({ ...d, [id]: { ...d[id], [field]: value } }))
@@ -70,9 +74,13 @@ export function JugadoresAdmin({ data }: Props) {
   }
 
   const borrar = async (j: Jugador) => {
-    const enEquipos = data.usuarios.filter(u => u.equipo.includes(j.numero)).map(u => u.nombre)
-    const warn = enEquipos.length
-      ? `\n\n⚠️ En el equipo de: ${enEquipos.join(', ')}. Su hueco quedará vacío hasta que lo cambien.`
+    // Solo la jornada en curso: las ya puntuadas no se ven afectadas por el borrado.
+    const n = jornadaEnCurso(data.jornadas)
+    const enAlineaciones = data.alineaciones
+      .filter(a => a.jornada === n && a.jugadores?.includes(j.numero))
+      .map(a => data.usuarios.find(u => u.id === a.usuario_id)?.nombre ?? a.usuario_id)
+    const warn = n !== null && enAlineaciones.length
+      ? `\n\n⚠️ Está en la alineación de la Jornada ${etiquetaJornada(data.jornadas, n)} de: ${enAlineaciones.join(', ')}. Esa alineación quedará incompleta y puntuará 0 si no se cambia (Admin > Usuarios).`
       : ''
     if (!confirm(`¿Borrar a ${j.name}? Se borrará también su historial.${warn}`)) return
     setMsg('')
@@ -84,13 +92,17 @@ export function JugadoresAdmin({ data }: Props) {
   return (
     <div className="admin-scroll">
       <h3>Jugadores</h3>
+      <div className="admin-view-topbar">
+        <input type="search" className="admin-buscador" placeholder="Buscar por nombre, nick, nº o posición…" value={q} onChange={e => setQ(e.target.value)} />
+      </div>
       {msg && <p className="admin-msg admin-error">{msg}</p>}
+      {q && visibles.length === 0 && <p className="admin-msg">Ningún jugador coincide con «{q}».</p>}
       <table className="admin-table">
         <thead>
           <tr><th>Nº</th><th>Nombre</th><th>Nick</th><th>Pos</th><th>Frase</th><th>Foto</th><th>leverade_id</th><th></th></tr>
         </thead>
         <tbody>
-          {data.jugadores.map(j => {
+          {visibles.map(j => {
             const d = draft[j.id] ?? {}
             const val = (f: keyof Jugador) => (d[f] ?? j[f] ?? '') as string | number
             return (

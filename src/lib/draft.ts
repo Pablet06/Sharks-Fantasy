@@ -50,3 +50,26 @@ export function validarDraft(
   }
   return { ok: true }
 }
+
+/** Fila de `alineaciones` que escribe el admin (Admin > Usuarios). Mismas reglas
+ * que el Draft pero sin tope de presupuesto: los precios de hoy no son los de esa
+ * jornada, así que `presupuesto_usado` va a null (nadie lo lee). Si la jornada ya
+ * está puntuada, vacía `puntos_jornada` para que `resolver_jornada` la recalcule:
+ * si no, una alineación que deja de estar completa conservaría los puntos viejos. */
+export function filaAlineacionAdmin(
+  usuarioId: string,
+  jornada: number,
+  yaPuntuada: boolean,
+  jugadores: (number | null)[],
+  capitan: number | null,
+  posiciones: Record<number, Position>,
+) {
+  const elegidos = jugadores.filter((n): n is number => n !== null)
+  const v = validarDraft(elegidos, capitan, {}, Infinity, posiciones)
+  if (!v.ok) return v
+  const fila = {
+    usuario_id: usuarioId, jornada, jugadores: elegidos, capitan, presupuesto_usado: null,
+    ...(yaPuntuada ? { puntos_jornada: null } : {}),
+  }
+  return { ok: true as const, fila, reprocesar: yaPuntuada }
+}

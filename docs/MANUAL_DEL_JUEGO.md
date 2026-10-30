@@ -350,13 +350,16 @@ Accesible desde el botón "Admin" (solo visible si tu usuario tiene
 
 ### Jugadores
 Crear, editar en línea y borrar jugadores de la plantilla (nombre, dorsal,
-posición, apodo, frase, foto, `leverade_id` para el scraper). El
+posición, apodo, frase, foto, `leverade_id` para el scraper). Un **buscador**
+arriba filtra la lista por nombre, apodo, dorsal o posición, sin distinguir
+mayúsculas ni tildes. El
 `leverade_id` es el id del jugador **en la inscripción de esa temporada**
 (sale de la URL `/players/<id>` de su ficha en la web de la federación), así
 que **cambia cada temporada**: hay que actualizarlo al empezar una nueva.
 Borrar un
-jugador que esté en el equipo (legado) de algún usuario avisa antes de
-confirmar, y también borra su historial.
+jugador que esté en la alineación de algún usuario en la jornada en curso
+avisa antes de confirmar, con sus nombres (esa alineación quedará incompleta
+y puntuará 0 si no se cambia desde Usuarios), y también borra su historial.
 
 ### Historial
 Edición manual del historial de una jornada concreta: 9 estadísticas por
@@ -392,10 +395,30 @@ UTC; el reintento es seguro porque solo procesa las jornadas sin historial).
 ### Usuarios
 Renombrar, dar/quitar admin, y borrar la cuenta de cualquier usuario (vía la
 función `delete-account`; borra también todos sus datos de juego —
-alineaciones, apuestas, presupuestos y power-ups— por `ON DELETE CASCADE`). También tiene un editor del campo legado
-`usuarios.equipo` (7 dorsales) — **es reliquia del modelo antiguo, previo a
-las alineaciones por jornada**, y ya no afecta a la puntuación de nadie;
-está ahí sin usarse, no hace falta tocarlo.
+alineaciones, apuestas, presupuestos y power-ups— por `ON DELETE CASCADE`).
+Un **buscador** filtra la lista por nombre de usuario, sin distinguir
+mayúsculas ni tildes.
+
+Arriba hay un **selector de jornada** (por defecto, la misma que enseña Mi
+Equipo; cada opción es `J<orden> · fed. <número>` y marca las ya resueltas).
+Para esa jornada, cada usuario muestra su **alineación real** (los 7 y el
+capitán) y sus puntos de la jornada, y el admin puede **cambiarla, o crearla**
+si el usuario no envió ninguna, con "Guardar alineación":
+- Se valida igual que en Mi Equipo (7 distintos, capitán dentro del 7,
+  1 Portero, 2 Extremos, 2 Laterales, 1 Boya y 1 Contraboya), pero **sin tope
+  de presupuesto**. Si quitas al capitán del 7, hay que elegir otro.
+- Un dorsal que ya no existe en la plantilla se ve como `#n (no existe)`.
+- Si la jornada **ya está puntuada**, pide confirmación (avisa de que dará
+  puntos retroactivos si el usuario no tenía alineación, y de que un +2 o un
+  Blindaje deja de aplicar si quitas a su objetivo) y, al guardar, ejecuta
+  `resolver_jornada` sola para recalcular los puntos de todos. Si ese paso
+  falla, la alineación queda guardada pero sin puntuar y el mensaje lo dice:
+  hay que lanzar "Reprocesar jornada" en Sync con el número de federación.
+- Cambiar de jornada descarta los cambios sin guardar.
+
+El antiguo editor de `usuarios.equipo` (modelo previo a las alineaciones por
+jornada) se ha retirado; la columna sigue en la base de datos, pero nada la
+lee.
 
 ### Temporada
 - **Terminar temporada**: descarga todo `historial` como JSON, luego lo

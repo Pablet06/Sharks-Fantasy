@@ -28,3 +28,15 @@ Preparar producción para la temporada 26-27 (arranca sáb 2026-10-24; jornada 7
 - Tras el partido (sáb 24 / dom 25): workflow `Weekly Stats Sync` en verde (reintento domingo), `config.unmatched_players` vacío, ranking con puntos, "Reprocesar jornada" si la siguiente no tenía fecha.
 - Decidir si reactivar Confirm email.
 - Riesgos: supuesto de 8 goles de porteros; `presupuesto_usado`/precio solo validados en cliente (proponer trigger de servidor); tope de cuotas; GitHub Actions degradado esta tarde (Pages en cola, sitio ya activo).
+
+## 2026-10-30
+
+### What was done
+- Revisión de producción en solo lectura (Supabase `sharks-fantasy`): RLS en las 12 tablas de `public`, storage `jugadores` privado, `resolver_jornada` no ejecutable por `anon`, `delete-account` v3 con `verify_jwt = true`, 5 secrets en GitHub, `.env` ignorado.
+- Bloque "Tras el partido" verificado con datos reales: runs programados en verde desde el 25-10, `unmatched_players = []`, apuestas J7 34/34, alineaciones 19/19, 19 de 22 usuarios con puntos.
+
+### Decisions made
+- Tarea cerrada como `done`; lo restante no bloquea el lanzamiento.
+
+### What's left
+- Notas no bloqueantes en "Pendientes al cerrar" de la tarea: Confirm email y Site URL, contraseñas filtradas, `.claude/launch.json`, `VITE_ADMIN_HASH` muerto en `deploy.yml`, `REVOKE EXECUTE` opcional a `anon`.

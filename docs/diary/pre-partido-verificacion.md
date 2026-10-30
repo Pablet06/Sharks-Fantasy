@@ -1,6 +1,6 @@
 # Verificación pre-partido
 
-Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): historial de usuario, fichajes en admin y flujo posterior al partido (scraper, puntos, apuestas, dinero). Tarea: `docs/tasks/pre-partido-verificacion.md`. PRs: #27 (mergeado el 2026-10-25) y #38 (admin con `alineaciones`, abierto hacia `develop`, sin mergear).
+Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): historial de usuario, fichajes en admin y flujo posterior al partido (scraper, puntos, apuestas, dinero). Tarea: `docs/tasks/pre-partido-verificacion.md`. PRs: #27 (mergeado el 2026-10-25) y #38 (admin con `alineaciones`, mergeado a `develop` y promovido a `main` el 2026-10-30).
 
 ## 2026-10-23
 
@@ -78,10 +78,11 @@ Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): h
 ## 2026-10-30
 
 ### What was done
-- PR #38 (`feature/admin-alineaciones` -> `develop`, commit `5b707c5`, abierto y sin mergear): Admin > Usuarios lee y edita `alineaciones` (7 + capitán) por jornada con selector (por defecto `jornadaEnCurso ?? ultimaJornadaResuelta`) y puede crear alineaciones que falten; helper `filaAlineacionAdmin` en `src/lib/draft.ts`; `equipo` fuera del tipo `Usuario`; aviso de borrado de jugador con las `alineaciones` de `jornadaEnCurso`; rejilla de selects con capitán ★; barras del admin sin solaparse en móvil; buscador en Jugadores y Usuarios con `coincide()` (`src/lib/busqueda.ts`). Docs: manual, `docs/features/admin-panel/README.md`, `docs/learning/admin-alineaciones.md`.
+- PR #38 (`feature/admin-alineaciones` -> `develop`, commit `5b707c5`, mergeado a `develop` y promovido a `main` el mismo día): Admin > Usuarios lee y edita `alineaciones` (7 + capitán) por jornada con selector (por defecto `jornadaEnCurso ?? ultimaJornadaResuelta`) y puede crear alineaciones que falten; helper `filaAlineacionAdmin` en `src/lib/draft.ts`; `equipo` fuera del tipo `Usuario`; aviso de borrado de jugador con las `alineaciones` de `jornadaEnCurso`; rejilla de selects con capitán ★; barras del admin sin solaparse en móvil; buscador en Jugadores y Usuarios con `coincide()` (`src/lib/busqueda.ts`). Docs: manual, `docs/features/admin-panel/README.md`, `docs/learning/admin-alineaciones.md`.
 - 78 tests, lint y build en verde; probado a mano en solo lectura (J7, validaciones, `confirm()` cancelado sin escrituras, buscador, escritorio y móvil).
 - Secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub confirmado: `config.last_sync_at` = `2026-10-30T14:46:24.951Z`, igual al `sync: nothing new` del run programado.
 - Tarea cerrada (`done`). También cerradas `federation-sync` y `season-launch-readiness`; `scraper-servidor-casa` en espera de J8.
+- Después: PR #38 y PR de docs #39 mergeados a `develop` y `develop` -> `main` con el PR #40 (`860baa1`). Deploy en `gh-pages` y bundle de producción con los textos nuevos (sin probar pantallas con sesión iniciada). Ramas fusionadas borradas y `main` local actualizado.
 
 ### Decisions made
 - Admin sin tope de presupuesto (`presupuesto_usado = null`).
@@ -90,8 +91,6 @@ Revisión del juego antes del partido real del sábado 2026-10-24 (15:45 UTC): h
 - Columna `usuarios.equipo` intacta en la BD: sin migración ni cambios de RLS (`alineaciones_admin_all` ya cubre al admin).
 
 ### What's left
-- Mergear PR #38 (decide el usuario) y probar el guardado real contra Supabase; sin verificar: aviso de borrado con jornada en curso y cambio de jornada en el selector.
-- PR de docs con los `docs/tasks/*` y diarios modificados.
+- Probar el guardado real del editor contra Supabase (PR #38 ya en `main`); sin verificar: aviso de borrado con jornada en curso y cambio de jornada en el selector.
 - `createProfile` (`src/hooks/useUsuario.ts`) sigue insertando `equipo`; quitarlo exige migración coordinada con `20261023000000_lock_usuarios_self_insert.sql`.
 - Discrepancia del remote en `CLAUDE.md` (SSH frente a HTTPS real), sin decidir.
-- Ideas para la próxima sesión (sin priorizar): Santapau como entrenador (solo visual), vista de formación en "Mi equipo", ranking completo, confirmar que no se repiten fichajes entre jornadas.

@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-10-23
-updated: 2026-10-25
+updated: 2026-10-30
 ---
 
 # Verificación pre-partido
@@ -14,12 +14,62 @@ Tener confianza de que el juego está listo para el partido y de que el proceso 
 
 ## Acceptance criteria
 - [x] Verificar si existe historial por jornada de cada usuario con puntos y dinero ganado (apuestas), visible para el propio usuario; si falta, documentar qué falta. (Verificado: no hay pantalla dedicada de historial con puntos y dinero por jornada; hueco documentado en Sessions y en el diario. Apuestas ya muestra resultados + balance aunque no haya jornada abierta.)
-- [x] Investigar por qué no aparecen en admin los fichajes de Charly y Pablo; confirmar si es un error de datos, RLS o UI, y dejar la causa raíz identificada. (Causa raíz: UI. `UsuariosAdmin` lee `usuarios.equipo`, campo retirado; los fichajes reales están en `alineaciones` de J7. Sin corregir.)
+- [x] Investigar por qué no aparecen en admin los fichajes de Charly y Pablo; confirmar si es un error de datos, RLS o UI, y dejar la causa raíz identificada. (Causa raíz: UI. `UsuariosAdmin` lee `usuarios.equipo`, campo retirado; los fichajes reales están en `alineaciones` de J7. Corregido el 2026-10-30 en PR #38: el admin lee y edita `alineaciones`; **PR abierto, pendiente de mergear a `develop`**.)
 - [x] Revisión del código del flujo post-partido (scraper/sync, cálculo de puntos, liquidación de apuestas, dinero) con lista de riesgos y huecos.
 - [x] Hallazgos y correcciones priorizadas; ninguna se mergea/despliega antes del partido sin confirmación. (Hecho 2026-10-25: tras el partido se mergearon PR #27 y PR #26 a develop y main, con deploy OK.)
-- [x] Verificar J7 tras el partido: comprobar la ejecución del scraper y los datos de J7 con `docs/runbook-partido-j7.md` (`gh run list`, comprobaciones SQL) y confirmar que el secret `service_role` de GitHub es la clave real. (J7 verificado y resuelto, scraper ejecutado en local. SIGUE PENDIENTE confirmar el secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub: las ejecuciones de GH fallaron por 520/429 de la federación, no se pudo comprobar.)
+- [x] Verificar J7 tras el partido: comprobar la ejecución del scraper y los datos de J7 con `docs/runbook-partido-j7.md` (`gh run list`, comprobaciones SQL) y confirmar que el secret `service_role` de GitHub es la clave real. (J7 verificado y resuelto, scraper ejecutado en local. Secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub confirmado el 2026-10-30: el run programado escribió `config.last_sync_at` = `2026-10-30T14:46:24.951Z`.)
+
+> Cerrada el 2026-10-30. El código del arreglo del admin (criterio 2) vive en PR #38, que **todavía no está mergeado** a `develop`.
 
 ## Sessions
+
+### 2026-10-30
+
+## Session Summary — 2026-10-30
+
+**What was done:**
+- Admin > Usuarios arreglado en PR #38 (https://github.com/Pablet06/Sharks-Fantasy/pull/38, rama `feature/admin-alineaciones` -> `develop`, commit único `5b707c5`). Estado: ABIERTO, mergeable, SIN mergear, sin checks de CI en el PR.
+  - Lee y edita `alineaciones` (7 jugadores + capitán) por jornada, con selector de jornada (por defecto la misma que "Mi equipo": `jornadaEnCurso ?? ultimaJornadaResuelta`). El admin también puede crear una alineación que falte. Helper puro `filaAlineacionAdmin` en `src/lib/draft.ts` (tests primero).
+  - Quitado `equipo` del tipo `Usuario` (la columna sigue en la BD; sin migración ni cambios de RLS: `alineaciones_admin_all` ya permite escribir al admin).
+  - El aviso al borrar un jugador en Admin > Jugadores ahora mira las `alineaciones` de la jornada en curso (solo `jornadaEnCurso`).
+  - Legibilidad: selects de la alineación en rejilla (2 columnas en escritorio, 1 en móvil) con el capitán como 8º select marcado con ★; arregladas las barras superiores internas del admin que se solapaban con la barra fija principal en móvil.
+  - Buscador en Admin > Jugadores (nombre, apodo, dorsal, posición) y Admin > Usuarios (nombre), sin distinguir acentos ni mayúsculas, con el helper puro `coincide()` en `src/lib/busqueda.ts` (+ test).
+  - Docs: `docs/MANUAL_DEL_JUEGO.md`, `docs/features/admin-panel/README.md` y nuevo `docs/learning/admin-alineaciones.md` (mentor). Plan en `.claude/plans/usuarios-admin-alineaciones.md` (local, sin trackear).
+  - Verificación: 78 tests, lint y build en verde. Probado a mano en el navegador integrado con la sesión de admin, solo lectura: alineaciones de J7 correctas, errores de validación, `confirm()` en jornada puntuada cancelado sin ninguna escritura de red, buscador, escritorio 1280 px y móvil.
+- Secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub confirmado: el run programado de hoy imprimió `sync: nothing new` a las 14:46:24.951 UTC y `config.last_sync_at` vale exactamente `2026-10-30T14:46:24.951Z` (esa tabla solo la escribe el admin o la clave de servicio). Resuelve la pregunta abierta desde el 2026-10-24.
+- Tarea cerrada como `done` (5/5 criterios), con el arreglo del admin pendiente de merge (PR #38).
+- Otras tareas tocadas hoy:
+  - `federation-sync`: cerrada (`done`); el criterio del primer sync semanal en verde pasa a `scraper-servidor-casa`.
+  - `season-launch-readiness`: cerrada (`done`) tras revisión de producción en solo lectura (RLS en las 12 tablas de `public`, storage `jugadores` privado, `resolver_jornada` no ejecutable por `anon`, `delete-account` v3 con `verify_jwt = true`, 5 secrets en GitHub, `.env` ignorado) y bloque post-partido verificado con datos reales (runs programados en verde desde el 25-10, `unmatched_players = []`, apuestas J7 34/34, alineaciones 19/19, 19 de 22 usuarios con puntos).
+  - `scraper-servidor-casa`: sigue `in-progress`, en espera de J8; contexto actualizado (la clave escribe; solo falta probar `/match/<id>/stats` desde GitHub).
+
+**Decisions made:**
+- El admin no tiene tope de presupuesto y guarda `presupuesto_usado = null`.
+- Se puede editar una jornada ya puntuada, previa `confirm()`: el mismo upsert pone `puntos_jornada = null` y después se llama a `resolver_jornada`, porque `resolver_jornada` no baja los `puntos_jornada` de una fila que deja de estar completa.
+- El admin puede crear una alineación a un usuario que no la tiene (con aviso de puntos retroactivos).
+- `equipo` fuera del tipo `Usuario`; la columna de la BD se queda (sin migración).
+- Aviso de borrado de jugador basado en las `alineaciones` de `jornadaEnCurso`.
+- `scraper-servidor-casa`: esperar a J8 antes de montar nada. Si el run programado tras el partido da 520/429, runner autoalojado (opción A); si funciona, cerrar sin runner.
+
+**Open questions:**
+- ¿Cuándo mergear PR #38 a `develop`? Lo decide el usuario (repo "team": PRs obligatorios).
+- `CLAUDE.md` dice que el remote es SSH (`git@github.com:Pablet06/Sharks-Fantasy.git`) pero `origin` es HTTPS (`https://github.com/Pablet06/Sharks-Fantasy.git`). Discrepancia solo de documentación; el usuario no ha decidido si actualizarlo.
+- Sin verificar en PR #38: el guardado real (upsert + `resolver_jornada`) contra Supabase (el `.env` local apunta a producción y editar J7 recalcularía los puntos de todos); el caso positivo del aviso al borrar jugador (necesita una jornada en curso); cambiar el selector a otra jornada (solo existe J7).
+
+**Next steps:**
+- Mergear PR #38 a `develop` (y luego `develop` -> `main`) cuando lo decida el usuario; probar el guardado real en la primera ocasión segura.
+- PR pequeño de docs con los `docs/tasks/*` modificados (`federation-sync`, `pre-partido-verificacion`, `season-launch-readiness`, `scraper-servidor-casa`) y los diarios.
+- Seguimiento (no hecho): `createProfile` en `src/hooks/useUsuario.ts` sigue insertando un `equipo` heredado al registrarse. La migración `20261023000000_lock_usuarios_self_insert.sql` está escrita en torno a ese insert, así que quitarlo exige una migración coordinada. La columna sigue en la BD: sin riesgo hoy.
+- J8: vigilar el run del scraper tras el partido (`scraper-servidor-casa`) y la financiación de presupuestos con datos reales.
+- Pendientes no bloqueantes en `season-launch-readiness` ("Pendientes al cerrar"): Confirm email y Site URL, protección de contraseñas filtradas, `.claude/launch.json` sin trackear, `VITE_ADMIN_HASH` muerto en `deploy.yml`, `REVOKE EXECUTE` opcional a `anon` en `recalc_puntos()`/`powerups_aplicar()`.
+
+**Ideas pendientes para la próxima sesión (sin priorizar; ni iniciadas ni planificadas):**
+- Añadir a "Santapau" como entrenador (easter egg), solo visual: aparece en la lista de jugadores pero no se puede fichar ni apostar por él.
+- Mostrar los fichajes de "Mi equipo" en una vista de formación de waterpolo (como el fantasy antiguo), también en el estado "Esperando fecha". Preguntar detalles al usuario si hace falta.
+- Mostrar el ranking completo en vez de solo el top 10.
+- Confirmar que en la siguiente jornada no se pueden fichar los mismos jugadores que en la anterior, como dice el manual.
+
+**Nota de entorno:** para probar en el móvil hace falta `npm run dev -- --host` (por defecto solo escucha en localhost); IP de LAN 192.168.1.215 y la ruta debe incluir `/Sharks-Fantasy/`. El `.env` apunta a producción.
 
 ### 2026-10-25 (tarde)
 

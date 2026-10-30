@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-09-09
-updated: 2026-09-09
+updated: 2026-10-30
 ---
 
 # Federation Sync — Phase A merge + Phase B
@@ -31,8 +31,12 @@ Pages), and the weekly scraper cron actually working. Then plan Phase B
 - [x] `service_role` key done: `sb_secret_…` in local `.env` + GH Actions secret
       (updated 2026-09-09), verified it bypasses RLS on `config`
 - [x] Scheduled workflow re-enabled on `main` (auto-reactivated by the main push; new `scraper.yml` now on main)
-- [ ] First real weekly sync run observed green — **Saturday 2026-09-12 22:00 UTC** (watch: Cloudflare IP block risk, orchestration never run end-to-end)
+- [x] First real weekly sync run observed green — superseded: GitHub IPs get 520/429 from the federation (Cloudflare), so this moved to `scraper-servidor-casa` (self-hosted runner, decided 2026-10-25)
 - [x] Phase B plan written — `docs/superpowers/plans/2026-09-09-admin-panel.md`
 - [x] **Phase B executed** — PR #3 merged (`5b6309e`). AdminView + 5 sections replace the disabled AdminPanel; `is_admin()`/`recalc_puntos()` on prod; `delete-account` v3; + a CRITICAL security fix (usuarios self-promotion, migration `20260910000000`). All 4 carry-over bugs closed. SDD ledger: `.superpowers/sdd/2026-09-09-admin-panel/progress.md`
 
 ## Sessions
+
+### 2026-10-30
+
+- Tarea cerrada (`status: done`). Fase A y Fase B completadas; el único criterio pendiente (primer sync semanal en verde) se traslada a `scraper-servidor-casa`.

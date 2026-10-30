@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-30
 ---
 
 # Season launch readiness
@@ -24,8 +24,8 @@ Producción en la última versión de `develop` con la 26-27 configurada: regist
 - [x] Registro, login y fichajes probados en producción (cuenta de pruebas "Pablo 2")
 - [x] Fantasy v2 desplegado: numeración `orden`, bloques informativos, composición obligatoria (trigger), precios desde la 25-26 (base 50, multiplicador 22) y cuotas con prior de la 25-26
 - [x] Favicon / icono de pantalla de inicio (iOS y Android) desplegado (PR #14/#15)
-- [ ] Variables de entorno y RLS de producción revisadas tras el deploy
-- [ ] Decidir qué hacer con los cambios locales sin commitear de `CLAUDE.md`
+- [x] Variables de entorno y RLS de producción revisadas tras el deploy (2026-10-30, ver "Revisión de producción")
+- [x] Decidir qué hacer con los cambios locales sin commitear de `CLAUDE.md` (restaurado a la versión del repo el 2026-10-25; `git diff` vacío)
 
 ### Antes del cierre del draft (vie 2026-10-23, 13:45 UTC)
 - [x] Probar la interfaz con sesión iniciada (Mi equipo, Apuestas, Power-ups, en todos sus estados)
@@ -36,10 +36,28 @@ Producción en la última versión de `develop` con la 26-27 configurada: regist
 Marcado como completado por el usuario; no verificado por Claude (requiere sesión iniciada y un móvil).
 
 ### Tras el partido (sáb 24 y dom 25)
-- [ ] El workflow `Weekly Stats Sync` sale en verde (sábado 22:00 UTC; reintento domingo 22:00 UTC)
-- [ ] `config.unmatched_players` vacío
-- [ ] El ranking tiene puntos y las apuestas de la jornada están resueltas
-- [ ] Si la jornada siguiente aún no tenía fecha al resolver: "Reprocesar jornada" en el panel de admin
+Verificado el 2026-10-30 contra producción:
+- [x] El workflow `Weekly Stats Sync` sale en verde: todos los runs programados desde el 2026-10-25 en `success`; solo fallaron 2 `workflow_dispatch` manuales (HTTP 520)
+- [x] `config.unmatched_players` vacío (`[]`)
+- [x] El ranking tiene puntos y las apuestas de la jornada están resueltas: 19 de 22 usuarios con puntos (los 3 sin alineación en J7 se quedan a 0), alineaciones 19/19 puntuadas, apuestas 34/34 resueltas, J7 `finalizado` (pierde)
+- [x] Si la jornada siguiente aún no tenía fecha al resolver: no aplica, la J8 todavía no existe en `jornadas` (la app muestra "Esperando fecha")
+
+### Revisión de producción (2026-10-30)
+Solo lectura, proyecto Supabase `sharks-fantasy`.
+- **RLS:** las 12 tablas de `public` tienen RLS activo y políticas. Configuración, jornadas, jugadores, historial y presupuestos solo los escribe el admin; el dueño solo escribe su `alineaciones`, `apuestas` y `powerups_aplicados`, y solo con fecha de partido; `usuarios` solo permite insertar/actualizarse a uno mismo con `is_admin = false` (y `puntos = 0` al insertar). Storage `jugadores`: lectura solo autenticados, escritura solo admin.
+- **Funciones:** `resolver_jornada` ya no la puede ejecutar `anon`; `resolver_jornada` y `recalc_puntos` tienen guarda de admin. Siguen ejecutables por `anon` `is_admin` (la necesitan las políticas), `recalc_puntos` y `powerups_aplicar` (avisos del advisor, riesgo bajo).
+- **Edge function** `delete-account`: activa, v3, `verify_jwt = true`.
+- **Variables:** los 5 secrets que usan los workflows existen en GitHub. `.env` local con las mismas 4 claves que `.env.example`, ignorado por git y apuntando a producción. `VITE_ADMIN_HASH` se inyecta en `deploy.yml` pero ya no lo lee nada del código (resto del acceso admin antiguo): se puede quitar del workflow y borrar el secret.
+- **Scraper:** el run diario del 2026-10-30 escribió `config.last_sync_at` (14:46:24 UTC) con `SUPABASE_SERVICE_ROLE_KEY` de GitHub: la clave sí escribe. Ojo: desde J7 todos los runs son "nothing new", así que la descarga de estadísticas de un partido desde las IPs de GitHub no se ha vuelto a probar (el 520 de J7 puede repetirse en la próxima jornada; ver `scraper-servidor-casa`).
+
+### Pendientes al cerrar (2026-10-30)
+Tarea cerrada como `done`; lo siguiente no bloquea el lanzamiento y queda como notas:
+- **«Confirm email»** de Supabase Auth sigue desactivado, y el **Site URL** de Auth sin revisar (Authentication > URL Configuration). Decisión del usuario.
+- **Protección contra contraseñas filtradas** desactivada (opcional; depende del plan de Supabase).
+- **`.claude/launch.json`** sin trackear: ignorarlo en `.gitignore` o borrarlo.
+- **`VITE_ADMIN_HASH`**: quitarlo de `deploy.yml` (PR) y borrar el secret de GitHub (`gh secret delete VITE_ADMIN_HASH`). Ya no lo lee nada del código.
+- **Endurecimiento opcional:** `REVOKE EXECUTE ... FROM anon` en `recalc_puntos()` y `powerups_aplicar()` (migración; `is_admin` debe seguir ejecutable porque la usan las políticas).
+- **Scraper y IPs de GitHub:** la descarga de estadísticas de un partido no se ha vuelto a probar desde J7; seguimiento en `scraper-servidor-casa`. El secret `SUPABASE_SERVICE_ROLE_KEY` de GitHub ya está comprobado (escribe `config.last_sync_at`).
 
 ## Riesgos conocidos
 - Precios de porteros calculados suponiendo 8 goles encajados por partido en la 25-26 (la captura no traía ese dato).
@@ -48,6 +66,7 @@ Marcado como completado por el usuario; no verificado por Claude (requiere sesi�
 - «Confirm email» de Supabase Auth desactivado temporalmente.
 
 ## Sessions
+- 2026-10-30: revisión de producción en solo lectura (RLS, permisos de funciones, storage, edge function, variables y secrets) y comprobación del bloque "Tras el partido" con datos reales; sin hallazgos graves. Tarea cerrada como `done`; pendientes anotados en "Pendientes al cerrar".
 - 2026-10-22: reseteo de la 25-26, roster, fix del scraper (descanso), Fantasy v2 (PR #8 a #17), migraciones aplicadas en producción (`orden` + resolver, composición, `historial_anterior`, `cuotas_previas`), favicon móvil, cron del domingo y `leverade_id` de la 26-27. Registro: el enlace de confirmación llevaba a `pablet06.github.io/` (404, Site URL mal al enviarse); decisión del usuario: «Confirm email» desactivado temporalmente. Rama de cierre: `feature/docs-registro` (mensaje del registro y documentación).
 
 ### 2026-10-22 (resumen final de sesión)

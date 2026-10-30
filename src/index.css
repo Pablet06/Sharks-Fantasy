@@ -1834,7 +1834,11 @@ button:focus-visible {
 .admin-view-topbar input, .admin-view-topbar select { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; color: inherit; padding: .25rem .4rem; }
 .admin-table input, .admin-table select { width: 100%; }
 .admin-view-topbar input[type="number"] { width: 5rem; }
+.admin-buscador { flex: 1 1 14rem; max-width: 24rem; }
 .admin-row-actions { display: flex; gap: .4rem; }
+/* Admin > Usuarios: los 7 selects de la alineación + el capitán (8º) en rejilla, para que se lea el nombre completo */
+.admin-alineacion { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; min-width: 29rem; }
+.admin-table .admin-capitan { border-color: var(--primary); }
 .admin-danger { color: var(--error); border-color: var(--error) !important; }
 .admin-msg { margin: 0; padding: 0; background: none; border: 0; color: inherit; opacity: .8; }
 .admin-msg.admin-error { color: var(--error); opacity: 1; }
@@ -1849,6 +1853,8 @@ button:focus-visible {
 @media (max-width: 700px) {
   .admin-view { padding: .75rem; }
   .admin-view-topbar { position: sticky; top: 0; z-index: 5; background: var(--bg-dark); padding: .5rem 0; margin-bottom: .5rem; }
+  /* las barras de dentro de una sección no pueden quedarse pegadas (.admin-scroll no hace scroll vertical) y taparían la principal */
+  .admin-scroll > .admin-view-topbar { position: static; }
   .admin-subnav { flex-wrap: nowrap; overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
   .admin-subnav-btn, .admin-back-btn { min-height: 44px; padding: .5rem 1rem; font-size: 1rem; white-space: nowrap; }
   .admin-table input, .admin-table select,
@@ -1862,5 +1868,8 @@ button:focus-visible {
   .admin-table td input, .admin-table td select { flex: 1; min-width: 0; }
   .admin-row-actions { flex-wrap: wrap; }
   .admin-row-actions .admin-subnav-btn { flex: 1; }
+  /* la etiqueta "Alineación" arriba y los 7 selects en una columna a ancho completo */
+  .admin-alineacion-cell { flex-wrap: wrap; }
+  .admin-alineacion { flex: 1 1 100%; grid-template-columns: 1fr; min-width: 0; }
   .admin-section-body button.admin-subnav-btn { min-height: 44px; }
 }

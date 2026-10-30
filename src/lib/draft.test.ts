@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validarDraft, contarPosiciones } from './draft'
+import { validarDraft, contarPosiciones, filaAlineacionAdmin } from './draft'
 import type { Position } from '../types'
 
 const precios = { 1: 100, 2: 100, 3: 100, 4: 100, 5: 100, 6: 100, 7: 100, 8: 500, 9: 100 }
@@ -71,5 +71,45 @@ describe('contarPosiciones', () => {
     expect(contarPosiciones(ok7, posiciones)).toEqual({
       Portero: 1, Extremo: 2, Lateral: 2, Boya: 1, Contraboya: 1,
     })
+  })
+})
+
+describe('filaAlineacionAdmin', () => {
+  it('falla si queda un hueco vacío', () => {
+    expect(filaAlineacionAdmin('u1', 13, false, [1, 2, 3, 4, 5, 6, null], 1, posiciones)).toEqual({
+      ok: false, error: 'Elige exactamente 7 jugadores.',
+    })
+  })
+
+  it('falla con composición incorrecta', () => {
+    const r = filaAlineacionAdmin('u1', 13, false, [1, 9, 2, 3, 4, 5, 6], 1, posiciones)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error).toContain('Composición incorrecta')
+  })
+
+  it('no aplica tope de presupuesto (el 7 que en Draft se pasa de 1000€ vale)', () => {
+    const pos = { ...posiciones, 8: 'Contraboya' as Position }
+    expect(filaAlineacionAdmin('u1', 13, false, [1, 2, 3, 4, 5, 6, 8], 1, pos).ok).toBe(true)
+  })
+
+  it('jornada sin puntuar: fila sin puntos_jornada, presupuesto_usado null y sin reprocesar', () => {
+    expect(filaAlineacionAdmin('u1', 13, false, ok7, 3, posiciones)).toStrictEqual({
+      ok: true,
+      fila: { usuario_id: 'u1', jornada: 13, jugadores: ok7, capitan: 3, presupuesto_usado: null },
+      reprocesar: false,
+    })
+  })
+
+  it('jornada ya puntuada: vacía puntos_jornada y pide reprocesar', () => {
+    expect(filaAlineacionAdmin('u1', 13, true, ok7, 3, posiciones)).toStrictEqual({
+      ok: true,
+      fila: { usuario_id: 'u1', jornada: 13, jugadores: ok7, capitan: 3, presupuesto_usado: null, puntos_jornada: null },
+      reprocesar: true,
+    })
+  })
+
+  it('escribe en la jornada recibida (número de federación, no el orden)', () => {
+    const r = filaAlineacionAdmin('u1', 9, false, ok7, 3, posiciones)
+    expect(r.ok && r.fila.jornada).toBe(9)
   })
 })

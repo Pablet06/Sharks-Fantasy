@@ -38,7 +38,6 @@ export interface Jugador {
 export interface Usuario {
   id: string
   nombre: string
-  equipo: number[]
   puntos: number
   created_at: string
   is_admin: boolean

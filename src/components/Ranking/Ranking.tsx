@@ -26,7 +26,6 @@ export function Ranking({ jugadores, currentUserId }: Props) {
       .from('usuarios')
       .select('*')
       .order('puntos', { ascending: false })
-      .limit(10)
       .then(({ data, error }) => {
         if (error) console.error('Ranking fetch error:', error)
         if (data) setRanking(data as Usuario[])
@@ -59,7 +58,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
 
   return (
     <div className="ranking">
-      <h2 className="section-title">Top 10</h2>
+      <h2 className="section-title">Clasificación</h2>
       <ol className="ranking-list">
         {ranking.map((u, i) => {
           const isMedal = i < 3

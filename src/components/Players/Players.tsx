@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Jugador } from '../../types'
 import { calcTotalPoints } from '../../lib/points'
 import { PlayerCard } from '../Dashboard/PlayerCard'
+import { DEFAULT_PHOTO, signedPhotoUrl } from '../../lib/photos'
 
 interface Props {
   jugadores: Jugador[]
@@ -9,12 +10,22 @@ interface Props {
 
 const POSITIONS = ['Todos', 'Portero', 'Boya', 'Extremo', 'Lateral', 'Contraboya']
 const DESKTOP_MQ = window.matchMedia('(min-width: 768px)')
+// Easter egg: frontend-only coach (no DB row), so he can't be drafted or bet on.
+// La foto vive en el bucket privado `jugadores`; hasta que llega la URL firmada se ve la de por defecto.
+const ENTRENADOR = { name: 'José Santapau', descripcion: 'Leyenda', fotoPath: 'entrenador-santapau.webp' }
 
 export function Players({ jugadores }: Props) {
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('Todos')
-  const [selected, setSelected] = useState<Jugador | null>(null)
+  const [selected, setSelected] = useState<Jugador | 'entrenador' | null>(null)
   const [isDesktop, setIsDesktop] = useState(DESKTOP_MQ.matches)
+  const [fotoEntrenador, setFotoEntrenador] = useState(DEFAULT_PHOTO)
+
+  useEffect(() => {
+    let cancelled = false
+    signedPhotoUrl(ENTRENADOR.fotoPath).then(url => { if (url && !cancelled) setFotoEntrenador(url) })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     const handler = (e: MediaQueryListEvent) => {
@@ -33,6 +44,26 @@ export function Players({ jugadores }: Props) {
       return matchesSearch && matchesPos
     })
     .sort((a, b) => calcTotalPoints(b.historial || []) - calcTotalPoints(a.historial || []))
+
+  const showEntrenador = posFilter === 'Todos' && ENTRENADOR.name.toLowerCase().includes(search.toLowerCase())
+
+  const fichaEntrenador = (
+    <div className="player-card-modal" onClick={isDesktop ? undefined : e => e.stopPropagation()}>
+      <button className="modal-close" onClick={() => setSelected(null)}>×</button>
+      <div className="player-card-header">
+        <img src={fotoEntrenador} alt={ENTRENADOR.name} className="player-card-photo" />
+        <div className="player-card-identity">
+          <h2 className="player-card-name">{ENTRENADOR.name}</h2>
+          <p className="player-card-nick">{ENTRENADOR.descripcion}</p>
+          <span className="pos-badge">Entrenador</span>
+        </div>
+      </div>
+      <div className="player-card-total">
+        <span>TOTAL</span>
+        <strong className="total-pts">∞ pts</strong>
+      </div>
+    </div>
+  )
 
   const listContent = (
     <>
@@ -61,11 +92,24 @@ export function Players({ jugadores }: Props) {
       />
 
       <ul className="players-list">
+        {showEntrenador && (
+          <li
+            onClick={() => setSelected('entrenador')}
+            className={`player-row${selected === 'entrenador' && isDesktop ? ' current-user' : ''}`}
+          >
+            <img src={fotoEntrenador} alt={ENTRENADOR.name} className="player-row-photo" />
+            <div className="player-row-info">
+              <strong>{ENTRENADOR.name}</strong>
+              <span className="pos-badge">Entrenador</span>
+            </div>
+            <span className="player-row-pts">∞ pts</span>
+          </li>
+        )}
         {filtered.map(j => (
           <li
             key={j.id}
             onClick={() => setSelected(j)}
-            className={`player-row${selected?.id === j.id && isDesktop ? ' current-user' : ''}`}
+            className={`player-row${selected !== 'entrenador' && selected?.id === j.id && isDesktop ? ' current-user' : ''}`}
           >
             <img
               src={j.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'}
@@ -90,7 +134,9 @@ export function Players({ jugadores }: Props) {
           {listContent}
         </div>
         <div className="players-detail-panel">
-          {selected ? (
+          {selected === 'entrenador' ? (
+            fichaEntrenador
+          ) : selected ? (
             <PlayerCard jugador={selected} onClose={() => setSelected(null)} inline={true} />
           ) : (
             <div className="players-detail-placeholder">
@@ -106,7 +152,11 @@ export function Players({ jugadores }: Props) {
   return (
     <div className="players-browser">
       {listContent}
-      {selected && <PlayerCard jugador={selected} onClose={() => setSelected(null)} />}
+      {selected === 'entrenador' ? (
+        <div className="modal-overlay" onClick={() => setSelected(null)}>{fichaEntrenador}</div>
+      ) : selected && (
+        <PlayerCard jugador={selected} onClose={() => setSelected(null)} />
+      )}
     </div>
   )
 }

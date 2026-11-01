@@ -47,8 +47,10 @@ Cada jornada de Los Sharks en la liga es un mini-juego independiente:
 4. **Repite** la semana siguiente con un equipo, unas apuestas y un
    presupuesto distintos.
 
-No hay plantilla fija: se draftea de cero cada jornada, así que un mal
-resultado nunca te condena para el resto de la temporada.
+No hay plantilla fija: se draftea de nuevo cada jornada, así que un mal
+resultado nunca te condena para el resto de la temporada. Eso sí, no puedes
+repetir el capitán de tu alineación anterior y como mucho repites 4 de los 7
+jugadores (ver sección 3).
 
 ## 2. Cómo entrar
 
@@ -82,10 +84,14 @@ el panel de administración enseña también el número de la federación.
 ### Tu alineación guardada
 
 Cuando ya tienes alineación para la jornada abierta, Mi Equipo enseña un
-**resumen**: tus 7 jugadores (con posición y precio, ★ en el capitán), el
-coste total y lo que te queda. Para cambiarla pulsa **"Cambiar Fichajes"**, que
-abre una ventana con la lista editable; si cierras la ventana sin guardar, no
-cambia nada. Si todavía no has fichado a nadie, la lista aparece directamente.
+**resumen**: tus 7 jugadores colocados en la piscina por posición (de arriba
+abajo: Contraboya, los 2 Laterales, Extremo + Boya + Extremo y el Portero),
+con ★ en el capitán, y debajo el coste total y lo que te queda. Cada jugador
+lleva su **precio** mientras se puede fichar y sus **puntos** de la jornada
+cuando ya está resuelta (los del capitán, ya doblados); toca uno para ver su
+ficha. Para cambiar la alineación pulsa **"Cambiar Fichajes"**, que abre una
+ventana con la lista editable; si cierras la ventana sin guardar, no cambia
+nada. Si todavía no has fichado a nadie, la lista aparece directamente.
 
 ### Presupuesto
 
@@ -130,6 +136,12 @@ rendimiento reciente.
 - Eliges un **capitán** entre tus 7 — sus puntos de esa jornada **cuentan
   doble** (para bien y para mal: si tiene una mala jornada con tarjetas o
   expulsión, esa penalización también se dobla).
+- **No repetir**: respecto a tu alineación anterior (la de la última jornada
+  en la que fichaste, aunque te saltaras alguna), no puedes repetir el
+  capitán y repites como mucho **4 de los 7** jugadores (cambia al menos 3).
+  Mientras eliges ves un contador «Repetidos n/4», y al llegar a 4 el resto de
+  jugadores de tu alineación anterior se bloquean. Si no tienes alineación
+  anterior, no hay límite. La base de datos también lo comprueba.
 - Puedes filtrar la lista por posición (Portero, Boya, Extremo, Lateral,
   Contraboya) para ayudarte a elegir.
 
@@ -264,7 +276,8 @@ Notas importantes:
 - **Capitán tardío**: lo aplicas como cualquier otro power-up antes de las
   24h, pero su efecto se nota después — en la pestaña "Mi Equipo", una vez
   tu alineación esté bloqueada, aparece un mini-selector para cambiar solo
-  el capitán hasta 1h antes del partido.
+  el capitán hasta 1h antes del partido. El nuevo capitán tampoco puede ser
+  el de tu alineación anterior (ver «No repetir» en la sección 3).
 - Si gastas un power-up y no te queda ninguno de ese tipo, el sistema lo
   rechaza — nunca se gasta "en el aire".
 
@@ -293,7 +306,8 @@ todas tus jornadas resueltas.
 
 ## 7. Ranking
 
-Muestra el top 10 de usuarios por puntos totales. Al tocar un usuario ves su
+Muestra la clasificación completa: todos los usuarios ordenados por puntos
+totales. Al tocar un usuario ves su
 **última jornada ya resuelta** (nunca su alineación de la jornada abierta —
 eso se mantiene en secreto hasta que se juega). Se indica quién fue el
 capitán de esa alineación.
@@ -303,7 +317,8 @@ capitán de esa alineación.
 Lista de los 19 jugadores de Los Sharks disponibles para draftear, con su
 ficha (nombre, posición, foto, frase). El pool de jugadores es siempre el
 mismo para todos — no hay propiedad exclusiva, cualquiera puede fichar a
-cualquiera en cualquier jornada.
+cualquiera. Lo único que no puedes es repetir demasiado respecto a tu propia
+alineación anterior (ver «No repetir» en la sección 3).
 
 ## 9. Perfil
 
@@ -317,6 +332,11 @@ Desde tu perfil puedes:
 
 **¿Puedo tener el mismo jugador que otro usuario en mi equipo?**
 Sí. No hay propiedad exclusiva — la escasez viene solo del presupuesto.
+
+**¿Puedo repetir el mismo equipo que la jornada pasada?**
+No. Respecto a tu alineación anterior tienes que cambiar de capitán y al
+menos 3 de los 7 jugadores (puedes repetir hasta 4). Si no tienes alineación
+anterior, no hay límite.
 
 **¿Qué pasa si me olvido de draftear una semana?**
 Tu alineación de esa jornada queda con 0 puntos. Tu presupuesto para la
@@ -406,7 +426,8 @@ capitán) y sus puntos de la jornada, y el admin puede **cambiarla, o crearla**
 si el usuario no envió ninguna, con "Guardar alineación":
 - Se valida igual que en Mi Equipo (7 distintos, capitán dentro del 7,
   1 Portero, 2 Extremos, 2 Laterales, 1 Boya y 1 Contraboya), pero **sin tope
-  de presupuesto**. Si quitas al capitán del 7, hay que elegir otro.
+  de presupuesto ni regla de repetidos** (puede repetir capitán y jugadores
+  de la alineación anterior). Si quitas al capitán del 7, hay que elegir otro.
 - Un dorsal que ya no existe en la plantilla se ve como `#n (no existe)`.
 - Si la jornada **ya está puntuada**, pide confirmación (avisa de que dará
   puntos retroactivos si el usuario no tenía alineación, y de que un +2 o un

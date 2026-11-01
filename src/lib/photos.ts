@@ -15,6 +15,12 @@ export async function withSignedPhotos<T extends Jugador>(jugadores: T[]): Promi
   return jugadores.map(j => ({ ...j, photo: (j.photo && urls.get(j.photo)) || null }))
 }
 
+/** URL firmada de una sola foto del bucket (null si falla). */
+export async function signedPhotoUrl(path: string): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, TTL_SECONDS)
+  return error || !data ? null : data.signedUrl
+}
+
 export async function uploadPhoto(numero: number, file: File): Promise<string> {
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `${numero}-${Date.now()}.${ext}`

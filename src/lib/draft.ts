@@ -1,6 +1,13 @@
-import type { Position } from '../types'
+import type { Alineacion, Jornada, Position } from '../types'
+import { etiquetaJornada } from './jornada'
 
 export type ResultadoValidacion = { ok: true } | { ok: false; error: string }
+
+/** Máximo de jugadores que se pueden repetir de la alineación anterior.
+ * Misma cifra que el trigger `alineaciones_repeticion` de la base de datos. */
+export const MAX_REPETIDOS = 4
+
+export type AlineacionPrevia = Pick<Alineacion, 'jugadores' | 'capitan'>
 
 /** Composición obligatoria del 7: 1 Portero, 2 Extremos, 2 Laterales, 1 Boya,
  * 1 Contraboya. Misma regla que el trigger de `alineaciones` en la base de datos. */
@@ -20,15 +27,55 @@ export function contarPosiciones(
   return cuenta
 }
 
+/** Cuántos de `jugadores` ya estaban en la alineación anterior (0 sin anterior). */
+export function contarRepetidos(jugadores: number[], anterior: AlineacionPrevia | null): number {
+  const previos = anterior?.jugadores ?? []
+  return jugadores.filter(n => previos.includes(n)).length
+}
+
+/** Con `MAX_REPETIDOS` ya elegidos, el resto de la alineación anterior no se
+ * puede añadir (los jugadores nuevos siguen libres). */
+export function repetidoBloqueado(
+  numero: number,
+  elegidos: number[],
+  anterior: AlineacionPrevia | null,
+): boolean {
+  return (anterior?.jugadores ?? []).includes(numero) && contarRepetidos(elegidos, anterior) >= MAX_REPETIDOS
+}
+
+/** La última alineación del usuario antes de `numeroActual`: la de mayor `orden`
+ * estrictamente menor (el `numero` de federación no sigue el calendario). */
+export function alineacionAnterior(
+  jornadas: Pick<Jornada, 'numero' | 'orden'>[],
+  alineaciones: Pick<Alineacion, 'jornada' | 'jugadores' | 'capitan'>[],
+  numeroActual: number,
+): AlineacionPrevia | null {
+  const orden = (numero: number) => etiquetaJornada(jornadas, numero)
+  const actual = orden(numeroActual)
+  return alineaciones
+    .filter(a => orden(a.jornada) < actual)
+    .sort((a, b) => orden(b.jornada) - orden(a.jornada))[0] ?? null
+}
+
+/** Filas de la piscina de arriba abajo: Contraboya / Laterales /
+ * Extremo + Boya + Extremo (boya en el centro) / Portero. */
+export function filasFormacion<T extends { pos: Position }>(js: T[]): T[][] {
+  const de = (pos: Position) => js.filter(j => j.pos === pos)
+  const extremos = de('Extremo')
+  return [de('Contraboya'), de('Lateral'), [...extremos.slice(0, 1), ...de('Boya'), ...extremos.slice(1)], de('Portero')]
+}
+
 /** Reglas de un draft válido: exactamente 7 dorsales distintos, capitán
- * entre ellos, composición por posiciones y coste total dentro del
- * presupuesto disponible. */
+ * entre ellos, composición por posiciones, no repetir capitán ni más de
+ * `MAX_REPETIDOS` jugadores de la alineación anterior (si se pasa) y coste
+ * total dentro del presupuesto disponible. */
 export function validarDraft(
   jugadores: number[],
   capitan: number | null,
   precios: Record<number, number>,
   presupuesto: number,
   posiciones: Record<number, Position>,
+  anterior: AlineacionPrevia | null = null,
 ): ResultadoValidacion {
   if (jugadores.length !== 7) return { ok: false, error: 'Elige exactamente 7 jugadores.' }
   if (new Set(jugadores).size !== 7) return { ok: false, error: 'No puedes repetir jugador.' }
@@ -42,6 +89,16 @@ export function validarDraft(
     return {
       ok: false,
       error: `Composición incorrecta (${detalle}). Necesitas 1 Portero, 2 Extremos, 2 Laterales, 1 Boya y 1 Contraboya.`,
+    }
+  }
+  if (anterior?.capitan != null && capitan === anterior.capitan) {
+    return { ok: false, error: 'No puedes repetir el capitán de tu alineación anterior.' }
+  }
+  const repetidos = contarRepetidos(jugadores, anterior)
+  if (repetidos > MAX_REPETIDOS) {
+    return {
+      ok: false,
+      error: `Repites ${repetidos} jugadores de tu alineación anterior (máximo ${MAX_REPETIDOS}): cambia al menos ${7 - MAX_REPETIDOS}.`,
     }
   }
   const usado = jugadores.reduce((sum, n) => sum + (precios[n] ?? 0), 0)

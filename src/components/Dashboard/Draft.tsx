@@ -3,7 +3,11 @@ import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Alineacion, Position } from '../../types'
 import { calcPrecio } from '../../lib/precio'
 import { jornadaEnCurso, ultimaJornadaResuelta } from '../../lib/jornada'
-import { validarDraft, contarPosiciones, COMPOSICION } from '../../lib/draft'
+import {
+  validarDraft, contarPosiciones, COMPOSICION, MAX_REPETIDOS, contarRepetidos, repetidoBloqueado, alineacionAnterior,
+  filasFormacion,
+} from '../../lib/draft'
+import { DEFAULT_PHOTO } from '../../lib/photos'
 import { PlayerCard } from './PlayerCard'
 
 interface Props {
@@ -29,6 +33,9 @@ export function Draft({ usuario, jugadores }: Props) {
   const [modalAbierto, setModalAbierto] = useState(false)
   // Sin jornada en curso se enseña la última resuelta, sin poder tocar nada.
   const [soloLectura, setSoloLectura] = useState(false)
+  // Para la regla de repetidos: todas las jornadas (orden) y todas mis alineaciones
+  const [todasJornadas, setTodasJornadas] = useState<Jornada[]>([])
+  const [misAlineaciones, setMisAlineaciones] = useState<Pick<Alineacion, 'jornada' | 'jugadores' | 'capitan'>[]>([])
 
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
@@ -49,6 +56,7 @@ export function Draft({ usuario, jugadores }: Props) {
       .then(({ data, error }) => {
         if (error) console.error('Jornadas fetch error:', error)
         const abiertas = (data ?? []) as Jornada[]
+        setTodasJornadas(abiertas)
         const n = jornadaEnCurso(abiertas)
         if (n === null) {
           const ultima = ultimaJornadaResuelta(abiertas)
@@ -99,6 +107,16 @@ export function Draft({ usuario, jugadores }: Props) {
         if (error) console.error('Powerup capitan_tardio fetch error:', error)
         setTieneCapitanTardio(data !== null)
       })
+
+    supabase
+      .from('alineaciones')
+      .select('jornada, jugadores, capitan')
+      .eq('usuario_id', usuario.id)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Alineaciones fetch error:', error)
+        setMisAlineaciones(data ?? [])
+      })
     return () => {
       cancelled = true
     }
@@ -124,6 +142,9 @@ export function Draft({ usuario, jugadores }: Props) {
     alineacion !== null && alineacion.puntos_jornada === null
 
   const usado = seleccion.reduce((sum, n) => sum + (precios[n] ?? 0), 0)
+  // Regla de repetidos frente a mi última alineación previa (no aplica en solo lectura)
+  const anterior = soloLectura ? null : alineacionAnterior(todasJornadas, misAlineaciones, jornada.numero)
+  const repetidos = contarRepetidos(seleccion, anterior)
 
   const toggleJugador = (numero: number) => {
     if (bloqueada) return
@@ -148,7 +169,7 @@ export function Draft({ usuario, jugadores }: Props) {
       return
     }
 
-    const validacion = validarDraft(seleccion, capitan, precios, presupuesto, posiciones)
+    const validacion = validarDraft(seleccion, capitan, precios, presupuesto, posiciones, anterior)
     if (!validacion.ok) { setMsg(validacion.error); return }
     setGuardando(true)
     setMsg('')
@@ -220,6 +241,11 @@ export function Draft({ usuario, jugadores }: Props) {
               {p} {cuentaPos[p]}/{COMPOSICION[p]}
             </span>
           ))}
+          {anterior && (
+            <span className={`composicion-item ${repetidos > MAX_REPETIDOS ? 'sobra' : ''}`}>
+              Repetidos {repetidos}/{MAX_REPETIDOS}
+            </span>
+          )}
         </div>
       )}
 
@@ -244,7 +270,10 @@ export function Draft({ usuario, jugadores }: Props) {
                   <button
                     className={`draft-pick-btn ${elegido ? 'active' : ''}`}
                     onClick={() => toggleJugador(j.numero)}
-                    disabled={!elegido && seleccion.length >= 7}
+                    disabled={!elegido && (seleccion.length >= 7 || repetidoBloqueado(j.numero, seleccion, anterior))}
+                    title={!elegido && repetidoBloqueado(j.numero, seleccion, anterior)
+                      ? `Ya repites ${MAX_REPETIDOS} jugadores de tu alineación anterior`
+                      : undefined}
                   >
                     {elegido ? '✓' : '+'}
                   </button>
@@ -252,7 +281,8 @@ export function Draft({ usuario, jugadores }: Props) {
                     <button
                       className={`draft-capitan-btn ${capitan === j.numero ? 'active' : ''}`}
                       onClick={() => setCapitan(j.numero)}
-                      title="Marcar como capitán"
+                      disabled={j.numero === anterior?.capitan}
+                      title={j.numero === anterior?.capitan ? 'Fue tu capitán en la alineación anterior' : 'Marcar como capitán'}
                     >
                       ★
                     </button>
@@ -278,9 +308,38 @@ export function Draft({ usuario, jugadores }: Props) {
   // Resumen de la alineación guardada (con datos guardados, no con la selección en edición)
   const guardados = alineacion?.jugadores ?? []
   const costeGuardado = guardados.reduce((sum, n) => sum + (precios[n] ?? 0), 0)
+  // Dorsales borrados se omiten; cada jugador cae en la fila de su posición actual
+  const [filaContraboya, filaLaterales, filaDosMetros, filaPortero] = filasFormacion(
+    guardados.map(n => jugadores.find(j => j.numero === n)).filter((p): p is Jugador => p !== undefined),
+  )
+  // Precio mientras se ficha; puntos de la jornada (x2 capitán) en solo lectura
+  const nodo = (p: Jugador) => {
+    const esCapitan = alineacion?.capitan === p.numero
+    return (
+      <button key={p.numero} className="player-node" onClick={() => setSelectedCard(p)}>
+        <span className="player-node-circle">
+          <img src={p.photo || DEFAULT_PHOTO} alt={p.nick || p.name} className="player-node-photo" />
+        </span>
+        <span className="player-node-name">{esCapitan ? '★ ' : ''}{p.nick || p.name}</span>
+        <span className="player-node-pts">
+          {soloLectura
+            ? `${(p.historial?.find(h => h.jornada === jornada.numero)?.puntos ?? 0) * (esCapitan ? 2 : 1)} pts`
+            : `${precios[p.numero]}€`}
+        </span>
+      </button>
+    )
+  }
 
   return (
     <div className="draft-container">
+      {jornada.fecha_partido && !bloqueada && (
+        <p className="placeholder draft-cierre">
+          Cierra el {new Date(new Date(jornada.fecha_partido).getTime() - 24 * 60 * 60 * 1000).toLocaleString('es-ES', {
+            dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid',
+          })} (24 h antes del partido)
+        </p>
+      )}
+
       <div className="team-total-pts team-puntos">
         <span>Puntos</span>
         <strong>{usuario.puntos}</strong>
@@ -291,14 +350,6 @@ export function Draft({ usuario, jugadores }: Props) {
           <span>Jornada {orden}</span>
           <strong>{presupuesto - usado}€</strong>
         </div>
-      )}
-
-      {jornada.fecha_partido && !bloqueada && (
-        <p className="placeholder">
-          Cierra el {new Date(new Date(jornada.fecha_partido).getTime() - 24 * 60 * 60 * 1000).toLocaleString('es-ES', {
-            dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid',
-          })} (24 h antes del partido)
-        </p>
       )}
 
       {bloqueada && (
@@ -323,7 +374,12 @@ export function Draft({ usuario, jugadores }: Props) {
               >
                 {(alineacion?.jugadores ?? []).map(numero => {
                   const j = jugadores.find(x => x.numero === numero)
-                  return <option key={numero} value={numero}>{j?.nick || j?.name || numero}</option>
+                  const fueCapitan = numero === anterior?.capitan
+                  return (
+                    <option key={numero} value={numero} disabled={fueCapitan}>
+                      {j?.nick || j?.name || numero}{fueCapitan ? ' (capitán anterior)' : ''}
+                    </option>
+                  )
                 })}
               </select>
               {msg && <p className="admin-msg">{msg}</p>}
@@ -334,23 +390,15 @@ export function Draft({ usuario, jugadores }: Props) {
 
       {alineacion ? (
         <div className="resumen-card">
-          <div className="mini-pool">
-            {guardados.map(n => {
-              const p = jugadores.find(j => j.numero === n)
-              if (!p) return null
-              return (
-                <button key={n} className="mini-player" onClick={() => setSelectedCard(p)}>
-                  <img src={p.photo || '/Sharks-Fantasy/jugadores/predeterminado.png'} alt={p.nick || p.name} />
-                  <span>{p.nick || p.name}{alineacion.capitan === n ? ' ★' : ''}</span>
-                  <small className="mini-pos">{p.pos}</small>
-                  <small className="mini-precio">
-                    {soloLectura
-                      ? `${(p.historial?.find(h => h.jornada === jornada.numero)?.puntos ?? 0) * (alineacion.capitan === n ? 2 : 1)} pts`
-                      : `${precios[n]}€`}
-                  </small>
-                </button>
-              )
-            })}
+          <div className="pool">
+            <div className="pool-halfline" />
+            <div className="pool-row">{filaContraboya.map(nodo)}</div>
+            <div className="pool-row">{filaLaterales.map(nodo)}</div>
+            <div className="pool-zone-line fivemeter"><span className="pool-zone-label">5 m</span></div>
+            <div className="pool-row">{filaDosMetros.map(nodo)}</div>
+            <div className="pool-zone-line twometer"><span className="pool-zone-label">2 m</span></div>
+            <div className="pool-row goalkeeper-row">{filaPortero.map(nodo)}</div>
+            <div className="pool-goal" />
           </div>
           {!soloLectura && (
             <p className="placeholder">

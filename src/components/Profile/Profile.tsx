@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Usuario } from '../../types'
 import { Historial } from './Historial'
+import { ResetPasswordForm } from '../Auth/ResetPasswordForm'
 
 interface Props {
   usuario: Usuario
@@ -73,6 +74,11 @@ export function Profile({ usuario, userEmail, onUpdate, onSignOut }: Props) {
             {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar'}
           </button>
         </div>
+      </div>
+
+      <div className="profile-field">
+        <span className="label">Cambiar contraseña</span>
+        <ResetPasswordForm />
       </div>
 
       <Historial usuarioId={usuario.id} />

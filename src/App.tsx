@@ -1,12 +1,14 @@
 import { useAuth } from './hooks/useAuth'
 import { useJugadores } from './hooks/useJugadores'
 import { useUsuario } from './hooks/useUsuario'
+import { authRedirect } from './lib/supabase'
 import { Auth } from './components/Auth/Auth'
 import { Onboarding } from './components/Auth/Onboarding'
+import { ResetPasswordForm } from './components/Auth/ResetPasswordForm'
 import { Dashboard } from './components/Dashboard/Dashboard'
 
 export function App() {
-  const { user, loading: authLoading, signOut } = useAuth()
+  const { user, loading: authLoading, signOut, recovery, endRecovery } = useAuth()
   const { jugadores, loading: jugadoresLoading, error: jugadoresError } = useJugadores(user?.id)
   const { usuario, loading: usuarioLoading, needsOnboarding, updateNombre, createProfile } = useUsuario(user?.id)
 
@@ -27,7 +29,28 @@ export function App() {
     )
   }
 
-  if (!user) return <Auth />
+  if (!user) return <Auth linkError={authRedirect.linkError} />
+
+  // A recovery session must set a new password before seeing Onboarding/Dashboard.
+  if (recovery) {
+    return (
+      <div className="auth-container">
+        <div className="auth-logo">
+          <img src="/Sharks-Fantasy/logo.png" alt="Sharks Fantasy" className="auth-logo-img" />
+          <h1 className="auth-title">SHARKS FANTASY</h1>
+          <p className="auth-subtitle">Liga de Waterpolo</p>
+        </div>
+        <ResetPasswordForm
+          title="Nueva contraseña"
+          onSuccess={endRecovery}
+          onCancel={() => {
+            endRecovery()
+            signOut()
+          }}
+        />
+      </div>
+    )
+  }
 
   if (usuarioLoading) {
     return (

@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-11
 ---
 
 # Mejoras para la próxima jornada
@@ -39,7 +39,7 @@ Antes de que se publique la fecha de la próxima jornada, tener resuelta la duda
 - [x] José Santapau no se puede fichar (no sale en el Draft ni lo acepta el servidor) ni se puede apostar por él (no sale en goleador/expulsado), y no rompe el scraper, las cuotas ni los puntos. (Seguro por construcción: es una constante de frontend, no hay fila en BD.)
 - [x] Mi equipo muestra los 7 fichajes en formación de waterpolo, cada jugador en su posición, con capitán marcado y tocar un jugador abre su ficha; se ve bien en móvil y en escritorio.
 - [x] `npm run test`, `npm run lint` y `npm run build` en verde; probado en navegador. (89 tests; navegador en local, móvil y escritorio, con la alineación guardada real del usuario.)
-- [ ] Comprobado en producción tras el deploy: guardar con 5 repetidos o con el capitán anterior se rechaza en la UI, y la formación, el ranking completo y el entrenador se ven bien.
+- [x] Comprobado en producción tras el deploy: guardar con 5 repetidos o con el capitán anterior se rechaza en la UI, y la formación, el ranking completo y el entrenador se ven bien. (Hecho el 2026-11-11 en https://pablet06.github.io/Sharks-Fantasy/ con la sesión del usuario, solo lectura: formación con el capitán marcado; "Clasificación" con 24 filas y sin "Top 10"; José Santapau el primero de Jugadores como ENTRENADOR con ∞ pts; en "Cambiar Fichajes" el contador "Repetidos 4/4" y la ★ del capitán anterior deshabilitada. **No se forzó un 5.º repetido ni se guardó nada** para no tocar alineaciones reales: la barrera de servidor se comprobó el 2026-11-01 en un bloque DO con rollback y hoy el trigger `alineaciones_repeticion` sigue activo en producción.)
 
 ## Decisions (2026-11-01)
 - **Rama:** `feature/next-jornada-improvements` desde `develop`.
@@ -51,8 +51,9 @@ Antes de que se publique la fecha de la próxima jornada, tener resuelta la duda
 
 ## Open questions
 Las preguntas originales (repetidos, formación y entrenador) están resueltas en Decisions. Siguen abiertas:
-1. ¿Se anota la spec `docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md` (líneas 31-33: "draft desde cero" / "cualquiera puede fichar a cualquiera")? Sin decidir.
-2. Comprobar en producción la regla de repetidos, la formación, el ranking y el entrenador (último criterio de aceptación).
+1. ~~¿Se anota la spec `docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md`?~~ Resuelta el 2026-11-11: sí, se añadió una nota bajo "Bucle semanal" con la regla de repetidos (la spec original queda intacta).
+2. ~~Comprobar en producción la regla de repetidos, la formación, el ranking y el entrenador.~~ Hecho el 2026-11-11 (ver el último criterio de aceptación).
+3. Opcional, sin hacer: redimensionar la foto del entrenador (235 KB).
 
 ## Sessions
 
@@ -90,3 +91,11 @@ Las preguntas originales (repetidos, formación y entrenador) están resueltas e
 - (d) Tras el partido del 2026-11-07: revisar puntuación y resolver, y las stats del scraper.
 - (e) Opcional: redimensionar la foto del entrenador (235 KB).
 - Sigue abierta `docs/tasks/scraper-servidor-casa.md` (`in-progress`): el endpoint `/match/<id>/stats` sigue sin probarse con una jornada real; el partido del 2026-11-07 es la siguiente ocasión, y si las descargas desde GitHub fallan con 520 el plan es el runner autoalojado (opción A). El servidor de desarrollo sigue en http://localhost:5174 apuntando a producción.
+
+### 2026-11-11 (verificación en producción y cierre)
+
+- Verificado en producción con la sesión del usuario, solo lectura (ver el último criterio de aceptación): formación, ranking completo, entrenador y contador "Repetidos 4/4" con la ★ del capitán anterior deshabilitada. No se guardó nada ni se forzó un 5.º repetido.
+- Servidor (solo lectura): el trigger `alineaciones_repeticion` está activo en `alineaciones`, junto a `alineaciones_composicion` y `alineaciones_before_update_capitan_tardio`.
+- El deploy 41353327504 queda irrelevante: `main` ha recibido despliegues posteriores en verde (p. ej. 43032704595 el 2026-11-11).
+- La J2 (federación 10, partido del 2026-11-07) figura `finalizado` en `jornadas` (12-23); la J3 es la de la federación 2, el 2026-11-15 11:00 UTC, con fichajes abiertos hasta el 2026-11-14 12:00 (Europe/Madrid). Que las stats por jugador de la J2 se escribieran no está comprobado (es cosa de `scraper-servidor-casa`).
+- Spec de diseño anotada con la regla de repetidos. Tarea cerrada como `done`.

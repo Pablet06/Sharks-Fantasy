@@ -3,9 +3,11 @@ import { supabase } from '../../lib/supabase'
 
 interface Props {
   onSwitch: () => void
+  onForgot: () => void
+  notice?: string | null
 }
 
-export function LoginForm({ onSwitch }: Props) {
+export function LoginForm({ onSwitch, onForgot, notice }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -23,6 +25,7 @@ export function LoginForm({ onSwitch }: Props) {
   return (
     <form onSubmit={handleSubmit} className="auth-form">
       <h2>Iniciar Sesión</h2>
+      {notice && <p className="auth-error">{notice}</p>}
       {error && <p className="auth-error">{error}</p>}
       <input
         type="email"
@@ -43,6 +46,11 @@ export function LoginForm({ onSwitch }: Props) {
       <button type="submit" disabled={loading} className="auth-btn">
         {loading ? 'Entrando...' : 'Entrar'}
       </button>
+      <p className="auth-switch">
+        <button type="button" onClick={onForgot} className="auth-link">
+          ¿Has olvidado tu contraseña?
+        </button>
+      </p>
       <p className="auth-switch">
         ¿No tienes cuenta?{' '}
         <button type="button" onClick={onSwitch} className="auth-link">

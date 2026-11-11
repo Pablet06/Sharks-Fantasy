@@ -254,6 +254,15 @@ button:focus-visible {
   font-size: 0.9rem;
 }
 
+.auth-success {
+  background: rgba(46, 213, 115, 0.12);
+  border: 1px solid rgba(46, 213, 115, 0.3);
+  color: var(--success);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
 .auth-switch {
   margin-top: 14px;
   font-size: 0.9rem;

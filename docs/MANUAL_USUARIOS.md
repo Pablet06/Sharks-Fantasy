@@ -48,6 +48,10 @@ un usuario con 0 puntos y un presupuesto inicial de 1000€ para tu primera
 jornada. La navegación tiene 6 pestañas: 🌊 Mi Equipo, 🎲 Apuestas, ⚡
 Power-ups, 🏆 Ranking, 👥 Jugadores, 👤 Perfil.
 
+**Si has olvidado tu contraseña**: pulsa «¿Has olvidado tu contraseña?» en la
+pantalla de inicio de sesión. Te llegará un correo con un enlace; al abrirlo
+eliges una contraseña nueva (mínimo 6 caracteres) y entras directamente.
+
 **En el móvil**: puedes añadir la web a la pantalla de inicio desde el menú
 del navegador ("Añadir a pantalla de inicio") y se abrirá como una app, con
 el icono de Los Sharks Fantasy. Si ya la tenías añadida antes de octubre de
@@ -312,6 +316,7 @@ alineación anterior (ver «No repetir» en la sección 3).
 Desde tu perfil puedes:
 - Ver tu email.
 - Cambiar tu nombre visible.
+- Cambiar tu contraseña (no hace falta la actual; sigues con la sesión abierta).
 - Consultar **Mi historial**: una fila por jornada ya resuelta con el resultado del partido, tus puntos, tu total acumulado, el presupuesto que tenías y el resultado neto de tus apuestas (`-` si no apostaste). Solo ves tu propio historial.
 - Cerrar sesión.
 - Borrar tu cuenta permanentemente (pide confirmación, es irreversible).
@@ -346,3 +351,15 @@ importe apostado.
 **¿Cuánto dura la ventana de "Capitán tardío"?**
 Desde que la aplicas (antes de las 24h) hasta 1 hora antes del partido. Solo
 afecta al campo capitán, nunca al resto de tu 7.
+
+**He olvidado mi contraseña, ¿qué hago?**
+Pulsa «¿Has olvidado tu contraseña?» en la pantalla de inicio de sesión,
+escribe tu email y te llegará un correo con un enlace para elegir una
+contraseña nueva. Puede tardar un rato o acabar en la carpeta de spam. El
+enlace caduca y solo sirve una vez: si falla, pide otro. Ojo: el servidor solo
+puede mandar unos pocos correos por hora para toda la liga, así que si te dice
+que ahora no puede, prueba más tarde o avisa al admin.
+
+**¿Cómo cambio mi contraseña?**
+En Perfil > Cambiar contraseña. No hace falta la actual y sigues con la
+sesión abierta.

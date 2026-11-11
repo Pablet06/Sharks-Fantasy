@@ -59,6 +59,10 @@ un usuario con 0 puntos y un presupuesto inicial de 1000€ para tu primera
 jornada. La navegación tiene 6 pestañas: 🌊 Mi Equipo, 🎲 Apuestas, ⚡
 Power-ups, 🏆 Ranking, 👥 Jugadores, 👤 Perfil.
 
+**Si has olvidado tu contraseña**: pulsa «¿Has olvidado tu contraseña?» en la
+pantalla de inicio de sesión. Te llegará un correo con un enlace; al abrirlo
+eliges una contraseña nueva (mínimo 6 caracteres) y entras directamente.
+
 **En el móvil**: puedes añadir la web a la pantalla de inicio desde el menú
 del navegador ("Añadir a pantalla de inicio") y se abrirá como una app, con
 el icono de Los Sharks Fantasy. Si ya la tenías añadida antes de octubre de
@@ -325,6 +329,7 @@ alineación anterior (ver «No repetir» en la sección 3).
 Desde tu perfil puedes:
 - Ver tu email.
 - Cambiar tu nombre visible.
+- Cambiar tu contraseña (no hace falta la actual; sigues con la sesión abierta).
 - Cerrar sesión.
 - Borrar tu cuenta permanentemente (pide confirmación, es irreversible).
 
@@ -358,6 +363,18 @@ importe apostado.
 **¿Cuánto dura la ventana de "Capitán tardío"?**
 Desde que la aplicas (antes de las 24h) hasta 1 hora antes del partido. Solo
 afecta al campo capitán, nunca al resto de tu 7.
+
+**He olvidado mi contraseña, ¿qué hago?**
+Pulsa «¿Has olvidado tu contraseña?» en la pantalla de inicio de sesión,
+escribe tu email y te llegará un correo con un enlace para elegir una
+contraseña nueva. Puede tardar un rato o acabar en la carpeta de spam. El
+enlace caduca y solo sirve una vez: si falla, pide otro. Ojo: el servidor solo
+puede mandar unos pocos correos por hora para toda la liga, así que si te dice
+que ahora no puede, prueba más tarde o avisa al admin.
+
+**¿Cómo cambio mi contraseña?**
+En Perfil > Cambiar contraseña. No hace falta la actual y sigues con la
+sesión abierta.
 
 ---
 
@@ -542,3 +559,24 @@ directo a Supabase (SQL Editor o `execute_sql`/`apply_migration` vía MCP):
   plan Free de Supabase, sin entornos de desarrollo separados, así que
   toda migración se aplica directamente a producción, siempre con
   confirmación explícita antes de tocar nada.
+- Resetear la contraseña de un usuario cuando el correo de recuperación no le
+  funciona (ver «He olvidado mi contraseña» en la sección 10). Hay dos vías:
+  1. **Mandarle el correo desde el panel de Supabase**: Authentication >
+     Users > el usuario > "Send password recovery". Gasta el mismo cupo de
+     correos del proyecto (2 por hora para toda la liga), así que si el
+     problema es el cupo, esta vía no sirve.
+  2. **Ponerle una contraseña temporal** desde el SQL Editor de Supabase:
+
+     ```sql
+     UPDATE auth.users
+     SET encrypted_password = extensions.crypt('<contraseña-temporal>', extensions.gen_salt('bf', 10))
+     WHERE email = '<email-del-usuario>';
+     ```
+
+     Sustituye los dos marcadores (`<contraseña-temporal>` y
+     `<email-del-usuario>`) y **no lo ejecutes nunca sin el `WHERE`**: cambiaría
+     la contraseña de todos los usuarios. Comprueba que informa de
+     **exactamente 1 fila** actualizada (0 = el email no existe o está mal
+     escrito; más de 1 = no debería pasar, revisa antes de seguir). Pásale la
+     contraseña temporal al usuario **en privado** (no por el grupo de la liga)
+     y dile que la cambie enseguida en Perfil > Cambiar contraseña.

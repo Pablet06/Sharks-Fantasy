@@ -32,6 +32,13 @@ Sharks (decisión: no se amplía a otros equipos de la liga).
   cualquiera puede fichar a cualquiera, la escasez viene del presupuesto.
 - **Bucle semanal**: draft desde cero cada jornada (no plantilla persistente).
   Sin banquillo.
+
+> Nota (añadida el 2026-11-11): tras esta spec se añadió una regla de repetición
+> entre jornadas consecutivas del mismo usuario (decidida el 2026-11-01): el
+> capitán no puede repetirse respecto a su alineación anterior y como máximo 4 de
+> los 7 jugadores pueden repetirse (el admin queda exento; sin alineación previa
+> no hay restricción). No cambia lo anterior entre usuarios: sigue sin haber
+> propiedad exclusiva. Ver `docs/tasks/next-jornada-improvements.md`.
 - **Apuestas**: con riesgo real sobre el presupuesto de la jornada siguiente,
   cuotas automáticas (sin admin).
 - **Power-ups**: muchos y pequeños, recargables (no "chips" escasos de 1-2

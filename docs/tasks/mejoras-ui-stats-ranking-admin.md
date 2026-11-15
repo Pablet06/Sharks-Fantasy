@@ -60,8 +60,8 @@ Las cinco mejoras funcionando y verificadas en el navegador (móvil de 375 px y 
 - [ ] PR a `develop` y PR de release `develop` -> `main` (título `release: ...`); **el usuario aprueba cada merge**
 - [x] Manuales (`MANUAL_USUARIOS.md` / `MANUAL_DEL_JUEGO.md`) actualizados
 
-## Pendiente fuera de alcance
-- `Ranking.tsx` (modal "ver equipo") busca la última alineación resuelta con `.order('jornada', desc)`, es decir por `numero`: enseña la J2 (fed. 18) en vez de la J3 (fed. 10). Mismo tipo de fallo que el 1b; no se ha tocado.
+## Arreglo añadido después (mismo PR)
+- **Ranking, modal "ver equipo"**: elegía la última alineación resuelta con `.order('jornada', desc)` (por `numero` de federación) y enseñaba la J2 (fed. 18) en vez de la J3 (fed. 10). Ahora se traen las alineaciones puntuadas del usuario y `ultimaAlineacionPuntuada` (`src/lib/jornada.ts`, con tests) elige la de mayor `orden`. Verificado con sesión real: Vivi el Gabacho J3 = 41 pts (antes saldría la J2 con 47), El vasko J3 = 46, igual que SQL. Revisado: no queda ningún otro `order('jornada')` ni sort por `numero` en `src/` (los `a.numero - b.numero` de `jornada.ts` son desempate tras la fecha).
 
 ## Decisiones del usuario (2026-11-15, todas las dudas cerradas)
 1. **Bug 1**: calcular las estadísticas generales en el cliente desde `historial` (`sumarStats`), sin tocar la BD. La columna `jugadores.stats` queda sin lector.

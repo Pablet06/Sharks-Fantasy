@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcMatchPoints, calcTotalPoints, EMPTY_STATS } from './points'
+import { calcMatchPoints, calcTotalPoints, sumarStats, EMPTY_STATS } from './points'
 
 const stats = (o: Partial<typeof EMPTY_STATS>) => ({ ...EMPTY_STATS, ...o })
 
@@ -38,6 +38,32 @@ describe('calcMatchPoints', () => {
   it('goalkeeper still loses points for their own cards/exclusions', () => {
     // 1 + 2 + max(0,10-5) + (-3) = 5
     expect(calcMatchPoints('Portero', stats({ partidos: 1, goles_contra: 5, tarjetas: 1 }))).toBe(5)
+  })
+})
+
+describe('sumarStats', () => {
+  // Caso real (Pablo Ferrer): 1 + 2 + 1 goles en tres jornadas. La columna
+  // jugadores.stats se quedó congelada en la primera (1 gol), pero la ficha debe
+  // enseñar la suma del historial.
+  it('suma las stats de todas las jornadas del historial', () => {
+    const historial = [
+      { stats: stats({ partidos: 1, goles: 1 }) },
+      { stats: stats({ partidos: 1, goles: 2 }) },
+      { stats: stats({ partidos: 1, goles: 1, goles_penalti: 1, expulsiones: 1 }) },
+    ]
+    expect(sumarStats(historial)).toEqual(stats({ partidos: 3, goles: 4, goles_penalti: 1, expulsiones: 1 }))
+  })
+
+  it('no cuenta como partido una fila densa con partidos = 0', () => {
+    expect(sumarStats([{ stats: stats({ partidos: 1, goles: 2 }) }, { stats: stats({}) }]).partidos).toBe(1)
+  })
+
+  it('goles_contra se acumula siempre a 0 (es una cifra por partido, como en recalc_puntos)', () => {
+    expect(sumarStats([{ stats: stats({ partidos: 1, goles_contra: 7 }) }]).goles_contra).toBe(0)
+  })
+
+  it('historial vacío -> todo a 0', () => {
+    expect(sumarStats([])).toEqual(EMPTY_STATS)
   })
 })
 

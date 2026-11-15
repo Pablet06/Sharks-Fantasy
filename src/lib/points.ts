@@ -26,6 +26,22 @@ export function calcMatchPoints(pos: Position, s: PlayerStats): number {
   return pts
 }
 
+/**
+ * Estadísticas acumuladas de un jugador: suma de `historial.stats`. Es la fuente de verdad
+ * de las "Estadísticas generales"; la columna `jugadores.stats` solo la refresca la RPC
+ * admin `recalc_puntos()` y se queda atrasada tras cada sync. `goles_contra` es una cifra
+ * por partido y no se acumula (igual que en `recalc_puntos`).
+ */
+export function sumarStats(historial: { stats: PlayerStats }[]): PlayerStats {
+  const total = { ...EMPTY_STATS }
+  for (const { stats } of historial) {
+    for (const k of Object.keys(total) as (keyof PlayerStats)[]) {
+      if (k !== 'goles_contra') total[k] += stats[k] ?? 0
+    }
+  }
+  return total
+}
+
 export function calcTotalPoints(historial: { puntos: number }[]): number {
   return historial.reduce((sum, h) => sum + h.puntos, 0)
 }

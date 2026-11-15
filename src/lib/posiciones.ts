@@ -18,9 +18,9 @@ export interface PosicionesJornada {
   numero: number
   /** Etiqueta visible ("Jornada 1"). */
   orden: number
-  /** Usuarios con alineación puntuada: el total de «N.º de M» en la jornada. */
+  /** Usuarios con alineación puntuada: el «Jugaron N de M» de la jornada. */
   jugaron: number
-  /** Todos los usuarios: el total de «N.º de M» en el acumulado. */
+  /** Todos los usuarios (los puestos del acumulado se reparten entre todos). */
   total: number
   /** Una fila por usuario, sin ordenar. */
   filas: PosicionUsuario[]
@@ -68,9 +68,4 @@ export function posicionesPorJornada(
         }),
       }
     })
-}
-
-/** «3.º de 17». */
-export function formatoPuesto(pos: number, total: number): string {
-  return `${pos}.º de ${total}`
 }

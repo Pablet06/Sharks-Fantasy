@@ -37,7 +37,7 @@ Poder ver, para cada jornada finalizada, la posición que obtuvo cada usuario (p
 Respondidas por el usuario el 2026-11-15:
 - **Dónde:** las tres: pantalla Clasificación con selector de jornada, historial del perfil y modal del equipo de otro usuario.
 - **Base:** ambas, con conmutador «Jornada / Acumulado» (jornada = por `puntos_jornada` de esa jornada; acumulado = suma hasta esa jornada, por `orden`).
-- **Empates y sin alineación:** los empatados comparten puesto (1, 2, 2, 4, igual que la general). Quien no envió alineación en una jornada sale al final como «No jugó», sin puesto, y el total es sobre quienes jugaron (p. ej. «3.º de 17»).
+- **Empates y sin alineación:** los empatados comparten puesto (1, 2, 2, 4, igual que la general). Quien no envió alineación en una jornada sale al final como «No jugó», sin puesto, y el total es sobre quienes jugaron («Jugaron 17 de 24 usuarios», en la Clasificación). Ajuste posterior del usuario: en el modal y en el historial el puesto se muestra solo como «#N» (sin «de M»).
 - **Visibilidad:** todos ven todas las posiciones. La RLS de `alineaciones` ya deja leer los `puntos_jornada` de cualquier usuario, así que no hay cambios de base de datos.
 
 Confirmadas por el usuario después (2026-11-15):

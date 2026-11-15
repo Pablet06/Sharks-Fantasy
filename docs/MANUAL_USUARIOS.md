@@ -327,7 +327,7 @@ Los empates comparten puesto, igual que en la general (1.º, 2.º, 2.º, 4.º).
 
 Al tocar un usuario, debajo de su última alineación aparece la tabla
 **Posición por jornada**: para cada jornada, sus puntos, su puesto en esa
-jornada («3.º de 17», o *No jugó*) y su puesto acumulado («6.º de 24»).
+jornada («#3», o *No jugó*) y su puesto acumulado («#6»).
 
 ## 8. Jugadores (la plantilla)
 

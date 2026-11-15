@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { posicionesPorJornada, formatoPuesto } from './posiciones'
+import { posicionesPorJornada } from './posiciones'
 import { posicionRanking } from './ranking'
 
 type J = Parameters<typeof posicionesPorJornada>[2][number]
@@ -109,11 +109,5 @@ describe('posicionesPorJornada', () => {
     const r = posicionesPorJornada(usuarios, alineaciones, [j(10, 3), j(15, 1), j(18, 2)])
     const ultima = r[r.length - 1]
     for (const u of usuarios) expect(fila(ultima, u.id).posAcumulado).toBe(posicionRanking(usuarios, u.puntos))
-  })
-})
-
-describe('formatoPuesto', () => {
-  it('«3.º de 17»', () => {
-    expect(formatoPuesto(3, 17)).toBe('3.º de 17')
   })
 })

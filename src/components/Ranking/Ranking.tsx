@@ -6,7 +6,6 @@ import { useJornadas } from '../../hooks/useJornadas'
 import { usePosicionesPorJornada } from '../../hooks/usePosicionesPorJornada'
 import { etiquetaJornada, ultimaAlineacionPuntuada } from '../../lib/jornada'
 import { posicionRanking } from '../../lib/ranking'
-import { formatoPuesto } from '../../lib/posiciones'
 
 interface Props {
   jugadores: Jugador[]
@@ -159,8 +158,8 @@ export function Ranking({ jugadores, currentUserId }: Props) {
                         <tr key={p.numero}>
                           <td>{p.orden}</td>
                           <td>{f?.puntos ?? '–'}</td>
-                          <td>{f && f.posJornada !== null ? formatoPuesto(f.posJornada, p.jugaron) : 'No jugó'}</td>
-                          <td>{f ? formatoPuesto(f.posAcumulado, p.total) : '–'}</td>
+                          <td>{f && f.posJornada !== null ? `#${f.posJornada}` : 'No jugó'}</td>
+                          <td>{f ? `#${f.posAcumulado}` : '–'}</td>
                         </tr>
                       )
                     })}

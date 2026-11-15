@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jornada, Alineacion, Apuesta } from '../../types'
 import { construirHistorial, type FilaHistorial } from '../../lib/historial'
-import { formatoPuesto } from '../../lib/posiciones'
 import { usePosicionesPorJornada } from '../../hooks/usePosicionesPorJornada'
 
 const RESULTADO = { gana: 'Victoria', pierde: 'Derrota', empata: 'Empate' } as const
@@ -70,8 +69,8 @@ export function Historial({ usuarioId }: { usuarioId: string }) {
                   </td>
                   <td data-label="Puntos">{f.puntos}</td>
                   <td data-label="Total">{f.acumulado}</td>
-                  <td data-label="Puesto">{!p || !pu ? '-' : pu.posJornada === null ? 'No jugó' : formatoPuesto(pu.posJornada, p.jugaron)}</td>
-                  <td data-label="Pos. total">{!p || !pu ? '-' : formatoPuesto(pu.posAcumulado, p.total)}</td>
+                  <td data-label="Puesto">{!p || !pu ? '-' : pu.posJornada === null ? 'No jugó' : `#${pu.posJornada}`}</td>
+                  <td data-label="Pos. total">{!p || !pu ? '-' : `#${pu.posAcumulado}`}</td>
                   <td data-label="Presupuesto">{Math.round(f.presupuesto)}€</td>
                   <td data-label="Apuestas" className={f.neto === null ? '' : claseSigno(f.neto)}>
                     {f.neto === null ? '-' : `${f.neto > 0 ? '+' : ''}${f.neto}€`}

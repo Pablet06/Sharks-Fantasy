@@ -132,13 +132,69 @@ No se marcan como hechas.
 
 ### 2026-11-15
 
-- El scraper de GitHub falló con 429 tras jugarse Castelló. Diagnóstico: 429 en `/stats` más
-  renumeración del calendario por la federación el 13-nov. Copia completa, migración atómica a
-  la numeración nueva y sync local de J10 verificados contra la copia (J15/J18 intactas).
-  Power-up duplicado resuelto (se quitó el segundo reparto). Runner autoalojado instalado en
-  `pablo-server` y probado (#50, #51), scraper con menos peticiones (#52, #53) y crons de fin
-  de semana a las 21:00 CET. El usuario da la tarea por completada; lo que falta (primera
-  escritura real desde el runner, avisos y el cambio de marzo) queda en "Pendiente tras el cierre".
+**What was done:**
+- Diagnóstico: los runs de GitHub fallaban con HTTP 429 de Cloudflare en `/match/<id>/stats`
+  desde el 13-nov, y ese día la federación recreó el calendario y renumeró las jornadas (detalle
+  y correspondencia antiguo → nuevo en Context). Un sync local sin explicar a las 16:20 UTC había
+  escrito una "J15" vacía (Morvedre con acta sin jugadores) y disparado `resolver_jornada`.
+- Base de datos (Supabase `sihvxbhqcyynuulhqmii`): copia completa de 9 tablas en el esquema
+  `backup_20261115`, verificada fila a fila; migración atómica a la numeración nueva (FKs
+  quitadas y recreadas; 10→18, 7→15 y 2→10 en `jornadas`, `historial`, `alineaciones`, `apuestas`,
+  `presupuestos` y `powerups_aplicados`, con comprobaciones antes y después; la J15 vacía se retiró
+  y queda en la copia). `npm run sync` en local escribió J10 (Castelló 7-14): 17 alineaciones
+  puntuadas, 18 apuestas resueltas y +408 puntos repartidos; J15 y J18 intactas frente a la copia.
+- Power-ups: el reparto se disparó dos veces (J15 vacía a las 16:20 y J10 real). Se quitó
+  exactamente el segundo: 25 power-ups y tabla idéntica a la copia previa al sync.
+- Infra: runner de GitHub Actions autoalojado en `pablo-server` (Ubuntu 26.04, entrando por
+  Tailscale SSH): usuario `ghrunner` sin `sudo` ni `docker` y con `linger`, runner 2.338.2 con
+  checksum verificado, servicio de usuario `github-runner`, etiqueta `sharks-scraper` y solo
+  conexiones de salida. Política de aprobación a forks cambiada de `first_time_contributors` a
+  `all_external_contributors`, porque el repo es público.
+- Código y PRs (en pares: PR a `develop` y release a `main`): #50/#51 `scraper.yml` con
+  `runs-on: [self-hosted, sharks-scraper]`; #52/#53 `syncJornada` pide solo el `/stats` del partido
+  de los Sharks, identificado por la API (TDD, 3 tests nuevos y 3 mutaciones detectadas; scraper
+  71 tests, raíz 99); #54/#55 crons de fin de semana a `0 20 * * 6` y `0 20 * * 0` (21:00 CET)
+  y tareas al día; #56/#57 cierre de `scraper-servidor-casa`, `forgot-password` y
+  `next-jornada-improvements`; #66 tarea futura `scraper-timer-servidor` (status `todo`, fusionada
+  en `develop` y aún no en `main`).
+- Desde esta sesión se lanzaron otras dos, con sus propias tareas y diarios:
+  `mejoras-ui-stats-ranking-admin` (#58–#61) y `posicion-por-jornada` (#62–#65), ya en `main`.
+
+**Decisions made:**
+- Opción A (runner autoalojado con medidas de seguridad) y no la B: se conservan el historial de
+  runs, los emails de fallo y los secretos en GitHub. Con un repo público el runner solo se
+  protege si se limita quién puede lanzarlo: forks bajo aprobación, usuario sin privilegios, solo
+  salida, y `scraper.yml` nunca con `push` ni `pull_request`.
+- El esquema `backup_20261115` se conserva ("por si acaso"); solo se borra cuando lo diga el
+  usuario.
+- Un solo reparto de power-ups: se quita el segundo, que vino de un `resolver_jornada` disparado
+  por una jornada vacía y no de un partido real.
+- Las tres tareas se dan por completadas aunque quede algo sin verificar: lo pendiente no se
+  marca como hecho y queda en secciones de pendientes (ver "Pendiente tras el cierre").
+- El timer en el servidor se aplaza (`scraper-timer-servidor`). Recomendación dada: opción C
+  (timer que solo lanza el workflow, con un token limitado). De momento siguen los crons de GitHub
+  ejecutados en el runner de casa.
+
+**Open questions:**
+- Primera escritura real desde el runner con el próximo partido de los Sharks; si ese run sale en
+  rojo, reabrir la tarea.
+- Aviso si la federación vuelve a renumerar el calendario, y comprobar que GitHub envía el email
+  de los runs fallidos.
+- Marzo de 2027: pasar los crons de fin de semana a `0 19` (o resolverlo con el timer).
+- El run programado de las 20:00 UTC del 15-nov no se había visto a las 21:27 UTC: GitHub retrasa
+  los crons de 3,5 a unas 8 h (el diario de las 08:00 UTC sale hacia las 15:00-16:00 UTC), así que
+  la hora de las 21:00 es orientativa.
+- `resolver_jornada` calcula la jornada anterior de la racha con `numero <` aunque la numeración
+  no es cronológica; debería usar `orden` (ver Notes).
+- La reconciliación de presupuesto (PR #27) sigue sin revisarse con datos reales.
+- La carpeta vacía `.worktrees/posicion-por-jornada` hay que borrarla a mano.
+- `todo` es un estado nuevo: hasta ahora el proyecto solo usaba `in-progress` y `done`.
+
+**Next steps:**
+- Mañana por la tarde: `gh run list --workflow scraper.yml --event schedule --limit 3` y
+  comprobar que el run diario lo ejecuta `pablo-server`.
+- Esperar al próximo partido para la primera escritura real desde el runner.
+- Retomar `scraper-timer-servidor` cuando el usuario quiera.
 
 ### 2026-10-30
 

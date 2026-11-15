@@ -408,6 +408,12 @@ button:focus-visible {
   padding: 0;
 }
 
+/* Notas de estado de Mi equipo ("Última jornada…", "No enviaste alineación…"): sin el padding global de 40px
+   para que el cuadro de fichajes quede más arriba */
+.placeholder.draft-nota {
+  padding: 0;
+}
+
 /* ==========================================================================
    POOL VIEW (player formation)
    ========================================================================== */
@@ -460,6 +466,29 @@ button:focus-visible {
 
 .team-dinero strong {
   color: var(--success);
+}
+
+/* Mi equipo: Puntos y Dinero lado a lado, a la misma altura */
+.team-totales {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.team-totales > .team-total-pts {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 14px 8px;
+  justify-content: center;
+}
+
+/* Posición en la clasificación, dentro del rectángulo de Puntos */
+.team-total-pts .team-posicion {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  color: var(--primary);
 }
 
 .pool {
@@ -830,6 +859,47 @@ button:focus-visible {
   font-family: 'Teko', sans-serif;
   font-size: 1.8rem;
   color: var(--accent);
+}
+
+/* Gráfica de evolución de la ficha (barras de puntos / línea de precio) */
+.player-chart {
+  margin-bottom: 18px;
+}
+
+.player-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.player-chart-head h4 {
+  font-size: 1rem;
+  color: var(--primary);
+  letter-spacing: 1px;
+}
+
+.player-chart .filter-chips {
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.player-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--text);
+}
+
+.player-chart svg text {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.player-chart svg text.player-chart-valor {
+  fill: var(--text);
+  font-weight: 600;
 }
 
 .historial-list {
@@ -1847,6 +1917,9 @@ button:focus-visible {
 .admin-alineacion { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; min-width: 29rem; }
 .admin-table .admin-capitan { border-color: var(--primary); }
 .admin-danger { color: var(--error); border-color: var(--error) !important; }
+/* Admin > Usuarios: "Usuarios con plantilla: X/Y" con barra */
+.admin-plantillas { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-bottom: 1rem; }
+.admin-plantillas progress { flex: 1 1 8rem; max-width: 16rem; height: .6rem; accent-color: var(--primary); }
 .admin-msg { margin: 0; padding: 0; background: none; border: 0; color: inherit; opacity: .8; }
 .admin-msg.admin-error { color: var(--error); opacity: 1; }
 .admin-scroll { overflow-x: auto; }

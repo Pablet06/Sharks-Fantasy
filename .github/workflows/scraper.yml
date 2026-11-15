@@ -2,11 +2,14 @@ name: Weekly Stats Sync
 
 on:
   schedule:
-    - cron: '0 22 * * 6'  # Every Saturday at 22:00 UTC (00:00 CEST)
+    # Weekend runs are meant for 21:00 Spanish time, but GitHub crons are UTC only:
+    # 20:00 UTC is 21:00 in winter (CET) and 22:00 in summer (CEST). Move both to
+    # 19:00 UTC when the clocks go forward (end of March) and back in October.
+    - cron: '0 20 * * 6'  # Every Saturday at 20:00 UTC (21:00 CET)
     # Reintento: si el sábado el acta aún no estaba publicada o Cloudflare
     # bloqueó (429), el incremental solo procesa jornadas sin historial, así
     # que repetirlo es seguro.
-    - cron: '0 22 * * 0'  # Every Sunday at 22:00 UTC
+    - cron: '0 20 * * 0'  # Every Sunday at 20:00 UTC (21:00 CET)
     # Diario: la federación publica la fecha de un partido cuando quiere, y la
     # jornada (draft, apuestas, presupuesto) no existe hasta que el scraper la ve.
     # El incremental es idempotente (solo escribe lo nuevo), así que repetirlo es seguro.

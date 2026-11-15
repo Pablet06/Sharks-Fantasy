@@ -1150,6 +1150,15 @@ button:focus-visible {
   box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
 }
 
+/* Botón de estadísticas bajo el buscador de Jugadores: elige por cuál se ordena la lista */
+.stats-filter {
+  margin-bottom: 14px;
+}
+
+.stats-filter .filter-chips {
+  margin: 10px 0 0;
+}
+
 .players-list {
   list-style: none;
   display: flex;

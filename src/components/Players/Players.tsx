@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Jugador } from '../../types'
-import { calcTotalPoints } from '../../lib/points'
+import { ESTADISTICAS, ordenarPorEstadistica, valorEstadistica, type ClaveEstadistica } from '../../lib/points'
 import { PlayerCard } from '../Dashboard/PlayerCard'
 import { DEFAULT_PHOTO, signedPhotoUrl } from '../../lib/photos'
 
@@ -17,6 +17,9 @@ const ENTRENADOR = { name: 'José Santapau', descripcion: 'Leyenda', fotoPath: '
 export function Players({ jugadores }: Props) {
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('Todos')
+  // Orden de la lista: por puntos totales salvo que se elija otra estadística con el botón de debajo del buscador.
+  const [statOrden, setStatOrden] = useState<ClaveEstadistica>('puntos')
+  const [statsAbierto, setStatsAbierto] = useState(false)
   const [selected, setSelected] = useState<Jugador | 'entrenador' | null>(null)
   const [isDesktop, setIsDesktop] = useState(DESKTOP_MQ.matches)
   const [fotoEntrenador, setFotoEntrenador] = useState(DEFAULT_PHOTO)
@@ -36,14 +39,17 @@ export function Players({ jugadores }: Props) {
     return () => DESKTOP_MQ.removeEventListener('change', handler)
   }, [])
 
-  const filtered = jugadores
-    .filter(j => {
+  const stat = ESTADISTICAS.find(e => e.clave === statOrden) ?? ESTADISTICAS[0]
+
+  const filtered = ordenarPorEstadistica(
+    jugadores.filter(j => {
       const q = search.toLowerCase()
       const matchesSearch = j.name.toLowerCase().includes(q) || (j.nick || '').toLowerCase().includes(q)
       const matchesPos = posFilter === 'Todos' || j.pos.toLowerCase() === posFilter.toLowerCase()
       return matchesSearch && matchesPos
-    })
-    .sort((a, b) => calcTotalPoints(b.historial || []) - calcTotalPoints(a.historial || []))
+    }),
+    statOrden,
+  )
 
   const showEntrenador = posFilter === 'Todos' && ENTRENADOR.name.toLowerCase().includes(search.toLowerCase())
 
@@ -91,6 +97,32 @@ export function Players({ jugadores }: Props) {
         className="search-input"
       />
 
+      <div className="stats-filter">
+        <button
+          type="button"
+          className={`filter-chip ${statOrden !== 'puntos' ? 'active-all' : ''}`}
+          aria-expanded={statsAbierto}
+          onClick={() => setStatsAbierto(a => !a)}
+        >
+          {statOrden === 'puntos' ? 'Estadísticas' : `Ordenado por: ${stat.etiqueta}`} {statsAbierto ? '▴' : '▾'}
+        </button>
+        {statsAbierto && (
+          <div className="filter-chips">
+            {ESTADISTICAS.map(e => (
+              <button
+                key={e.clave}
+                type="button"
+                aria-pressed={statOrden === e.clave}
+                className={`filter-chip ${statOrden === e.clave ? 'active-all' : ''}`}
+                onClick={() => setStatOrden(e.clave)}
+              >
+                {e.etiqueta}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <ul className="players-list">
         {showEntrenador && (
           <li
@@ -120,7 +152,7 @@ export function Players({ jugadores }: Props) {
               <strong>{j.name}</strong>
               <span className={`pos-badge pos-${j.pos.toLowerCase()}`}>{j.pos}</span>
             </div>
-            <span className="player-row-pts">{calcTotalPoints(j.historial || [])} pts</span>
+            <span className="player-row-pts">{valorEstadistica(j.historial || [], statOrden)} {stat.unidad}</span>
           </li>
         ))}
       </ul>

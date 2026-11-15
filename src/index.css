@@ -1052,6 +1052,15 @@ button:focus-visible {
   color: var(--primary);
 }
 
+/* Clasificación por jornada: selector, «No jugó» y tabla de posiciones del modal */
+.ranking-filtros { align-items: center; }
+.ranking-filtros select { font-size: 16px; } /* 16px: iOS no hace zoom al enfocar */
+.ranking-item.no-jugo { opacity: 0.55; }
+.posiciones-titulo { margin: 18px 0 8px; font-size: 0.95rem; color: var(--text-muted); text-align: center; }
+.posiciones-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.posiciones-table th, .posiciones-table td { padding: 5px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
+.posiciones-table th { color: var(--text-muted); font-weight: 600; }
+
 .team-modal {
   width: 100%;
   max-width: 460px;
@@ -1376,6 +1385,7 @@ button:focus-visible {
 }
 
 .apuesta-row select,
+.ranking-filtros select,
 .apuesta-row input[type="number"] {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);

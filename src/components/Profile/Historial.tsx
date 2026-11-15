@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jornada, Alineacion, Apuesta } from '../../types'
 import { construirHistorial, type FilaHistorial } from '../../lib/historial'
+import { usePosicionesPorJornada } from '../../hooks/usePosicionesPorJornada'
 
 const RESULTADO = { gana: 'Victoria', pierde: 'Derrota', empata: 'Empate' } as const
 
@@ -9,6 +10,7 @@ const claseSigno = (n: number) => (n > 0 ? 'pts-positive' : n < 0 ? 'pts-negativ
 
 export function Historial({ usuarioId }: { usuarioId: string }) {
   const [filas, setFilas] = useState<FilaHistorial[] | null>(null)
+  const posiciones = usePosicionesPorJornada() // null mientras carga: las celdas de puesto salen con «-»
 
   useEffect(() => {
     let cancelled = false
@@ -48,26 +50,34 @@ export function Historial({ usuarioId }: { usuarioId: string }) {
               <th>Resultado</th>
               <th>Pts</th>
               <th>Total</th>
+              <th>Puesto</th>
+              <th>Pos. total</th>
               <th>Presup.</th>
               <th>Apuestas</th>
             </tr>
           </thead>
           <tbody>
-            {filas.map(f => (
-              <tr key={f.numero}>
-                <td data-label="Jornada">{f.orden}</td>
-                <td data-label="Resultado">
-                  {f.resultado ? RESULTADO[f.resultado] : '-'}
-                  {f.golesFavor !== null && f.golesContra !== null && ` ${f.golesFavor}-${f.golesContra}`}
-                </td>
-                <td data-label="Puntos">{f.puntos}</td>
-                <td data-label="Total">{f.acumulado}</td>
-                <td data-label="Presupuesto">{Math.round(f.presupuesto)}€</td>
-                <td data-label="Apuestas" className={f.neto === null ? '' : claseSigno(f.neto)}>
-                  {f.neto === null ? '-' : `${f.neto > 0 ? '+' : ''}${f.neto}€`}
-                </td>
-              </tr>
-            ))}
+            {filas.map(f => {
+              const p = posiciones?.find(x => x.numero === f.numero)
+              const pu = p?.filas.find(x => x.usuarioId === usuarioId)
+              return (
+                <tr key={f.numero}>
+                  <td data-label="Jornada">{f.orden}</td>
+                  <td data-label="Resultado">
+                    {f.resultado ? RESULTADO[f.resultado] : '-'}
+                    {f.golesFavor !== null && f.golesContra !== null && ` ${f.golesFavor}-${f.golesContra}`}
+                  </td>
+                  <td data-label="Puntos">{f.puntos}</td>
+                  <td data-label="Total">{f.acumulado}</td>
+                  <td data-label="Puesto">{!p || !pu ? '-' : pu.posJornada === null ? 'No jugó' : `#${pu.posJornada}`}</td>
+                  <td data-label="Pos. total">{!p || !pu ? '-' : `#${pu.posAcumulado}`}</td>
+                  <td data-label="Presupuesto">{Math.round(f.presupuesto)}€</td>
+                  <td data-label="Apuestas" className={f.neto === null ? '' : claseSigno(f.neto)}>
+                    {f.neto === null ? '-' : `${f.neto > 0 ? '+' : ''}${f.neto}€`}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       )}

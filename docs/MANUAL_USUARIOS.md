@@ -309,6 +309,26 @@ Los usuarios con los **mismos puntos comparten posición** (y medalla): si dos
 empatan en el 2.º puesto, ambos son el #2 y el siguiente es el #4. Esa misma
 posición es la que ves en Mi Equipo.
 
+### Posición en cada jornada
+
+Encima de la lista hay un selector. En **General** ves la clasificación de
+siempre. Si eliges una **Jornada N** (la más reciente sale primero) ves en qué
+puesto acabó cada usuario en esa jornada, con dos vistas que cambias con los
+botones de al lado:
+
+- **Jornada**: ordena por los puntos de esa jornada sola. Quien no envió
+  alineación sale al final como *No jugó*, sin puesto, y no cuenta en el total
+  (arriba se indica, por ejemplo, «Jugaron 17 de 24 usuarios»).
+- **Acumulado**: ordena por los puntos sumados hasta esa jornada, es decir,
+  cómo estaba la clasificación general al terminarla. La de la última jornada
+  es idéntica a la general.
+
+Los empates comparten puesto, igual que en la general (1.º, 2.º, 2.º, 4.º).
+
+Al tocar un usuario, debajo de su última alineación aparece la tabla
+**Posición por jornada**: para cada jornada, sus puntos, su puesto en esa
+jornada («#3», o *No jugó*) y su puesto acumulado («#6»).
+
 ## 8. Jugadores (la plantilla)
 
 Lista de los 19 jugadores de Los Sharks disponibles para draftear, con su
@@ -333,7 +353,7 @@ Desde tu perfil puedes:
 - Ver tu email.
 - Cambiar tu nombre visible.
 - Cambiar tu contraseña (no hace falta la actual; sigues con la sesión abierta).
-- Consultar **Mi historial**: una fila por jornada ya resuelta con el resultado del partido, tus puntos, tu total acumulado, el presupuesto que tenías y el resultado neto de tus apuestas (`-` si no apostaste). Solo ves tu propio historial.
+- Consultar **Mi historial**: una fila por jornada ya resuelta con el resultado del partido, tus puntos, tu total acumulado, tu puesto en la jornada (entre quienes jugaron, o *No jugó*) y tu puesto acumulado, el presupuesto que tenías y el resultado neto de tus apuestas (`-` si no apostaste). Solo ves tu propio historial.
 - Cerrar sesión.
 - Borrar tu cuenta permanentemente (pide confirmación, es irreversible).
 

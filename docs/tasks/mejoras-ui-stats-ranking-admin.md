@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-15
 updated: 2026-11-15
 ---
@@ -54,10 +54,10 @@ Las cinco mejoras funcionando y verificadas en el navegador (móvil de 375 px y 
 - [x] **3. Gráfica de la ficha**: una gráfica Puntos | Precio (SVG a mano), ordenada por `orden`; precio derivado con `calcPrecio` (verificado a mano contra `historial_anterior` para Pablo Ferrer: 130 €, 165 €, 165 €); jornada sin jugar sin barra; con 1 jornada se dibuja una sola barra, con 12 se quitan las etiquetas
 - [x] **4. Admin Usuarios**: "Usuarios con plantilla: X/24" con `<progress>` para la jornada del selector; `contarConPlantilla` testeada; verificado 19/24, 18/24 y 17/24 (J1/J2/J3), igual que SQL
 - [x] **5. Posición en el ranking**: `posicionRanking` testeada (empates 1, 2, 2, 4), usada por Clasificación (medallas por posición) y Mi equipo (`#6` para dos usuarios con 103 pts, verificado contra `rank()` en SQL)
-- [x] `npm run test` (119), `npm run lint` y `npm run build` en verde
+- [x] `npm run test` (133 al cerrar), `npm run lint` y `npm run build` en verde
 - [x] Verificado en el navegador local en 375 px y escritorio con sesión real, solo lectura (únicamente se cambió el selector de jornada del admin, que es estado local)
 - [x] **6. (añadida después, mismo PR) Jugadores: ordenar por estadística**: botón "Estadísticas" bajo el buscador con chips (Puntos, Partidos, Goles, Goles penalti, P. fallados, Faltas penalti, Tarjetas, Expulsiones, Expuls. graves); por defecto Puntos (como antes); el número de la derecha pasa a la estadística elegida; desempate por puntos. `ESTADISTICAS`, `valorEstadistica` y `ordenarPorEstadistica` en `src/lib/points.ts` con tests. Verificado con sesión real en escritorio y 375 px (Goles: Carlos Ferrer, Luca Di Lorenzo y Pablo Ferrer con 4; Expulsiones: Guillermo Izquierdo con 5, igual que SQL)
-- [ ] PR a `develop` y PR de release `develop` -> `main` (título `release: ...`); **el usuario aprueba cada merge**
+- [x] PR a `develop` (#58, `feature/mejoras-ui-stats-ranking-admin`, merge `0463b55`) y PR de release `develop` -> `main` (#59, merge `186dc61`); el usuario aprobó cada merge y el workflow de deploy terminó bien
 - [x] Manuales (`MANUAL_USUARIOS.md` / `MANUAL_DEL_JUEGO.md`) actualizados
 
 ## Arreglo añadido después (mismo PR)
@@ -72,8 +72,39 @@ Las cinco mejoras funcionando y verificadas en el navegador (móvil de 375 px y 
 6. **Ranking**: empates comparten posición (1, 2, 2, 4) y Clasificación usa la misma función (medallas por posición).
 
 ## Decisions
-- **Rama:** `feature/mejoras-ui-stats-ranking-admin` desde `develop` (la crea `git-handler`). Si el trabajo se reparte en varias PRs, una rama por mejora con el prefijo `feature/`.
+- **Rama:** `feature/mejoras-ui-stats-ranking-admin` desde `develop`, una sola PR (#58) para todo el trabajo. La rama sigue existiendo en GitHub (no se ha borrado tras el merge).
 - **Restricciones de entrega (del usuario, 2026-11-15):** TDD donde haya lógica; el `.env` local apunta a producción, así que solo SQL de solo lectura por el MCP de Supabase y ninguna escritura en datos de producción; no tocar el esquema `backup_20261115` ni los tres ficheros sin trackear (`.claude/launch.json`, `.claude/plans/usuarios-admin-alineaciones.md`, `docs/learning/next-jornada-repetidos-y-formacion.md`); no lanzar el `mentor` salvo que el usuario lo pida.
 - Sin dependencias nuevas: si hace falta gráfica, SVG a mano.
 
 ## Sessions
+
+### 2026-11-15
+
+**What was done:**
+- Las cinco mejoras pedidas, verificadas en el navegador (375 px y escritorio) con la sesión real del usuario (solo lectura sobre producción; únicamente se tocó el selector de jornada del admin, que es estado local) y contrastadas con SQL:
+  1. **Bug de las estadísticas generales de la ficha**: la causa era que `jugadores.stats` solo se refresca con la RPC de admin `recalc_puntos()` y nada la lanza tras el scraper, así que se quedó congelada en la jornada 1. No la causó la renumeración del 15-nov. Arreglado en el cliente con `sumarStats(historial)`, sin tocar la BD; la columna `jugadores.stats` ya no tiene lector.
+  2. **Mi equipo**: Puntos | Dinero lado a lado, posición `#N` dentro de Puntos, notas sin el padding de 40 px; en "Esperando fecha" solo Puntos (con posición) a todo el ancho.
+  3. **Gráfica de evolución en la ficha**: botones Puntos | Precio, SVG a mano; el precio se deriva con `calcPrecio` hasta cada jornada porque no se guarda historial de precios.
+  4. **Admin > Usuarios**: contador "Usuarios con plantilla X/24" con barra de progreso (19/24, 18/24 y 17/24 para J1/J2/J3, igual que SQL).
+  5. **Posición en el ranking** con empates compartidos (1, 2, 2, 4), común a Clasificación y Mi equipo (`posicionRanking`).
+- Extras aprobados o pedidos por el usuario:
+  - Orden por `jornadas.orden` en lugar del `numero` de la federación en "Por jornada" de la ficha y en la ventana de 5 jornadas de `calcPrecio` (solo temporada actual).
+  - Jugadores: botón "Estadísticas" bajo el buscador para ordenar por cualquier estadística de la ficha (Puntos por defecto); `ESTADISTICAS`, `valorEstadistica` y `ordenarPorEstadistica` en `src/lib/points.ts`.
+  - Arreglo del modal "ver equipo" de Clasificación, que elegía la última alineación por `numero` (enseñaba la J2 en vez de la J3); ahora `ultimaAlineacionPuntuada` (`src/lib/jornada.ts`) elige por `orden`.
+- Entrega: PR #58 (`feature/mejoras-ui-stats-ranking-admin` -> `develop`, merge `0463b55`) y PR de release #59 (`develop` -> `main`, merge `186dc61`); deploy completado con éxito. El usuario aprobó cada merge; auto-fix activado en #58.
+- 133 tests, lint y build en verde. Manuales (`MANUAL_USUARIOS.md`, `MANUAL_DEL_JUEGO.md`) actualizados. El `planner` dejó el plan en `.claude/plans/mejoras-ui-stats-ranking-admin.md`.
+
+**Decisions made:**
+- Stats generales calculadas en el cliente (`sumarStats`) y no con un trigger en BD: sin migración ni escrituras en producción, y nunca se queda atrasado. Coste: la columna `jugadores.stats` queda sin lector.
+- Ordenar siempre por `jornadas.orden`, nunca por `numero`, desde la renumeración de la federación.
+- Precio de la gráfica derivado con `calcPrecio` y no "registrado": si se recalibra `MULTIPLICADOR_PRECIO`, la serie pasada cambia.
+- Empates en el ranking comparten posición (1, 2, 2, 4) con una única función para Clasificación y Mi equipo.
+- El `mentor` no se lanzó (preferencia del usuario: solo si lo pide). No se tocaron los tres ficheros sin trackear (`.claude/launch.json`, `.claude/plans/usuarios-admin-alineaciones.md`, `docs/learning/next-jornada-repetidos-y-formacion.md`) por petición expresa.
+
+**Open questions:**
+- Ninguna de producto. Limitación de verificación: hoy no hay jornada abierta, así que la fila de dos rectángulos (Puntos | Dinero) y el contador del admin sobre una jornada abierta solo se comprobaron con una página temporal con el mismo CSS (ya borrada) y no con datos vivos.
+
+**Next steps:**
+- Cuando abra la próxima jornada, mirar en producción Mi equipo (Puntos | Dinero con `#N`) y el contador "Usuarios con plantilla" del admin.
+- Decidir si se borra la columna `jugadores.stats` (o se deja sin lector) y si se quita `recalc_puntos()` de los botones de admin si ya no hace falta para la ficha.
+- Borrar la rama remota `feature/mejoras-ui-stats-ranking-admin` si ya no se necesita (sigue en GitHub).

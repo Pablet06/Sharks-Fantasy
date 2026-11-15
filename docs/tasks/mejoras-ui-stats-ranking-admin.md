@@ -56,6 +56,7 @@ Las cinco mejoras funcionando y verificadas en el navegador (móvil de 375 px y 
 - [x] **5. Posición en el ranking**: `posicionRanking` testeada (empates 1, 2, 2, 4), usada por Clasificación (medallas por posición) y Mi equipo (`#6` para dos usuarios con 103 pts, verificado contra `rank()` en SQL)
 - [x] `npm run test` (119), `npm run lint` y `npm run build` en verde
 - [x] Verificado en el navegador local en 375 px y escritorio con sesión real, solo lectura (únicamente se cambió el selector de jornada del admin, que es estado local)
+- [x] **6. (añadida después, mismo PR) Jugadores: ordenar por estadística**: botón "Estadísticas" bajo el buscador con chips (Puntos, Partidos, Goles, Goles penalti, P. fallados, Faltas penalti, Tarjetas, Expulsiones, Expuls. graves); por defecto Puntos (como antes); el número de la derecha pasa a la estadística elegida; desempate por puntos. `ESTADISTICAS`, `valorEstadistica` y `ordenarPorEstadistica` en `src/lib/points.ts` con tests. Verificado con sesión real en escritorio y 375 px (Goles: Carlos Ferrer, Luca Di Lorenzo y Pablo Ferrer con 4; Expulsiones: Guillermo Izquierdo con 5, igual que SQL)
 - [ ] PR a `develop` y PR de release `develop` -> `main` (título `release: ...`); **el usuario aprueba cada merge**
 - [x] Manuales (`MANUAL_USUARIOS.md` / `MANUAL_DEL_JUEGO.md`) actualizados
 

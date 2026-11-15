@@ -315,7 +315,14 @@ Lista de los 19 jugadores de Los Sharks disponibles para draftear, con su
 ficha (nombre, posición, foto, frase). Las **estadísticas generales** de la
 ficha son la suma de todas sus jornadas, y debajo del total hay una gráfica de
 **evolución**: con los botones *Puntos* y *Precio* alternas entre los puntos
-que hizo en cada jornada y el precio (€) que tenía tras jugarla. El pool de jugadores es siempre el
+que hizo en cada jornada y el precio (€) que tenía tras jugarla.
+
+Debajo del buscador, el botón **Estadísticas** deja **ordenar la lista** por
+una estadística (goles, tarjetas, expulsiones, partidos…): el número de la
+derecha pasa a ser esa estadística. Por defecto se ordena por puntos. Se
+combina con el filtro de posición y el buscador.
+
+El pool de jugadores es siempre el
 mismo para todos — no hay propiedad exclusiva, cualquiera puede fichar a
 cualquiera. Lo único que no puedes es repetir demasiado respecto a tu propia
 alineación anterior (ver «No repetir» en la sección 3).

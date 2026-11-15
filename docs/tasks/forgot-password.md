@@ -1,7 +1,7 @@
 ---
-status: done  # cerrada el 2026-11-11 por decisión del usuario; ver "Verificación aplazada" en Acceptance criteria
+status: done  # cerrada el 2026-11-11 por decisión del usuario; el 2026-11-15 la confirma como completada; ver "Verificación aplazada" en Acceptance criteria
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-15
 ---
 
 # Recuperar y cambiar la contraseña
@@ -34,6 +34,7 @@ Que un usuario que ha olvidado su contraseña pueda pedir un enlace desde el log
 - [x] Sin migración, sin cambios de RLS y sin dependencias nuevas.
 
 ### Verificación aplazada (cierre con estas partes SIN verificar, por decisión del usuario el 2026-11-11)
+El 2026-11-15 el usuario confirma la tarea como completada. Estas cuatro comprobaciones siguen sin hacerse y no se marcan como hechas.
 - [ ] **Prueba E1 con correo real desde LOCAL** (límite de 60 s y reabrir un enlace usado desde localhost): no se hizo; el puerto 5173 estaba ocupado por otro proceso y Vite cayó al 5174, que no está en Redirect URLs. El usuario da la tarea por cerrada sin esta prueba.
 - [ ] **Texto del límite de 60 s**: el patrón "after N seconds" de `authErrorMessage` sigue sin confirmarse contra una respuesta real de Supabase (solo lo cubren los tests unitarios).
 - [ ] **Plantilla del correo en castellano**: pegada en el panel y verificada al recargar, pero NO vista aún en una bandeja real.

@@ -1,7 +1,7 @@
 ---
-status: done
+status: done  # confirmada como completada por el usuario el 2026-11-15; solo queda lo opcional de la foto del entrenador
 created: 2026-11-01
-updated: 2026-11-11
+updated: 2026-11-15
 ---
 
 # Mejoras para la próxima jornada
@@ -53,7 +53,7 @@ Antes de que se publique la fecha de la próxima jornada, tener resuelta la duda
 Las preguntas originales (repetidos, formación y entrenador) están resueltas en Decisions. Siguen abiertas:
 1. ~~¿Se anota la spec `docs/superpowers/specs/2026-09-11-fantasy-dinamico-design.md`?~~ Resuelta el 2026-11-11: sí, se añadió una nota bajo "Bucle semanal" con la regla de repetidos (la spec original queda intacta).
 2. ~~Comprobar en producción la regla de repetidos, la formación, el ranking y el entrenador.~~ Hecho el 2026-11-11 (ver el último criterio de aceptación).
-3. Opcional, sin hacer: redimensionar la foto del entrenador (235 KB).
+3. Opcional, sin hacer: redimensionar la foto del entrenador (235 KB). El usuario da la tarea por completada el 2026-11-15 sin hacerlo.
 
 ## Sessions
 

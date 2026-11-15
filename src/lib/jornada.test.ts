@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { jornadaAbierta, jornadaEnCurso, faseJuego, etiquetaJornada, ultimaJornadaResuelta } from './jornada'
+import {
+  jornadaAbierta, jornadaEnCurso, faseJuego, etiquetaJornada, ultimaJornadaResuelta, ultimaAlineacionPuntuada,
+} from './jornada'
 import type { Jornada } from '../types'
 
 const j = (numero: number, o: Partial<Jornada> = {}): Jornada => ({
@@ -134,5 +136,33 @@ describe('ultimaJornadaResuelta', () => {
 
   it('null si no hay ninguna resuelta', () => {
     expect(ultimaJornadaResuelta([j(1)])).toBeNull()
+  })
+})
+
+describe('ultimaAlineacionPuntuada', () => {
+  // Calendario tras la renumeración: federación 15 = J1, 18 = J2, 10 = J3 (el número no es cronológico).
+  const jornadas = [{ numero: 15, orden: 1 }, { numero: 18, orden: 2 }, { numero: 10, orden: 3 }]
+  const al = (jornada: number, puntos_jornada: number | null) => ({ jornada, puntos_jornada })
+
+  it('elige la más reciente por orden, no por número de federación', () => {
+    const r = ultimaAlineacionPuntuada([al(15, 8), al(18, 5), al(10, 3)], jornadas)
+    expect(r?.jornada).toBe(10) // J3; por número habría salido la 18 (J2)
+  })
+
+  it('ignora las alineaciones aún sin puntuar aunque sean más recientes', () => {
+    expect(ultimaAlineacionPuntuada([al(15, 8), al(18, 5), al(10, null)], jornadas)?.jornada).toBe(18)
+  })
+
+  it('null si ninguna está puntuada o no hay alineaciones', () => {
+    expect(ultimaAlineacionPuntuada([al(15, null)], jornadas)).toBeNull()
+    expect(ultimaAlineacionPuntuada([], jornadas)).toBeNull()
+  })
+
+  it('sin jornadas cargadas cae al número de federación', () => {
+    expect(ultimaAlineacionPuntuada([al(15, 8), al(18, 5)], [])?.jornada).toBe(18)
+  })
+
+  it('una alineación con 0 puntos cuenta como puntuada', () => {
+    expect(ultimaAlineacionPuntuada([al(15, 8), al(10, 0)], jornadas)?.jornada).toBe(10)
   })
 })

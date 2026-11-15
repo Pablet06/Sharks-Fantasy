@@ -54,6 +54,19 @@ export function ultimaJornadaResuelta(jornadas: Jornada[]): Jornada | null {
   return jornadas.filter(j => j.finalizado).sort((a, b) => b.orden - a.orden)[0] ?? null
 }
 
+/**
+ * La alineación ya puntuada (`puntos_jornada` no nulo) de la jornada más reciente por `orden`,
+ * no por el número de federación (que tras renumerar el calendario no es cronológico).
+ */
+export function ultimaAlineacionPuntuada<A extends { jornada: number; puntos_jornada: number | null }>(
+  alineaciones: A[],
+  jornadas: Pick<Jornada, 'numero' | 'orden'>[],
+): A | null {
+  return alineaciones
+    .filter(a => a.puntos_jornada !== null)
+    .sort((a, b) => etiquetaJornada(jornadas, b.jornada) - etiquetaJornada(jornadas, a.jornada))[0] ?? null
+}
+
 export type Fase = 'abiertos' | 'cerrados' | 'en_juego' | 'resolviendo' | 'esperando'
 
 export interface FaseJuego {

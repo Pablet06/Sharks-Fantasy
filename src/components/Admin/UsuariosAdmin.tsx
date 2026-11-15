@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import type { Usuario, Position } from '../../types'
 import type { useAdminData } from '../../hooks/useAdminData'
 import { jornadaEnCurso, ultimaJornadaResuelta } from '../../lib/jornada'
-import { filaAlineacionAdmin } from '../../lib/draft'
+import { filaAlineacionAdmin, contarConPlantilla } from '../../lib/draft'
 import { coincide } from '../../lib/busqueda'
 
 interface Props { data: ReturnType<typeof useAdminData> }
@@ -33,6 +33,8 @@ export function UsuariosAdmin({ data }: Props) {
   }
 
   const visibles = data.usuarios.filter(u => coincide(q, u.nombre))
+  // Sobre todos los usuarios (no solo los que deja el buscador) y la jornada del selector.
+  const { con, total } = contarConPlantilla(data.usuarios, data.alineaciones, jornadaSel)
 
   const patch = (id: string, field: string, value: unknown) =>
     setDraft(d => ({ ...d, [id]: { ...d[id], [field]: value } }))
@@ -118,6 +120,10 @@ export function UsuariosAdmin({ data }: Props) {
           </select>
         </label>
         <input type="search" className="admin-buscador" placeholder="Buscar usuario…" value={q} onChange={e => setQ(e.target.value)} />
+      </div>
+      <div className="admin-plantillas">
+        <span>Usuarios con plantilla: <strong>{con}/{total}</strong></span>
+        <progress value={con} max={Math.max(total, 1)} aria-label="Usuarios con plantilla" />
       </div>
       {msg && <p className="admin-msg admin-error">{msg}</p>}
       {q && visibles.length === 0 && <p className="admin-msg">Ningún usuario coincide con «{q}».</p>}

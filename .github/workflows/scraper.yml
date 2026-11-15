@@ -20,7 +20,12 @@ on:
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    # Self-hosted runner at home: the federation (Cloudflare) answers HTTP 429 to
+    # GitHub's IPs on /match/<id>/stats, but not to the home IP. Only safe because
+    # this workflow runs on schedule and workflow_dispatch alone: never add push or
+    # pull_request triggers here (the repo is public). The custom label keeps other
+    # jobs from landing on this runner by accident.
+    runs-on: [self-hosted, sharks-scraper]
     steps:
       - uses: actions/checkout@v4
 

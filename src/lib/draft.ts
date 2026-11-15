@@ -130,3 +130,18 @@ export function filaAlineacionAdmin(
   }
   return { ok: true as const, fila, reprocesar: yaPuntuada }
 }
+
+/** "Usuarios con plantilla X/Y" del admin: cuántos usuarios tienen alineación con jugadores
+ * en esa jornada (`numero` de federación) sobre el total de usuarios. */
+export function contarConPlantilla(
+  usuarios: { id: string }[],
+  alineaciones: Pick<Alineacion, 'usuario_id' | 'jornada' | 'jugadores'>[],
+  jornada: number | null,
+): { con: number; total: number } {
+  const firmados = new Set(
+    alineaciones
+      .filter(a => a.jornada === jornada && (a.jugadores?.length ?? 0) > 0)
+      .map(a => a.usuario_id),
+  )
+  return { con: usuarios.filter(u => firmados.has(u.id)).length, total: usuarios.length }
+}

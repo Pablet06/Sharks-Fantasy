@@ -24,13 +24,13 @@ Poder ver, para cada jornada finalizada, la posición que obtuvo cada usuario (p
 
 ## Acceptance criteria
 - [x] Decididas y anotadas aquí las decisiones de diseño: dónde se muestra, base de la posición, empates y usuarios sin alineación, y visibilidad
-- [ ] Lógica de posición por jornada con tests: empates y usuarios sin alineación incluidos; orden de jornadas siempre por `jornadas.orden`
-- [ ] Clasificación: selector de jornada (por `orden`) + conmutador «Jornada / Acumulado»; lista de todos con su posición
-- [ ] Historial del perfil: columna con la posición del usuario en cada jornada
-- [ ] Modal del equipo de otro usuario: su posición en cada jornada
-- [ ] Verificado en el navegador en 375 px y en escritorio
-- [ ] `npm run test`, `npm run lint` y `npm run build` en verde
-- [ ] Manuales (`docs/MANUAL_USUARIOS.md` y `docs/MANUAL_DEL_JUEGO.md`) actualizados si procede
+- [x] Lógica de posición por jornada con tests: empates y usuarios sin alineación incluidos; orden de jornadas siempre por `jornadas.orden`
+- [x] Clasificación: selector de jornada (por `orden`) + conmutador «Jornada / Acumulado»; lista de todos con su posición
+- [x] Historial del perfil: columna con la posición del usuario en cada jornada
+- [x] Modal del equipo de otro usuario: su posición en cada jornada
+- [x] Verificado en el navegador en 375 px y en escritorio (lecturas contra producción: selector, conmutador, modal e historial cuadran con la base de datos)
+- [x] `npm run test`, `npm run lint` y `npm run build` en verde
+- [x] Manuales (`docs/MANUAL_USUARIOS.md` y `docs/MANUAL_DEL_JUEGO.md`) actualizados si procede
 - [ ] PR `feature/posicion-por-jornada` -> `develop` y después PR de release `develop` -> `main` (el usuario aprueba cada merge)
 
 ## Decisiones de diseño

@@ -1,7 +1,7 @@
 ---
-status: in-progress  # en espera de la próxima jornada; si falla la descarga de stats desde GitHub, montar el runner (opción A)
+status: in-progress  # confirmado el 2026-11-15: GitHub recibe 429 en /stats; pendiente montar el runner (opción A) y reducir peticiones
 created: 2026-10-25
-updated: 2026-10-30
+updated: 2026-11-15
 ---
 
 # Scraper desde el servidor de casa
@@ -24,6 +24,26 @@ escribir. Mientras tanto, J7 se tuvo que sincronizar en local.
   ha vuelto a probar. No está claro si es un bloqueo de IP o un error intermitente del origen.
 - `--discover` es una sonda de solo lectura de ese mismo endpoint (pide las estadísticas de los
   partidos terminados y no escribe en la base de datos).
+
+**Actualización 2026-11-15:**
+- **GitHub recibe HTTP 429 en `/match/<id>/stats`** (runs rojos desde el 13-nov): confirmado con
+  datos reales, así que la opción A (runner autoalojado) queda justificada. Desde la IP de casa
+  el incremental completo funcionó sin 429.
+- **La federación recreó el calendario el 13-nov a las 08:29 y renumeró las jornadas** (Leverade
+  `order`, que el scraper usa como `jornada`). Antiguo → nuevo: Morvedre 24-oct J7→J15, Petrer
+  7-nov J10→J18, Castelló 15-nov J2→J10. Efecto: el incremental se saltaba J10 (tenía el
+  historial de Petrer) y un sync local escribió una "J15" vacía (la federación perdió las actas
+  de los partidos recreados).
+- **Migración hecha el 2026-11-15** (un solo bloque atómico con comprobaciones antes y después):
+  `jornadas`, `historial`, `alineaciones`, `apuestas`, `presupuestos` y `powerups_aplicados`
+  renumeradas 10→18, 7→15, 2→10 con las FKs quitadas y recreadas idénticas. La J15 vacía se
+  retiró y está en la copia. Copia completa pre-migración en el esquema `backup_20261115`
+  (no expuesto por la API). Después `npm run sync` en local escribió J10 (Castelló 7-14).
+- Efecto colateral conocido: `resolver_jornada` reparte un power-up aleatorio a todos cuando el
+  nº de jornadas finalizadas es múltiplo de 3; la J15 vacía lo disparó a las 16:20 y la J10 real
+  lo volvió a disparar (powerups_usuario 25 → 49). **Decidido el 2026-11-15: dejar un solo
+  reparto.** Se restó exactamente el segundo (diferencia contra la copia previa al sync, +1 por
+  usuario) y la tabla quedó idéntica a esa copia (26 filas, 25 power-ups).
 
 ## Goal
 El scraper corre solo, tras cada partido, desde una IP que la federación no bloquee
@@ -53,15 +73,21 @@ Si funciona → cerrar la tarea sin runner (quedan solo el aviso de fallo y la h
 Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas de GitHub, así que el tráfico a la federación sale desde la IP de casa. Se mantiene el historial de runs y los secrets en GitHub. La B (cron local) queda descartada por ahora.
 
 ## Acceptance criteria
-- [ ] Sonda de solo lectura desde GitHub: `workflow_dispatch` con `--discover`, para ver si el
-      endpoint de estadísticas sigue dando 520/429 a las IPs de GitHub (decide si hace falta el runner)
+- [x] Sonda desde GitHub: no hizo falta `--discover`; los runs reales del 13 al 15-nov dan 429
+      en `/stats` (2026-11-15). Hace falta el runner
 - [ ] Servidor de casa con Node 24 y acceso saliente a la federación y a Supabase
 - [ ] Runner autoalojado (opción A) instalado y arrancando con el servidor; workflow con `runs-on: self-hosted`, solo para `schedule` y `workflow_dispatch`
 - [ ] Ejecución manual `--jornada 7` desde el servidor sin 520/429 (prueba de bloqueo)
-- [ ] Prueba de escritura real con la clave de servicio (p. ej. `--jornada 7` o la
-      próxima jornada) y comprobación en la base de datos de que no cambia nada
-      inesperado (`usuarios.puntos`, `historial`, `apuestas`, `presupuestos`). La clave ya
-      escribe en `config` (comprobado el 2026-10-30); falta una escritura de `historial`
+- [x] Prueba de escritura real con la clave de servicio y comprobación en la base de datos
+      (2026-11-15, desde el PC de casa): `historial`, `jornadas`, puntos y apuestas de J10 bien;
+      J15 y J18 sin una fila distinta respecto a la copia. Falta repetirla desde el runner
+- [ ] Reducir peticiones: `syncJornada` pide `/stats` de todos los partidos terminados de la
+      ronda hasta dar con el de los Sharks (J12, J15 y J18 daban 429 en GitHub). El calendario
+      ya identifica el partido de los Sharks por ids de equipo: pedir solo ese
+- [ ] Aviso si la federación renumera el calendario (p. ej. comparar fecha/rival de las jornadas
+      con historial contra la API y avisar si no cuadran, en vez de saltarlas en silencio)
+- [x] Decidir el power-up duplicado: se quitó el segundo reparto (2026-11-15)
+- [ ] Borrar el esquema `backup_20261115` cuando el usuario confirme que todo está bien
 - [ ] Decidir si se desactiva el cron de GitHub Actions (evita runs duplicados y fallos
       en rojo)
 - [ ] Aviso si el scraper falla (hoy solo `::error::` en el log del run)
@@ -82,7 +108,19 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
 - Pendiente de la jornada J8: la reconciliación de presupuesto (PR #27, `sync.ts`) solo
   tiene tests unitarios; revisarla con datos reales cuando aparezca la fecha.
 
+- `resolver_jornada` calcula la jornada anterior de la racha con `numero < p_jornada`, pero la
+  numeración de la federación no es cronológica (por eso existe `orden`). Ya pasaba antes de
+  la renumeración; revisar si debería usar `orden`.
+
 ## Sessions
+
+### 2026-11-15
+
+- El scraper de GitHub falló con 429 tras jugarse Castelló. Diagnóstico: 429 en `/stats` más
+  renumeración del calendario por la federación el 13-nov. Copia completa, migración atómica a
+  la numeración nueva y sync local de J10 verificados contra la copia (J15/J18 intactas).
+  Power-up duplicado resuelto (se quitó el segundo reparto). Pendiente: reducir peticiones,
+  aviso de renumeración, runner autoalojado.
 
 ### 2026-10-30
 

@@ -1,5 +1,5 @@
 ---
-status: in-progress  # runner y menos peticiones en producción (2026-11-15); se cierra cuando el próximo partido escriba historial desde el runner
+status: done  # cerrada el 2026-11-15 por decisión del usuario; ver "Pendiente tras el cierre" en Acceptance criteria
 created: 2026-10-25
 updated: 2026-11-15
 ---
@@ -84,22 +84,27 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
 - [x] Prueba de escritura real con la clave de servicio y comprobación en la base de datos
       (2026-11-15, desde el PC de casa): `historial`, `jornadas`, puntos y apuestas de J10 bien;
       J15 y J18 sin una fila distinta respecto a la copia
-- [ ] Primera escritura real desde el runner: el próximo partido de los Sharks debe escribir
-      `historial` y puntuar desde `pablo-server`. Todos los runs hasta ahora fueron `nothing new`
 - [x] Reducir peticiones: `syncJornada` pide solo el `/stats` del partido de los Sharks,
       identificado por la API (y ninguno mientras no haya terminado) (#52, 2026-11-15)
-- [ ] Aviso si la federación renumera el calendario (p. ej. comparar fecha/rival de las jornadas
-      con historial contra la API y avisar si no cuadran, en vez de saltarlas en silencio)
 - [x] Decidir el power-up duplicado: se quitó el segundo reparto (2026-11-15)
-- [ ] Esquema `backup_20261115`: se deja en la base de datos por decisión del usuario
-      (2026-11-15, "por si acaso"). Borrarlo solo cuando el usuario lo diga
 - [x] Cron de GitHub Actions: se mantiene; ahora ejecuta en el runner de casa (2026-11-15)
-- [ ] Aviso si el scraper falla (hoy solo `::error::` en el log del run): comprobar que
-      GitHub envía el email de los runs fallidos o añadir otro aviso
 - [x] Hora de los crons de fin de semana a las 21:00 hora española: `0 20 * * 6` y `0 20 * * 0`
-      (20:00 UTC = 21:00 CET), con comentario en `scraper.yml` (2026-11-15). **En marzo de 2027,
-      con el cambio a horario de verano, pasar ambos a `0 19`** (y volver a `0 20` en octubre),
-      o aceptar 1 h de desfase
+      (20:00 UTC = 21:00 CET), con comentario en `scraper.yml` (2026-11-15). Ver abajo el
+      cambio de marzo
+
+### Pendiente tras el cierre (cierre con estas partes SIN hacer, por decisión del usuario el 2026-11-15)
+No se marcan como hechas.
+- [ ] **Primera escritura real desde el runner**: el próximo partido de los Sharks debe escribir
+      `historial` y puntuar desde `pablo-server`. Todos los runs hasta ahora fueron `nothing new`.
+      Si ese run sale en rojo, reabrir esta tarea
+- [ ] **Aviso si la federación renumera el calendario** (p. ej. comparar fecha/rival de las
+      jornadas con historial contra la API y avisar si no cuadran, en vez de saltarlas en silencio)
+- [ ] **Aviso si el scraper falla** (hoy solo `::error::` en el log del run): comprobar que
+      GitHub envía el email de los runs fallidos o añadir otro aviso
+- [ ] **Marzo de 2027**: con el horario de verano, pasar los dos crons de fin de semana a `0 19`
+      (y volver a `0 20` en octubre), o aceptar 1 h de desfase
+- Esquema `backup_20261115`: se deja en la base de datos por decisión del usuario (2026-11-15,
+  "por si acaso"). Borrarlo solo cuando el usuario lo diga
 
 ## Notes
 - El incremental ya reintenta jornadas dejadas a medias (`resolver_jornada` fallido y
@@ -132,8 +137,8 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
   la numeración nueva y sync local de J10 verificados contra la copia (J15/J18 intactas).
   Power-up duplicado resuelto (se quitó el segundo reparto). Runner autoalojado instalado en
   `pablo-server` y probado (#50, #51), scraper con menos peticiones (#52, #53) y crons de fin
-  de semana a las 21:00 CET. Pendiente: primera escritura real desde el runner, aviso de
-  renumeración y aviso de fallo.
+  de semana a las 21:00 CET. El usuario da la tarea por completada; lo que falta (primera
+  escritura real desde el runner, avisos y el cambio de marzo) queda en "Pendiente tras el cierre".
 
 ### 2026-10-30
 

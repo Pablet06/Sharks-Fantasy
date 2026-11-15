@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   validarDraft, contarPosiciones, filaAlineacionAdmin, contarRepetidos, repetidoBloqueado, alineacionAnterior, filasFormacion,
+  contarConPlantilla,
 } from './draft'
 import type { Position } from '../types'
 
@@ -193,5 +194,28 @@ describe('filaAlineacionAdmin', () => {
   it('escribe en la jornada recibida (número de federación, no el orden)', () => {
     const r = filaAlineacionAdmin('u1', 9, false, ok7, 3, posiciones)
     expect(r.ok && r.fila.jornada).toBe(9)
+  })
+})
+
+describe('contarConPlantilla', () => {
+  const usuarios = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
+  const al = (usuario_id: string, jornada: number, jugadores: number[] | null) => ({ usuario_id, jornada, jugadores })
+
+  it('cuenta los usuarios con alineación con jugadores en esa jornada y el total de usuarios', () => {
+    const alineaciones = [al('a', 15, ok7), al('b', 15, ok7), al('c', 18, ok7)]
+    expect(contarConPlantilla(usuarios, alineaciones, 15)).toEqual({ con: 2, total: 4 })
+  })
+
+  it('una alineación vacía o sin jugadores no cuenta como plantilla', () => {
+    const alineaciones = [al('a', 15, []), al('b', 15, null), al('c', 15, ok7)]
+    expect(contarConPlantilla(usuarios, alineaciones, 15).con).toBe(1)
+  })
+
+  it('ignora alineaciones de usuarios que ya no existen', () => {
+    expect(contarConPlantilla(usuarios, [al('borrado', 15, ok7), al('a', 15, ok7)], 15).con).toBe(1)
+  })
+
+  it('sin jornada seleccionada: 0 con plantilla', () => {
+    expect(contarConPlantilla(usuarios, [al('a', 15, ok7)], null)).toEqual({ con: 0, total: 4 })
   })
 })

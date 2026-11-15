@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Jugador, Usuario, Jornada, Alineacion, Position } from '../../types'
 import { calcPrecio } from '../../lib/precio'
+import { posicionRanking } from '../../lib/ranking'
 import { jornadaEnCurso, ultimaJornadaResuelta } from '../../lib/jornada'
 import {
   validarDraft, contarPosiciones, COMPOSICION, MAX_REPETIDOS, contarRepetidos, repetidoBloqueado, alineacionAnterior,
@@ -37,11 +38,15 @@ export function Draft({ usuario, jugadores }: Props) {
   const [todasJornadas, setTodasJornadas] = useState<Jornada[]>([])
   const [misAlineaciones, setMisAlineaciones] = useState<Pick<Alineacion, 'jornada' | 'jugadores' | 'capitan'>[]>([])
 
+  // Puntos de todos los usuarios, solo para calcular mi posición en la clasificación (lectura).
+  const [puntosTodos, setPuntosTodos] = useState<{ puntos: number }[] | null>(null)
+
+  // `todasJornadas` da el orden cronológico (`orden`) para elegir las últimas 5 jornadas del precio.
   const precios = useMemo(() => {
     const m: Record<number, number> = {}
-    for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [], j.historial_anterior ?? [])
+    for (const j of jugadores) m[j.numero] = calcPrecio(j.historial ?? [], j.historial_anterior ?? [], todasJornadas)
     return m
-  }, [jugadores])
+  }, [jugadores, todasJornadas])
 
   const posiciones = useMemo(() => {
     const m: Record<number, Position> = {}
@@ -67,6 +72,19 @@ export function Draft({ usuario, jugadores }: Props) {
         }
       })
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('usuarios')
+      .select('puntos')
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) console.error('Clasificación fetch error:', error)
+        else setPuntosTodos(data ?? [])
+      })
+    return () => { cancelled = true }
+  }, [usuario.puntos])
 
   useEffect(() => {
     if (!jornada || jornada === 'loading') return
@@ -340,29 +358,36 @@ export function Draft({ usuario, jugadores }: Props) {
         </p>
       )}
 
-      <div className="team-total-pts team-puntos">
-        <span>Puntos</span>
-        <strong>{usuario.puntos}</strong>
-      </div>
-
-      {!soloLectura && (
-        <div className="team-total-pts team-dinero">
-          <span>Jornada {orden}</span>
-          <strong>{presupuesto - usado}€</strong>
+      <div className="team-totales">
+        <div className="team-total-pts team-puntos">
+          <span>Puntos</span>
+          <strong>{usuario.puntos}</strong>
+          {puntosTodos && (
+            <span className="team-posicion" title="Posición en la clasificación">
+              #{posicionRanking(puntosTodos, usuario.puntos)}
+            </span>
+          )}
         </div>
-      )}
+
+        {!soloLectura && (
+          <div className="team-total-pts team-dinero">
+            <span>Jornada {orden}</span>
+            <strong>{presupuesto - usado}€</strong>
+          </div>
+        )}
+      </div>
 
       {bloqueada && (
         <>
-          <p className="placeholder">
+          <p className="placeholder draft-nota">
             {soloLectura ? `Última jornada (Jornada ${orden})` : 'Alineación bloqueada para esta jornada'}
             {alineacion && alineacion.puntos_jornada !== null && ` — ${alineacion.puntos_jornada} pts`}
           </p>
           {ahora !== null && alineacion === null && soloLectura && (
-            <p className="placeholder">No enviaste alineación en la Jornada {orden}.</p>
+            <p className="placeholder draft-nota">No enviaste alineación en la Jornada {orden}.</p>
           )}
           {ahora !== null && alineacion === null && !soloLectura && (
-            <p className="placeholder">No enviaste alineación: harás 0 puntos en esta jornada.</p>
+            <p className="placeholder draft-nota">No enviaste alineación: harás 0 puntos en esta jornada.</p>
           )}
 
           {puedeEditarCapitanTarde && (

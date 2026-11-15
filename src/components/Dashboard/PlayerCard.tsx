@@ -1,7 +1,9 @@
 import type { Jugador, Position, PlayerStats } from '../../types'
-import { calcTotalPoints } from '../../lib/points'
+import { calcTotalPoints, sumarStats } from '../../lib/points'
+import { evolucionJugador } from '../../lib/precio'
 import { useJornadas } from '../../hooks/useJornadas'
 import { etiquetaJornada } from '../../lib/jornada'
+import { PlayerChart } from './PlayerChart'
 
 interface Props {
   jugador: Jugador
@@ -30,7 +32,8 @@ function getKeyStats(pos: Position, stats: PlayerStats) {
 export function PlayerCard({ jugador, onClose, inline = false }: Props) {
   const jornadas = useJornadas()
   const totalPoints = calcTotalPoints(jugador.historial || [])
-  const s = jugador.stats
+  // Se suma del historial: la columna jugadores.stats solo la refresca un admin a mano y se queda atrasada.
+  const s = sumarStats(jugador.historial ?? [])
 
   const cardContent = (
     <div
@@ -78,12 +81,14 @@ export function PlayerCard({ jugador, onClose, inline = false }: Props) {
         <strong className="total-pts">{totalPoints} pts</strong>
       </div>
 
+      <PlayerChart serie={evolucionJugador(jugador.historial ?? [], jugador.historial_anterior ?? [], jornadas)} />
+
       {(() => {
         // Historial is dense (a row per rostered player per jornada). Only show
-        // jornadas this player actually dressed for.
+        // jornadas this player actually dressed for, chronologically (by orden, not federation numero).
         const played = [...(jugador.historial || [])]
           .filter(h => h.stats.partidos > 0)
-          .sort((a, b) => a.jornada - b.jornada)
+          .sort((a, b) => etiquetaJornada(jornadas, a.jornada) - etiquetaJornada(jornadas, b.jornada))
         return played.length > 0 && (
         <div className="historial-list">
           <h4>Por jornada</h4>

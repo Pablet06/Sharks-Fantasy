@@ -94,8 +94,10 @@ nada. Si todavía no has fichado a nadie, la lista aparece directamente.
   es 0€ (no se puede quedar en negativo).
 - Lo que te **sobra** de la alineación (lo que no gastas en fichajes) **no se
   acumula**: no pasa a la jornada siguiente.
-- La cabecera de Mi Equipo enseña tus **puntos totales** y el dinero que te
-  queda de esta jornada.
+- La cabecera de Mi Equipo enseña, en dos rectángulos, tus **puntos totales**
+  (con tu **posición en la clasificación** debajo, p. ej. `#3`) y el dinero que
+  te queda de esta jornada. Mientras esperas la siguiente jornada solo se ve el
+  rectángulo de puntos con tu posición.
 
 ### Precio de cada jugador
 
@@ -303,10 +305,17 @@ totales. Al tocar un usuario ves su
 eso se mantiene en secreto hasta que se juega). Se indica quién fue el
 capitán de esa alineación.
 
+Los usuarios con los **mismos puntos comparten posición** (y medalla): si dos
+empatan en el 2.º puesto, ambos son el #2 y el siguiente es el #4. Esa misma
+posición es la que ves en Mi Equipo.
+
 ## 8. Jugadores (la plantilla)
 
 Lista de los 19 jugadores de Los Sharks disponibles para draftear, con su
-ficha (nombre, posición, foto, frase). El pool de jugadores es siempre el
+ficha (nombre, posición, foto, frase). Las **estadísticas generales** de la
+ficha son la suma de todas sus jornadas, y debajo del total hay una gráfica de
+**evolución**: con los botones *Puntos* y *Precio* alternas entre los puntos
+que hizo en cada jornada y el precio (€) que tenía tras jugarla. El pool de jugadores es siempre el
 mismo para todos — no hay propiedad exclusiva, cualquiera puede fichar a
 cualquiera. Lo único que no puedes es repetir demasiado respecto a tu propia
 alineación anterior (ver «No repetir» en la sección 3).

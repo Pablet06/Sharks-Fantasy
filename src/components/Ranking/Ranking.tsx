@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import type { Usuario, Jugador, Alineacion } from '../../types'
 import { PlayerCard } from '../Dashboard/PlayerCard'
 import { useJornadas } from '../../hooks/useJornadas'
-import { etiquetaJornada } from '../../lib/jornada'
+import { etiquetaJornada, ultimaAlineacionPuntuada } from '../../lib/jornada'
 import { posicionRanking } from '../../lib/ranking'
 
 interface Props {
@@ -18,9 +18,11 @@ export function Ranking({ jugadores, currentUserId }: Props) {
   const [ranking, setRanking] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [viewTeam, setViewTeam] = useState<Usuario | null>(null)
-  const [viewAlineacion, setViewAlineacion] = useState<Alineacion | null | 'none'>('none')
+  // Alineaciones puntuadas del usuario abierto (null = cargando); la última se elige al renderizar, por `orden`.
+  const [viewAlineaciones, setViewAlineaciones] = useState<Alineacion[] | null>(null)
   const [viewPlayer, setViewPlayer] = useState<Jugador | null>(null)
   const jornadas = useJornadas()
+  const viewAlineacion = viewAlineaciones === null ? 'none' : ultimaAlineacionPuntuada(viewAlineaciones, jornadas)
 
   useEffect(() => {
     supabase
@@ -42,13 +44,10 @@ export function Ranking({ jugadores, currentUserId }: Props) {
       .select('*')
       .eq('usuario_id', viewTeam.id)
       .not('puntos_jornada', 'is', null)
-      .order('jornada', { ascending: false })
-      .limit(1)
-      .maybeSingle()
       .then(({ data, error }) => {
         if (cancelled) return
         if (error) console.error('Alineacion fetch error:', error)
-        setViewAlineacion((data as Alineacion) ?? null)
+        setViewAlineaciones((data as Alineacion[]) ?? [])
       })
     return () => {
       cancelled = true
@@ -70,7 +69,7 @@ export function Ranking({ jugadores, currentUserId }: Props) {
             <li
               key={u.id}
               className={`ranking-item ${isCurrentUser ? 'current-user' : ''} ${isMedal ? RANK_CLASS[pos - 1] : ''}`}
-              onClick={() => { setViewTeam(u); setViewAlineacion('none') }}
+              onClick={() => { setViewTeam(u); setViewAlineaciones(null) }}
             >
               <span className="rank-pos">{isMedal ? MEDAL[pos - 1] : `#${pos}`}</span>
               <span className="rank-name">{u.nombre}</span>

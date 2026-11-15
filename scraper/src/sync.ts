@@ -104,6 +104,12 @@ export async function syncJornada(
   let sharksMatch: Awaited<ReturnType<typeof fetchMatchStats>> | null = null
   let matchDate: string | null = null
   for (const m of finished) {
+    // The Leverade API says who plays, so only the Sharks sheet is worth a hit on the
+    // federation's site: Cloudflare answers HTTP 429 to bursts of /stats requests.
+    if (!m.homeTeamId || !m.awayTeamId) continue
+    const [homeName, awayName] = await Promise.all([getTeamName(m.homeTeamId), getTeamName(m.awayTeamId)])
+    if (ladoSharks(homeName, awayName) === null) continue
+
     const stats = await fetchMatchStats(tournamentId, m.id)
     if (stats.local === SHARKS_TEAM_NAME || stats.visitante === SHARKS_TEAM_NAME) {
       sharksMatch = stats

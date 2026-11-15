@@ -186,6 +186,74 @@ describe('resolverJornadas', () => {
   })
 })
 
+describe('syncJornada: which pages it asks the federation for', () => {
+  const players = [{ id: 1, name: 'A', nick: 'a', pos: 'JUG', leverade_id: '10' }] as never
+  const partido = (id: string, finished: boolean, home: string, away: string) =>
+    ({ id, date: '2026-11-15 11:00:00', finished, homeTeamId: home, awayTeamId: away })
+  // Hand-written federation sheets: one for the Sharks match, one for any other match.
+  const actaSharks = {
+    local: 'Rival t5', visitante: SHARKS_TEAM_NAME, sharks: 'visitante', golesLocal: 14, golesVisitante: 7,
+    jugadores: [raw({ leveradeId: '10', G: 1 })],
+  }
+  const actaOtro = {
+    local: 'Rival t1', visitante: 'Rival t2', sharks: null, golesLocal: 9, golesVisitante: 8, jugadores: [],
+  }
+
+  beforeEach(() => {
+    vi.mocked(fetchMatchStats).mockReset()
+    vi.mocked(fetchMatchStats).mockResolvedValue(actaOtro as never) // any page not overridden is another team's
+    vi.mocked(getRoundMatches).mockReset()
+    vi.mocked(getTeamName).mockReset()
+    vi.mocked(getTeamName).mockImplementation((id: string) =>
+      Promise.resolve(id === 'tSharks' ? SHARKS_TEAM_NAME : `Rival ${id}`),
+    )
+    vi.mocked(supabase).from = vi.fn(() => ({ upsert: vi.fn().mockResolvedValue({ error: null }) })) as never
+  })
+
+  it('asks for the stats of the Sharks match only, not of the other finished matches of the round', async () => {
+    vi.mocked(getRoundMatches).mockResolvedValue([
+      partido('m1', true, 't1', 't2'),
+      partido('m2', true, 't3', 't4'),
+      partido('m3', true, 't5', 'tSharks'),
+      partido('m4', true, 't6', 't7'),
+    ])
+    vi.mocked(fetchMatchStats).mockImplementation(async (_torneo, id) => (id === 'm3' ? actaSharks : actaOtro) as never)
+
+    const res = await syncJornada('1344408', { id: 'r1', jornada: 10 }, players)
+
+    expect(fetchMatchStats).toHaveBeenCalledTimes(1)
+    expect(fetchMatchStats).toHaveBeenCalledWith('1344408', 'm3')
+    expect(res?.rows).toBe(1)
+  })
+
+  it('asks for no stats page at all while the Sharks match is not finished, even if other matches are', async () => {
+    vi.mocked(getRoundMatches).mockResolvedValue([
+      partido('m1', true, 't1', 't2'),
+      partido('m2', false, 't5', 'tSharks'),
+    ])
+
+    const res = await syncJornada('1344408', { id: 'r1', jornada: 2 }, players)
+
+    expect(res).toBeNull()
+    expect(fetchMatchStats).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing when the page fetched is not the Sharks sheet, even if the API said it was', async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null })
+    vi.mocked(supabase).from = vi.fn(() => ({ upsert })) as never
+    vi.mocked(getRoundMatches).mockResolvedValue([partido('m3', true, 't5', 'tSharks')])
+    // A populated sheet (it has a roster) that belongs to another team: only the name check stops it.
+    vi.mocked(fetchMatchStats).mockResolvedValue(
+      { ...actaOtro, jugadores: [raw({ leveradeId: '10', G: 3 })] } as never,
+    )
+
+    const res = await syncJornada('1344408', { id: 'r1', jornada: 10 }, players)
+
+    expect(res).toBeNull()
+    expect(upsert).not.toHaveBeenCalled()
+  })
+})
+
 describe('historial_anterior', () => {
   const players = [{ id: 1, name: 'A', nick: 'a', pos: 'JUG', leverade_id: '10' }] as never
   const stats = {
@@ -210,6 +278,10 @@ describe('historial_anterior', () => {
     vi.mocked(getRoundMatches).mockResolvedValue([
       { id: 'm1', date: '2025-10-05T18:00:00', finished: true, homeTeamId: 't1', awayTeamId: 't2' },
     ])
+    // The API names the teams: t1 is the Sharks, so m1 is the match worth fetching.
+    vi.mocked(getTeamName).mockImplementation((id: string) =>
+      Promise.resolve(id === 't1' ? SHARKS_TEAM_NAME : 'Rival'),
+    )
     vi.mocked(fetchMatchStats).mockResolvedValue(stats as never)
   })
 

@@ -1,5 +1,5 @@
 ---
-status: in-progress  # confirmado el 2026-11-15: GitHub recibe 429 en /stats; pendiente montar el runner (opción A) y reducir peticiones
+status: in-progress  # runner y menos peticiones en producción (2026-11-15); se cierra cuando el próximo partido escriba historial desde el runner
 created: 2026-10-25
 updated: 2026-11-15
 ---
@@ -58,8 +58,8 @@ El scraper corre solo, tras cada partido, desde una IP que la federación no blo
   con un `.env` local (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`). Más simple, pero
   la clave vive en el servidor y no hay historial de runs en GitHub.
 
-Mantener los crons actuales (sábado y domingo 22:00 UTC, diario 08:00 UTC): el
-incremental es idempotente.
+Crons: sábado y domingo 20:00 UTC (21:00 CET desde el 2026-11-15; antes 22:00 UTC) y diario
+08:00 UTC. El incremental es idempotente, así que repetirlo es seguro.
 
 ## Decision
 **2026-10-30: esperar a la próxima jornada (J8) antes de montar nada.** Hoy se comprobó que la
@@ -75,29 +75,31 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
 ## Acceptance criteria
 - [x] Sonda desde GitHub: no hizo falta `--discover`; los runs reales del 13 al 15-nov dan 429
       en `/stats` (2026-11-15). Hace falta el runner
-- [ ] Servidor de casa con Node 24 y acceso saliente a la federación y a Supabase
-- [ ] Runner autoalojado (opción A) instalado y arrancando con el servidor; workflow con `runs-on: self-hosted`, solo para `schedule` y `workflow_dispatch`
-- [ ] Ejecución manual `--jornada 7` desde el servidor sin 520/429 (prueba de bloqueo)
+- [x] Servidor de casa con acceso saliente a la federación y a Supabase (2026-11-15). Tiene Node 22,
+      pero `setup-node` instala el 24 en cada job
+- [x] Runner autoalojado (opción A) instalado y arrancando con el servidor; workflow con
+      `runs-on: [self-hosted, sharks-scraper]`, solo para `schedule` y `workflow_dispatch` (#50, 2026-11-15)
+- [x] Ejecución completa del incremental desde el servidor sin 520/429 (2026-11-15; `--jornada 7`
+      ya no aplica por la renumeración)
 - [x] Prueba de escritura real con la clave de servicio y comprobación en la base de datos
       (2026-11-15, desde el PC de casa): `historial`, `jornadas`, puntos y apuestas de J10 bien;
-      J15 y J18 sin una fila distinta respecto a la copia. Falta repetirla desde el runner
-- [ ] Reducir peticiones: `syncJornada` pide `/stats` de todos los partidos terminados de la
-      ronda hasta dar con el de los Sharks (J12, J15 y J18 daban 429 en GitHub). El calendario
-      ya identifica el partido de los Sharks por ids de equipo: pedir solo ese
+      J15 y J18 sin una fila distinta respecto a la copia
+- [ ] Primera escritura real desde el runner: el próximo partido de los Sharks debe escribir
+      `historial` y puntuar desde `pablo-server`. Todos los runs hasta ahora fueron `nothing new`
+- [x] Reducir peticiones: `syncJornada` pide solo el `/stats` del partido de los Sharks,
+      identificado por la API (y ninguno mientras no haya terminado) (#52, 2026-11-15)
 - [ ] Aviso si la federación renumera el calendario (p. ej. comparar fecha/rival de las jornadas
       con historial contra la API y avisar si no cuadran, en vez de saltarlas en silencio)
 - [x] Decidir el power-up duplicado: se quitó el segundo reparto (2026-11-15)
-- [ ] Borrar el esquema `backup_20261115` cuando el usuario confirme que todo está bien
-- [ ] Decidir si se desactiva el cron de GitHub Actions (evita runs duplicados y fallos
-      en rojo)
-- [ ] Aviso si el scraper falla (hoy solo `::error::` en el log del run)
-- [ ] Cambiar la hora de los crons de fin de semana (sábado y domingo) a las 21:00 hora
-      española. Hoy están a las 22:00 UTC (23:00/24:00 en España). Los crons van en UTC, así
-      que 21:00 son 19:00 UTC en horario de verano (CEST) y 20:00 UTC en invierno (CET): el
-      cambio de hora fue el 2026-10-25, así que ahora toca `0 20 * * 6` y `0 20 * * 0`, y
-      habrá que retocarlo en marzo, o aceptar 1 h de desfase. Actualizar también los
-      comentarios de `scraper.yml`. Si el runner es autoalojado, otra opción es un timer
-      con zona horaria `Europe/Madrid`.
+- [ ] Esquema `backup_20261115`: se deja en la base de datos por decisión del usuario
+      (2026-11-15, "por si acaso"). Borrarlo solo cuando el usuario lo diga
+- [x] Cron de GitHub Actions: se mantiene; ahora ejecuta en el runner de casa (2026-11-15)
+- [ ] Aviso si el scraper falla (hoy solo `::error::` en el log del run): comprobar que
+      GitHub envía el email de los runs fallidos o añadir otro aviso
+- [x] Hora de los crons de fin de semana a las 21:00 hora española: `0 20 * * 6` y `0 20 * * 0`
+      (20:00 UTC = 21:00 CET), con comentario en `scraper.yml` (2026-11-15). **En marzo de 2027,
+      con el cambio a horario de verano, pasar ambos a `0 19`** (y volver a `0 20` en octubre),
+      o aceptar 1 h de desfase
 
 ## Notes
 - El incremental ya reintenta jornadas dejadas a medias (`resolver_jornada` fallido y
@@ -111,6 +113,15 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
 - `resolver_jornada` calcula la jornada anterior de la racha con `numero < p_jornada`, pero la
   numeración de la federación no es cronológica (por eso existe `orden`). Ya pasaba antes de
   la renumeración; revisar si debería usar `orden`.
+- Runner (2026-11-15): máquina `pablo-server` (Tailscale), usuario `ghrunner` sin `sudo` ni
+  `docker`, en `/home/ghrunner/actions-runner`, como servicio de usuario `github-runner` (con
+  `linger`, arranca con el servidor), etiqueta `sharks-scraper`, solo conexiones de salida. El
+  repo es público: política de aprobación a forks en `all_external_contributors`, y **nunca
+  añadir `push` ni `pull_request` a `scraper.yml`**. Estado del servicio:
+  `tailscale ssh ghrunner@pablo-server` y `systemctl --user status github-runner`.
+- Lanzar el sync a mano: `gh workflow run scraper.yml` (opcional `-f args="--jornada N"`). No
+  usar `--backfill` ni `--jornada 15`/`--jornada 18`: la federación perdió las actas de los
+  partidos recreados y se sobrescribirían con ceros.
 
 ## Sessions
 
@@ -119,8 +130,10 @@ Opción A (2026-10-25): el job lo ejecuta el servidor de casa, no las máquinas 
 - El scraper de GitHub falló con 429 tras jugarse Castelló. Diagnóstico: 429 en `/stats` más
   renumeración del calendario por la federación el 13-nov. Copia completa, migración atómica a
   la numeración nueva y sync local de J10 verificados contra la copia (J15/J18 intactas).
-  Power-up duplicado resuelto (se quitó el segundo reparto). Pendiente: reducir peticiones,
-  aviso de renumeración, runner autoalojado.
+  Power-up duplicado resuelto (se quitó el segundo reparto). Runner autoalojado instalado en
+  `pablo-server` y probado (#50, #51), scraper con menos peticiones (#52, #53) y crons de fin
+  de semana a las 21:00 CET. Pendiente: primera escritura real desde el runner, aviso de
+  renumeración y aviso de fallo.
 
 ### 2026-10-30
 
